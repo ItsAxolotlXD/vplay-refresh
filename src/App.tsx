@@ -27,7 +27,8 @@ import {
   MapPin,
   Globe,
   Bell,
-  Trash2
+  Trash2,
+  User
 } from "lucide-react";
 import { motion } from "motion/react";
 import { CATEGORIES, Category, Channel } from "./data/channels";
@@ -46,9 +47,9 @@ const homeSlides = [
     channelPlayName: "Vplay Premium: Liquid Glass Dynamic Showcase",
     ageRating: "T13",
     ratingText: "Chất lượng UHD | Siêu mượt",
-    vignetteLeft: "from-[#08152e]/90 via-[#08152e]/50 to-transparent",
-    vignetteBottom: "from-[#070d1a] via-[#070d1a]/80 to-[#070d1a]/0",
-    vignetteTop: "from-[#0d1c3a]/30 via-transparent to-transparent"
+    vignetteLeft: "from-black/90 via-black/55 to-transparent",
+    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteTop: "from-black/45 via-transparent to-transparent"
   },
   {
     id: 1,
@@ -62,9 +63,9 @@ const homeSlides = [
     channelPlayName: "VTV6 - Vì một Việt Nam khỏe mạnh! (FHD)",
     ageRating: "Tất cả",
     ratingText: "Trực tiếp Thể thao | Bản quyền",
-    vignetteLeft: "from-[#200808]/90 via-[#200808]/50 to-transparent",
-    vignetteBottom: "from-[#140505] via-[#140505]/80 to-[#140505]/0",
-    vignetteTop: "from-[#290a0a]/30 via-transparent to-transparent"
+    vignetteLeft: "from-black/90 via-black/55 to-transparent",
+    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteTop: "from-black/45 via-transparent to-transparent"
   },
   {
     id: 2,
@@ -78,9 +79,9 @@ const homeSlides = [
     channelPlayName: "Trải nghiệm truyền hình đỉnh cao cùng Vplay (UltraHD)",
     ageRating: "T16",
     ratingText: "Độ trễ bằng 0 | Hỗ trợ m3u8 ngoại luồng",
-    vignetteLeft: "from-[#05211e]/90 via-[#05211e]/50 to-transparent",
-    vignetteBottom: "from-[#031412] via-[#031412]/80 to-[#031412]/0",
-    vignetteTop: "from-[#08302b]/30 via-transparent to-transparent"
+    vignetteLeft: "from-black/90 via-black/55 to-transparent",
+    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteTop: "from-black/45 via-transparent to-transparent"
   }
 ];
 
@@ -113,6 +114,22 @@ export default function App() {
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<"home" | "live" | "packages" | "settings">("home");
+
+  // Scroll Position Tracking for Floating Header
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Slide auto rotation effect every 8 seconds
   useEffect(() => {
@@ -512,8 +529,16 @@ export default function App() {
           <div className="w-full animate-fade-in space-y-0 bg-[#07050f]/60 min-h-screen relative pt-0">
             
             {/* TV360 STYLE CINEMATIC HEADER (Floating on Top of Immersive Poster) */}
-            <header className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black via-black/40 to-transparent z-40 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none">
-              <div className="flex items-center gap-6 sm:gap-8 lg:gap-12">
+            <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-300">
+              {/* Progressive background blurs backplate - Only visible when scrolled down */}
+              <div className={`absolute inset-x-0 top-0 h-full bg-[#07050f]/60 backdrop-blur-md border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-0 pointer-events-none transition-all duration-500 ease-out ${
+                isScrolled ? "opacity-100" : "opacity-0"
+              }`} />
+              <div className={`absolute inset-x-0 top-full h-12 bg-gradient-to-b from-[#07050f]/50 to-transparent backdrop-blur-[2.5px] z-0 pointer-events-none transition-all duration-500 ease-out ${
+                isScrolled ? "opacity-100" : "opacity-0"
+              }`} />
+
+              <div className="relative z-10 flex items-center gap-6 sm:gap-8 lg:gap-12">
                 {/* Brand Logo on the Left */}
                 <div onClick={() => setActiveTab("home")} className="flex items-center gap-2 cursor-pointer group">
                   <img 
@@ -538,7 +563,7 @@ export default function App() {
               </div>
 
               {/* Right Side: Search capsule, notifications, and profile card (VIP Button is Deleted) */}
-              <div className="flex items-center gap-3 sm:gap-6">
+              <div className="relative z-10 flex items-center gap-3 sm:gap-6">
                 {/* Mini Search input box */}
                 <div className="relative group transition-all duration-300 w-28 xs:w-36 sm:w-48 md:w-56 focus-within:w-40 sm:focus-within:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50 z-20 pointer-events-none" />
@@ -562,16 +587,16 @@ export default function App() {
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 ring-2 ring-transparent animate-pulse" />
                 </button>
 
-                {/* User avatar displaying exact email info */}
+                {/* User avatar displaying email info */}
                 <div className="relative group/avatar flex items-center gap-2 cursor-pointer z-50">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md">
-                    <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center font-bold text-[10px] sm:text-xs select-none">
-                      B
+                    <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
+                      <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90" />
                     </div>
                   </div>
-                  {/* Floating tooltip displaying email details */}
+                  {/* Floating tooltip protecting user email */}
                   <div className="absolute right-0 top-10 pointer-events-none opacity-0 group-hover/avatar:opacity-100 group-hover/avatar:pointer-events-auto transition-all duration-300 bg-black/95 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 shadow-xl text-[10px] sm:text-xs text-white/90 whitespace-nowrap z-50">
-                    Sống cùng đam mê: <span className="font-extrabold text-pink-300">tvbabinh2@gmail.com</span>
+                    Tài khoản: <span className="font-extrabold text-pink-300">Thành viên Premium</span>
                   </div>
                 </div>
               </div>
@@ -1001,101 +1026,14 @@ export default function App() {
 
         {/* VIEW: DETAILED PACKAGES (CÁC GÓI KÊNH) */}
         {activeTab === "packages" && (
-          <div className="max-w-4xl mx-auto py-4 animate-fade-in">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-black mb-2">Quyền Lợi & Gói Dịch Vụ</h2>
-              <p className="text-white/60 text-sm max-w-md mx-auto">Trải nghiệm các nhóm gói kênh chất lượng cao chuẩn HD hoàn toàn mở khoá không tốn phí</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Silver pack */}
-              <div className="p-6 rounded-3xl glass-panel border border-white/10 relative flex flex-col justify-between">
-                <div>
-                  <span className="text-xs text-white/50 block font-semibold uppercase tracking-wider">Cơ Bản</span>
-                  <h3 className="text-xl font-bold mt-1 text-cyan-400">Gói Kênh VTV</h3>
-                  <p className="text-white/60 text-xs mt-2 leading-relaxed">Truy cập toàn bộ 13 kênh thời sự văn hoá của Đài truyền hình Việt Nam với băng thông không giới hạn.</p>
-                  
-                  <div className="mt-6 space-y-3 text-xs text-white/80">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Luồng FPT cực kỳ ổn định</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Độ phân giải 1080p FHD</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Cập nhật lịch phát sóng tự lặp</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 border-t border-white/10 pt-4">
-                  <div className="text-lg font-black text-white">Hoàn Toàn Free</div>
-                  <button onClick={() => { setActiveTab("live"); setSelectedCategory("vtv"); }} className="w-full mt-3 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 hover:scale-110 active:scale-90 cursor-pointer text-cyan-200 border border-cyan-500/30 text-xs font-bold transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)]">Xem nhóm kênh</button>
-                </div>
+          <div className="min-h-[60vh] flex items-center justify-center py-10 animate-fade-in font-google">
+            <div className="text-center p-8 xs:p-10 rounded-3xl glass-panel border border-white/10 max-w-sm mx-auto shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-teal-500/5 -z-10" />
+              <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-inner transition-transform duration-500 group-hover:scale-110">
+                <Package className="w-8 h-8 text-pink-400" />
               </div>
-
-              {/* Gold pack */}
-              <div className="p-6 rounded-3xl glass-panel border border-white/20 relative flex flex-col justify-between transform -translate-y-2 ring-2 ring-pink-500/30">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-rose-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow">Đề Xuất</span>
-                
-                <div>
-                  <span className="text-xs text-white/50 block font-semibold uppercase tracking-wider mt-1">Cao Cấp</span>
-                  <h3 className="text-xl font-bold mt-1 text-pink-400">Gói Kênh VTVCab & HTV</h3>
-                  <p className="text-white/60 text-xs mt-2 leading-relaxed">Thế giới thể thao Golf, Kids trẻ em, nhạc trẻ, phim truyền ảnh châu Á và kho HTVC đặc sắc miễn chê.</p>
-                  
-                  <div className="mt-6 space-y-3 text-xs text-white/80">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-pink-400 shrink-0" />
-                      <span>Gồm ON Movies, ON Cine độc quyền</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-pink-400 shrink-0" />
-                      <span>Bao gồm HTV7, HTV9 bản quyền</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-pink-400 shrink-0" />
-                      <span>Phù hợp xem bóng đá thể thao</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 border-t border-white/10 pt-4">
-                  <div className="text-lg font-black text-white">Mở Khoá Sẵn</div>
-                  <button onClick={() => { setActiveTab("live"); setSelectedCategory("vtvcab"); }} className="w-full mt-3 py-2.5 rounded-xl bg-pink-500 hover:bg-pink-600 hover:scale-110 active:scale-90 cursor-pointer text-white text-xs font-bold transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] shadow-lg shadow-pink-500/20">Xem ngay miễn phí</button>
-                </div>
-              </div>
-
-              {/* Platinum pack */}
-              <div className="p-6 rounded-3xl glass-panel border border-white/10 relative flex flex-col justify-between">
-                <div>
-                  <span className="text-xs text-white/50 block font-semibold uppercase tracking-wider">Mở Rộng</span>
-                  <h3 className="text-xl font-bold mt-1 text-amber-400">Gói Quốc Tế & Tự Thêm</h3>
-                  <p className="text-white/60 text-xs mt-2 leading-relaxed">Không giới hạn số lượng kênh ngoài luồng. Tương thích trình phát m3u8 đa phương thức tốc độ cao.</p>
-                  
-                  <div className="mt-6 space-y-3 text-xs text-white/80">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Tải m3u8 từ bất kỳ máy chủ nào</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Hỗ trợ các đài phát thanh VOV</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Lưu danh sách tự thêm offline</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 border-t border-white/10 pt-4">
-                  <div className="text-lg font-black text-white">Lưu Trữ Không Giới Hạn</div>
-                  <button onClick={() => { setActiveTab("live"); setSelectedCategory("quoc-te"); }} className="w-full mt-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 hover:scale-110 active:scale-90 cursor-pointer text-amber-200 border border-amber-500/30 text-xs font-bold transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)]">Khám phá ngay</button>
-                </div>
-              </div>
+              <h2 className="text-2xl font-black tracking-widest text-white mb-3 uppercase">Coming soon</h2>
+              <p className="text-white/50 text-xs sm:text-[13px] leading-relaxed">Tính năng Gói Kênh Premium chất lượng cao đang được hoàn thiện và sẽ sớm ra mắt trong thời gian tới.</p>
             </div>
           </div>
         )}
@@ -1199,7 +1137,7 @@ export default function App() {
           
           {[
             { id: "home", icon: Home },
-            { id: "live", icon: Compass, pulse: true },
+            { id: "live", icon: Compass },
             { id: "packages", icon: Package },
             { id: "settings", icon: Settings },
           ].map((tab) => {
@@ -1223,7 +1161,7 @@ export default function App() {
                     className="absolute inset-0 bg-white rounded-full shadow-lg -z-10"
                   />
                 )}
-                <Icon className={`w-7.5 h-7.5 ${tab.pulse && !isActive ? "animate-pulse" : ""} transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
+                <Icon className={`w-7.5 h-7.5 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
               </button>
             );
           })}
