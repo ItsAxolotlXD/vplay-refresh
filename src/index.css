@@ -43,6 +43,90 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Progressive blur styles for high-fidelity vintage glass appearance */
+.progressive-blur-header {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.8) 35%, rgba(7, 5, 15, 0.4) 75%, rgba(7, 5, 15, 0) 100%);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.progressive-blur-dock {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.8) 35%, rgba(7, 5, 15, 0.4) 75%, rgba(7, 5, 15, 0) 100%);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.progressive-blur-player {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.75) 40%, rgba(7, 5, 15, 0) 100%);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 40%, rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 40%, rgba(0, 0, 0, 0) 100%);
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* Range slider custom pill shape values (Horizontal Pill) */
+.range-slider-pill::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease, width 0.2s ease, height 0.2s ease;
+}
+.range-slider-pill::-moz-range-thumb {
+  width: 14px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease, width 0.2s ease, height 0.2s ease;
+}
+.range-slider-pill:hover::-webkit-slider-thumb {
+  transform: scale(1.4);
+  background: rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.range-slider-pill:hover::-moz-range-thumb {
+  transform: scale(1.4);
+  background: rgba(255, 255, 255, 0.3) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.range-slider-pill:active::-webkit-slider-thumb {
+  transform: scale(1.8) rotate(1.5deg);
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1.5px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.range-slider-pill:active::-moz-range-thumb {
+  transform: scale(1.8) rotate(1.5deg);
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1.5px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
 .glass-pill {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);

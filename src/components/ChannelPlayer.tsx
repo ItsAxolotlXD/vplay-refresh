@@ -377,29 +377,34 @@ export default function ChannelPlayer({
         )}
 
         {/* Dynamic Frosted Glass Bottom Overlay Controls */}
-        <div className={`absolute bottom-0 inset-x-0 p-4 transition-all duration-300 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex flex-col gap-3.5 z-15 ${showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"}`}>
+        <div className={`absolute bottom-0 inset-x-0 p-4 transition-all duration-300 flex flex-col gap-3.5 z-15 ${showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"}`}>
+          
+          {/* Progressive blur background for premium translucent control base */}
+          <div className="progressive-blur-player" />
 
-          {/* 1. Horizontal Progress timeline/slider from mock */}
-          <div className="w-full flex items-center mt-1 px-1 relative group/slider">
-            <div 
-              className="w-full h-1 bg-white/20 rounded-full relative cursor-pointer"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
-                setProgramInfo(prev => ({ ...prev, progress: pct }));
-              }}
-            >
-              {/* Active slider track filled with white */}
+          {/* Interactive controls content wrapper above blur */}
+          <div className="relative z-10 flex flex-col gap-3.5 w-full">
+            {/* 1. Horizontal Progress timeline/slider from mock */}
+            <div className="w-full flex items-center mt-1 px-1 relative group/slider">
               <div 
-                className="h-full bg-white rounded-full relative" 
-                style={{ width: `${programInfo.progress}%` }}
+                className="w-full h-1 bg-white/20 rounded-full relative cursor-pointer"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickX = e.clientX - rect.left;
+                  const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
+                  setProgramInfo(prev => ({ ...prev, progress: pct }));
+                }}
               >
-                {/* Thumb dot */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg border border-white/25"></div>
+                {/* Active slider track filled with white */}
+                <div 
+                  className="h-full bg-white rounded-full relative" 
+                  style={{ width: `${programInfo.progress}%` }}
+                >
+                  {/* Thumb dot - Horizontal Pill Shape Capsule (interactive glassy spring scaling on hover/drag) */}
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-4 sm:w-5 h-1.5 sm:h-2 bg-white rounded-full shadow-lg border border-white/20 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover/slider:scale-135 group-hover/slider:bg-white/30 group-hover/slider:border-white group-active/slider:scale-175 group-active/slider:bg-white/15"></div>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* 2. Controls and Buttons row */}
           <div className="flex items-center justify-between gap-2">
@@ -416,7 +421,7 @@ export default function ChannelPlayer({
                 step="0.05"
                 value={muted ? 0 : volume}
                 onChange={handleVolumeChangeLocal}
-                className="w-12 sm:w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:accent-purple-400 transition-all"
+                className="w-12 sm:w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer transition-all range-slider-pill outline-none"
               />
             </div>
 
@@ -488,5 +493,6 @@ export default function ChannelPlayer({
         </div>
       </div>
     </div>
+  </div>
   );
 }

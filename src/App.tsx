@@ -120,7 +120,8 @@ export default function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
+      const top = window.scrollY || document.documentElement.scrollTop;
+      if (top > 10) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
@@ -370,9 +371,78 @@ export default function App() {
       <div className="absolute top-1/2 right-10 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[130px] pointer-events-none"></div>
       <div className="absolute bottom-20 left-10 w-[400px] h-[400px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none"></div>
 
+      {/* TV360 STYLE CINEMATIC HEADER (Floating on Top - Exclusively on HOME tab) */}
+      {activeTab === "home" && (
+        <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-150">
+          {/* Progressive background blurs backplate - Only visible when scrolled down and completely invisible on top scroll */}
+          <div className={`progressive-blur-header z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] ${
+            isScrolled ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+          }`} />
 
+          <div className="relative z-10 flex items-center gap-6 sm:gap-8 lg:gap-12">
+            {/* Brand Logo on the Left */}
+            <div onClick={() => setActiveTab("home")} className="flex items-center gap-2 cursor-pointer group">
+              <img 
+                src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi" 
+                alt="Vplay Brand Logo"
+                referrerPolicy="no-referrer"
+                className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="hidden xs:inline-block font-sans font-black text-lg bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-wider select-none">360</span>
+            </div>
 
+            {/* Real-time Ticking Digital Clock with Seconds */}
+            <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-inner select-none transition-all duration-300 hover:scale-105 font-google">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
+              <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white font-google drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                {formatTimeWithSeconds(time)}
+              </span>
+              <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10 font-google">
+                {formatDateVietnamese(time)}
+              </span>
+            </div>
+          </div>
 
+          {/* Right Side: Search capsule, notifications, and profile card */}
+          <div className="relative z-10 flex items-center gap-3 sm:gap-6">
+            {/* Mini Search input box */}
+            <div className="relative group transition-all duration-300 w-28 xs:w-36 sm:w-48 md:w-56 focus-within:w-40 sm:focus-within:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50 z-20 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Tìm kênh nhanh..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (activeTab !== "live") {
+                    setActiveTab("live");
+                  }
+                }}
+                className="w-full pl-8 pr-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-white/25 text-white placeholder-white/40 focus:outline-none transition-all duration-300 shadow-inner"
+              />
+            </div>
+
+            {/* Notification bell icon */}
+            <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer">
+              <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 ring-2 ring-transparent animate-pulse" />
+            </button>
+
+            {/* User avatar displaying email info */}
+            <div className="relative group/avatar flex items-center gap-2 cursor-pointer z-50">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md">
+                <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
+                  <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90" />
+                </div>
+              </div>
+              {/* Floating tooltip */}
+              <div className="absolute right-0 top-10 pointer-events-none opacity-0 group-hover/avatar:opacity-100 group-hover/avatar:pointer-events-auto transition-all duration-300 bg-black/95 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 shadow-xl text-[10px] sm:text-xs text-white/90 whitespace-nowrap z-50">
+                Tài khoản: <span className="font-extrabold text-pink-300">Thành viên Premium</span>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
 
       {/* Main Container */}
       <main id="player-anchor" className={activeTab === "home" ? "w-full pt-0 z-10 relative" : "w-full max-w-7xl mx-auto px-4 pt-6 z-10 relative"}>
@@ -491,7 +561,7 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-16 xs:h-18 sm:h-22 md:h-26 border-2 sm:border-3 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-14 xs:h-16 sm:h-20 md:h-24 border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
                               isPlaying 
                                 ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                                 : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/50"
@@ -505,11 +575,13 @@ export default function App() {
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
-                                  className="w-full h-full object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115"
+                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115 ${
+                                    ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : "w-full h-full"
+                                  }`}
                                 />
                               ) : (
-                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg} shadow-inner border border-white/10 font-bold text-white text-[10px] sm:text-xs tracking-wider text-center px-1`}>
-                                  {ch.logoText}
+                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
+                                   {ch.logoText}
                                 </div>
                               )}
                             </div>
@@ -528,80 +600,6 @@ export default function App() {
         {activeTab === "home" && (
           <div className="w-full animate-fade-in space-y-0 bg-[#07050f]/60 min-h-screen relative pt-0">
             
-            {/* TV360 STYLE CINEMATIC HEADER (Floating on Top of Immersive Poster) */}
-            <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-300">
-              {/* Progressive background blurs backplate - Only visible when scrolled down */}
-              <div className={`absolute inset-x-0 top-0 h-full bg-[#07050f]/60 backdrop-blur-md border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-0 pointer-events-none transition-all duration-500 ease-out ${
-                isScrolled ? "opacity-100" : "opacity-0"
-              }`} />
-              <div className={`absolute inset-x-0 top-full h-12 bg-gradient-to-b from-[#07050f]/50 to-transparent backdrop-blur-[2.5px] z-0 pointer-events-none transition-all duration-500 ease-out ${
-                isScrolled ? "opacity-100" : "opacity-0"
-              }`} />
-
-              <div className="relative z-10 flex items-center gap-6 sm:gap-8 lg:gap-12">
-                {/* Brand Logo on the Left */}
-                <div onClick={() => setActiveTab("home")} className="flex items-center gap-2 cursor-pointer group">
-                  <img 
-                    src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi" 
-                    alt="Vplay Brand Logo"
-                    referrerPolicy="no-referrer"
-                    className="h-8 sm:h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <span className="hidden xs:inline-block font-sans font-black text-lg bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-wider select-none">360</span>
-                </div>
-
-                {/* Real-time Ticking Digital Clock with Seconds replacing Navigation tabs */}
-                <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-inner select-none transition-all duration-300 hover:scale-105 font-google">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
-                  <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white font-google drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
-                    {formatTimeWithSeconds(time)}
-                  </span>
-                  <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10 font-google">
-                    {formatDateVietnamese(time)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Right Side: Search capsule, notifications, and profile card (VIP Button is Deleted) */}
-              <div className="relative z-10 flex items-center gap-3 sm:gap-6">
-                {/* Mini Search input box */}
-                <div className="relative group transition-all duration-300 w-28 xs:w-36 sm:w-48 md:w-56 focus-within:w-40 sm:focus-within:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50 z-20 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="Tìm kênh nhanh..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (activeTab !== "live") {
-                        setActiveTab("live");
-                      }
-                    }}
-                    className="w-full pl-8 pr-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-white/25 text-white placeholder-white/40 focus:outline-none transition-all duration-300 shadow-inner"
-                  />
-                </div>
-
-                {/* Notification bell icon */}
-                <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer">
-                  <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 ring-2 ring-transparent animate-pulse" />
-                </button>
-
-                {/* User avatar displaying email info */}
-                <div className="relative group/avatar flex items-center gap-2 cursor-pointer z-50">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md">
-                    <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
-                      <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90" />
-                    </div>
-                  </div>
-                  {/* Floating tooltip protecting user email */}
-                  <div className="absolute right-0 top-10 pointer-events-none opacity-0 group-hover/avatar:opacity-100 group-hover/avatar:pointer-events-auto transition-all duration-300 bg-black/95 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 shadow-xl text-[10px] sm:text-xs text-white/90 whitespace-nowrap z-50">
-                    Tài khoản: <span className="font-extrabold text-pink-300">Thành viên Premium</span>
-                  </div>
-                </div>
-              </div>
-            </header>
-
             {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
             <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[460px] sm:min-h-[580px] md:min-h-[660px] lg:min-h-[720px] flex items-end pb-12 sm:pb-16 md:pb-20 lg:pb-24 group/hero">
               
@@ -756,7 +754,7 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-36 sm:w-44 md:w-52 h-16 xs:h-18 sm:h-22 md:h-26 border-2 sm:border-3 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-22 xs:w-26 sm:w-32 md:w-38 h-11 xs:h-13 sm:h-16 md:h-18 border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
                             isPlaying 
                               ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                               : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/50"
@@ -770,10 +768,12 @@ export default function App() {
                                 src={ch.logoImg}
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
-                                className="w-full h-full object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115"
+                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115 ${
+                                  ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : "w-full h-full"
+                                }`}
                               />
                             ) : (
-                              <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[10px] sm:text-xs tracking-wider text-center px-1`}>
+                              <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
                                 {ch.logoText}
                               </div>
                             )}
@@ -1131,9 +1131,14 @@ export default function App() {
 
       </main>
 
+      {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
+      <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
+        <div className="progressive-blur-dock" />
+      </div>
+
       {/* FLOAT GLASSBOTTOM NAVIGATION NAVIGATION TAB DOCK */}
       <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[450px] z-50">
-        <div className="h-16 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 shadow-2xl flex items-center justify-around px-2.5 py-1 relative">
+        <div className="h-16 rounded-full bg-white/[0.12] backdrop-blur-[20px] saturate-[185%] border border-white/20 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2.5 py-1 relative">
           
           {[
             { id: "home", icon: Home },
