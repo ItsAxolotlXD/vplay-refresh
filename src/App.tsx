@@ -280,10 +280,10 @@ export default function App() {
       <header className="relative w-full max-w-7xl mx-auto px-4 pt-6 pb-2 flex items-center justify-between z-10">
         {/* Left Side: Clock with seconds & date in Thứ x - dd/mm/yy formatting */}
         <div className="flex flex-col items-start justify-center font-google select-none z-10 gap-0.5">
-          <div className="text-sm sm:text-base md:text-lg font-bold text-white/95 tracking-wide drop-shadow-md font-google">
+          <div className="text-[11px] xs:text-xs sm:text-sm md:text-base font-bold text-white/95 tracking-wide drop-shadow-md font-google">
             {formatTimeWithSeconds(time)}
           </div>
-          <div className="text-sm sm:text-base md:text-lg font-semibold text-white/60 tracking-wide font-google">
+          <div className="text-[10px] xs:text-[11px] sm:text-xs md:text-sm font-semibold text-white/60 tracking-wide font-google">
             {formatDateVietnamese(time)}
           </div>
         </div>
@@ -408,8 +408,8 @@ export default function App() {
                       </span>
                     </div>
 
-                    {/* Channels responsive grid aligned properly: exactly 3 columns on mobile and 5 columns on desktop */}
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+                    {/* Channels responsive grid aligned properly: 4 columns on mobile and up to 8/9 columns on desktop to reduce width */}
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 gap-2 sm:gap-3">
                       {category.channels.map((ch) => {
                         const isPlaying = selectedChannel.id === ch.id;
 
@@ -418,27 +418,24 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-2xl p-3 cursor-pointer flex items-center justify-center h-24 sm:h-28 border-4 ${
+                            className={`group relative rounded-xl p-1 sm:p-1.5 cursor-pointer flex items-center justify-center h-14 xs:h-16 sm:h-18 md:h-20 border-2 sm:border-[3px] select-none ${
                               isPlaying 
-                                ? "bg-white/25 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                                : "bg-white/5 backdrop-blur-md border-white/15 hover:border-white"
+                                ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
+                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/50"
                             }`}
                             title={ch.name}
                           >
-                            {/* Logo Graphic Container - renders official brand logo image or beautiful backup styled pill */}
-                            <div className="w-full flex justify-center items-center h-full">
+                            {/* Logo Graphic Container - fills the box completely */}
+                            <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
                               {ch.logoImg ? (
                                 <img
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
-                                  className={ch.group === "VTV" 
-                                    ? "max-h-20 sm:max-h-24 max-w-[100%] scale-105 object-contain filter drop-shadow-md select-none pointer-events-none"
-                                    : "max-h-16 sm:max-h-20 max-w-[95%] object-contain filter drop-shadow-md select-none pointer-events-none"
-                                  }
+                                  className="w-full h-full object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-95"
                                 />
                               ) : (
-                                <div className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl ${ch.logoBg} shadow-md border border-white/15 font-black text-white text-[11px] sm:text-xs tracking-widest relative`}>
+                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
                                   {ch.logoText}
                                 </div>
                               )}

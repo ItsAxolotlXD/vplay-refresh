@@ -423,48 +423,48 @@ export default function ChannelPlayer({
             </div>
 
             {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
-            <div className="flex items-center gap-2 sm:gap-3.5">
+            <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3.5">
               {/* Button 1: Menu list icon */}
               <button 
                 onClick={() => {
                   const targetEl = document.getElementById("channels-grid-section") || document.getElementById("player-anchor");
                   if (targetEl) targetEl.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Danh sách kênh"
               >
-                <Menu className="w-4.5 h-4.5 text-white" />
+                <Menu className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
               </button>
 
               {/* Button 2: Skip back */}
               <button 
                 onClick={onPrevChannel}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Kênh trước"
               >
-                <SkipBack className="w-4.5 h-4.5 text-white" />
+                <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
               </button>
 
               {/* Button 3: Main center Play/Pause button (Larger size) */}
               <button 
                 onClick={togglePlay}
-                className="w-12 h-12 sm:w-15 sm:h-15 rounded-full bg-white/[0.18] backdrop-blur-[15px] border border-white/25 hover:bg-white/[0.28] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-pointer"
+                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/[0.18] backdrop-blur-[15px] border border-white/25 hover:bg-white/[0.28] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-pointer"
                 title={isPlaying ? "Tạm Dừng" : "Phát"}
               >
                 {isPlaying ? (
-                  <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-white text-white" />
+                  <Pause className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white" />
                 ) : (
-                  <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-white text-white translate-x-0.5" />
+                  <Play className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white translate-x-0.5" />
                 )}
               </button>
 
               {/* Button 4: Skip forward */}
               <button 
                 onClick={onNextChannel}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Kênh sau"
               >
-                <SkipForward className="w-4.5 h-4.5 text-white" />
+                <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
               </button>
 
               {/* Button 5: Loop context / reload button */}
@@ -474,10 +474,10 @@ export default function ChannelPlayer({
                   setIsLoading(true);
                   if (videoRef.current) videoRef.current.load();
                 }}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Tải lại luồng"
               >
-                <RefreshCw className="w-4 h-4 text-white" />
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
               </button>
             </div>
 
