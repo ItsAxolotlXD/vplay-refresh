@@ -45,7 +45,10 @@ const homeSlides = [
     channelId: "vtv1",
     channelPlayName: "Vplay Premium: Liquid Glass Dynamic Showcase",
     ageRating: "T13",
-    ratingText: "Chất lượng UHD | Siêu mượt"
+    ratingText: "Chất lượng UHD | Siêu mượt",
+    vignetteLeft: "from-[#08152e]/90 via-[#08152e]/50 to-transparent",
+    vignetteBottom: "from-[#070d1a] via-[#070d1a]/80 to-[#070d1a]/0",
+    vignetteTop: "from-[#0d1c3a]/30 via-transparent to-transparent"
   },
   {
     id: 1,
@@ -58,7 +61,10 @@ const homeSlides = [
     channelId: "vtv3",
     channelPlayName: "VTV6 - Vì một Việt Nam khỏe mạnh! (FHD)",
     ageRating: "Tất cả",
-    ratingText: "Trực tiếp Thể thao | Bản quyền"
+    ratingText: "Trực tiếp Thể thao | Bản quyền",
+    vignetteLeft: "from-[#200808]/90 via-[#200808]/50 to-transparent",
+    vignetteBottom: "from-[#140505] via-[#140505]/80 to-[#140505]/0",
+    vignetteTop: "from-[#290a0a]/30 via-transparent to-transparent"
   },
   {
     id: 2,
@@ -71,7 +77,10 @@ const homeSlides = [
     channelId: "cartoon-network",
     channelPlayName: "Trải nghiệm truyền hình đỉnh cao cùng Vplay (UltraHD)",
     ageRating: "T16",
-    ratingText: "Độ trễ bằng 0 | Hỗ trợ m3u8 ngoại luồng"
+    ratingText: "Độ trễ bằng 0 | Hỗ trợ m3u8 ngoại luồng",
+    vignetteLeft: "from-[#05211e]/90 via-[#05211e]/50 to-transparent",
+    vignetteBottom: "from-[#031412] via-[#031412]/80 to-[#031412]/0",
+    vignetteTop: "from-[#08302b]/30 via-transparent to-transparent"
   }
 ];
 
@@ -103,7 +112,7 @@ export default function App() {
   }, []);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<"home" | "live" | "packages" | "settings">("live");
+  const [activeTab, setActiveTab] = useState<"home" | "live" | "packages" | "settings">("home");
 
   // Slide auto rotation effect every 8 seconds
   useEffect(() => {
@@ -346,37 +355,7 @@ export default function App() {
 
 
 
-      {/* Global Search Bar & Add Channel Button Bar - Hidden on Home tab to achieve fully immersive wallpaper */}
-      {activeTab !== "home" && (
-        <div className="w-full max-w-5xl mx-auto px-4 mt-4 mb-2 flex items-center justify-center gap-3 z-10 relative">
-          <div className="relative flex-1 max-w-md group transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-85 focus-within:scale-110">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 z-20 pointer-events-none transition-transform duration-300 group-hover:scale-110" />
-            <input
-              type="text"
-              placeholder="Search Vplay channels"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-full text-sm bg-white/10 border border-white/15 backdrop-blur-md text-white placeholder-white/50 focus:bg-white/15 focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all duration-300 shadow-md focus:outline-none"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery("")} 
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
 
-          <button
-            onClick={() => setShowCustomModal(true)}
-            className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 hover:scale-110 active:scale-120 text-white border border-white/15 backdrop-blur-md transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer"
-            title="Thêm link m3u8 của riêng bạn"
-          >
-            <Plus className="w-4 h-4 transition-transform duration-300 hover:rotate-90" /> Thêm kênh
-          </button>
-        </div>
-      )}
 
       {/* Main Container */}
       <main id="player-anchor" className={activeTab === "home" ? "w-full pt-0 z-10 relative" : "w-full max-w-7xl mx-auto px-4 pt-6 z-10 relative"}>
@@ -396,6 +375,36 @@ export default function App() {
               isFavorite={favorites.includes(selectedChannel.id)}
               onToggleFavorite={() => toggleFavorite(selectedChannel.id)}
             />
+
+            {/* Live tab Search Bar & Add Channel Button Bar - Placed perfectly under the channel player exactly as requested */}
+            <div className="w-full max-w-5xl mx-auto mt-6 mb-6 flex items-center justify-center gap-3 z-10 relative px-2">
+              <div className="relative flex-1 max-w-md group transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-85 focus-within:scale-110">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 z-20 pointer-events-none transition-transform duration-300 group-hover:scale-110" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm kênh Vplay..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 rounded-full text-sm bg-white/10 border border-white/15 backdrop-blur-md text-white placeholder-white/50 focus:bg-white/15 focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all duration-300 shadow-md focus:outline-none"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery("")} 
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowCustomModal(true)}
+                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 hover:scale-110 active:scale-120 text-white border border-white/15 backdrop-blur-md transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer"
+                title="Thêm link m3u8 của riêng bạn"
+              >
+                <Plus className="w-4 h-4 transition-transform duration-300 hover:rotate-90" /> Thêm kênh
+              </button>
+            </div>
 
             {/* Glass Category Filter row */}
             <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 pt-1 border-b border-white/5">
@@ -518,11 +527,11 @@ export default function App() {
 
                 {/* Real-time Ticking Digital Clock with Seconds replacing Navigation tabs */}
                 <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-inner select-none transition-all duration-300 hover:scale-105 font-google">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
+                  <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white font-google drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
                     {formatTimeWithSeconds(time)}
                   </span>
-                  <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10">
+                  <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10 font-google">
                     {formatDateVietnamese(time)}
                   </span>
                 </div>
@@ -580,24 +589,24 @@ export default function App() {
                   className="w-full h-full object-cover object-center md:object-right transition-all duration-700 ease-out scale-102 group-hover/hero:scale-105"
                 />
                 
-                {/* Advanced Multi-Layer Gradient Overlays for Cinematic TV360 Atmosphere */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 sm:via-black/60 md:via-black/20 to-transparent z-10" />
-                <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#07050f] via-[#07050f]/60 to-transparent z-10" />
-                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#07050f]/90 via-[#07050f]/30 to-transparent z-10" />
+                {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
+                <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10 transition-all duration-700`} />
+                <div className={`absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t ${homeSlides[currentSlide].vignetteBottom} z-10 transition-all duration-700`} />
+                <div className={`absolute inset-x-0 top-0 h-36 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10 transition-all duration-700`} />
               </div>
 
               {/* Foreground content details on left - nested in desktop alignment grid */}
               <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col items-start gap-1 justify-end h-full">
-                {/* Calligraphy logo and title text stylistics */}
-                <div className="flex flex-col select-none mb-3">
-                  <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif italic leading-none font-light text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)]">
+                {/* Calligraphy logo and title text stylistics with Google Sans font */}
+                <div className="flex flex-col select-none mb-3 font-google gap-1">
+                  <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
                     {homeSlides[currentSlide].titleTop}
                   </div>
-                  <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-2 xs:ml-4 sm:ml-6 -mt-1 uppercase">
+                  <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-2 xs:ml-4 sm:ml-6 -mt-1 uppercase font-google">
                     {homeSlides[currentSlide].titleMain}
                   </div>
                   {homeSlides[currentSlide].titleSub && (
-                    <div className="text-xl xs:text-2xl sm:text-3xl font-bold text-white drop-shadow ml-2 xs:ml-4 sm:ml-6 tracking-wide mt-1 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase">
+                    <div className="text-xl xs:text-2xl sm:text-3xl font-bold text-white drop-shadow ml-2 xs:ml-4 sm:ml-6 tracking-wide mt-1 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
                       {homeSlides[currentSlide].titleSub}
                     </div>
                   )}
@@ -636,7 +645,7 @@ export default function App() {
                     }}
                     className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-red-600 hover:bg-red-700 text-white font-extrabold shadow-xl hover:shadow-red-600/30 hover:scale-110 active:scale-120 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-red-500/10"
                   >
-                    <Play className="w-4.5 h-4.5 fill-white text-white" /> Xem ngay
+                    <Play className="w-4.5 h-4.5 fill-white text-white" /> Thử ngay
                   </button>
 
                   {/* Slider indicator arrows and paging inside the banner */}
@@ -681,7 +690,7 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-5 rounded bg-amber-400" />
-                    <h3 className="text-base sm:text-lg font-bold tracking-tight text-white/95 font-google">Kênh yêu thích</h3>
+                    <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Kênh yêu thích</h3>
                     <span className="text-xs text-amber-400/80 font-mono mt-1">({favoriteChannelsList.length})</span>
                   </div>
 
@@ -768,7 +777,7 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 rounded bg-pink-500" />
-                <h3 className="text-base sm:text-lg font-bold tracking-tight text-white/95 font-google">Xem tiếp</h3>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Xem tiếp</h3>
                 <span className="text-xs text-white/40 font-mono mt-1">Gần đây</span>
               </div>
 
@@ -840,8 +849,8 @@ export default function App() {
                     </div>
 
                     {/* Bottom overlay text details */}
-                    <div className="absolute bottom-2.5 left-3 right-12 z-10 pointer-events-none select-none">
-                      <h4 className="text-xs xs:text-sm font-bold text-white truncate drop-shadow-md">
+                    <div className="absolute bottom-2.5 left-3 right-12 z-10 pointer-events-none select-none font-google">
+                      <h4 className="text-xs sm:text-[13px] font-bold text-white truncate drop-shadow-md font-google">
                         {item.title}
                       </h4>
                       <p className="text-[10px] text-white/65 truncate drop-shadow text-pink-100/80">
@@ -857,7 +866,7 @@ export default function App() {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 rounded bg-teal-400" />
-                <h3 className="text-base sm:text-lg font-bold tracking-tight text-white/95 font-google">Phim đề xuất</h3>
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Phim đề xuất</h3>
                 <span className="text-xs text-teal-400/80 font-mono mt-1">Đặc sắc nhất</span>
               </div>
 
@@ -937,8 +946,8 @@ export default function App() {
                       </div>
                     </div>
                     {/* Content metadata details */}
-                    <div className="px-1 select-none">
-                      <h4 className="text-xs font-bold text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
+                    <div className="px-1 select-none font-google">
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-teal-300 transition-colors duration-200 truncate font-google">
                         {movie.title}
                       </h4>
                       <p className="text-[10px] text-white/45 truncate mt-0.5">
