@@ -19,7 +19,8 @@ import {
   Menu,
   SkipBack,
   SkipForward,
-  RefreshCw
+  RefreshCw,
+  Heart
 } from "lucide-react";
 import { Channel } from "../data/channels";
 
@@ -31,6 +32,8 @@ interface ChannelPlayerProps {
   onMutedChange: (muted: boolean) => void;
   onPrevChannel?: () => void;
   onNextChannel?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 export default function ChannelPlayer({
@@ -41,6 +44,8 @@ export default function ChannelPlayer({
   onMutedChange,
   onPrevChannel,
   onNextChannel,
+  isFavorite = false,
+  onToggleFavorite,
 }: ChannelPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -281,15 +286,8 @@ export default function ChannelPlayer({
 
         {/* Loading Spinner */}
         {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm z-20">
-            <div className="relative flex items-center justify-center">
-              <div className="w-16 h-16 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin"></div>
-              <Tv className="absolute w-6 h-6 text-white/70 animate-pulse" />
-            </div>
-            <p className="mt-4 text-white/90 text-sm font-medium tracking-wide">
-              Đang kết nối luồng {channel.name}...
-            </p>
-            <p className="text-xs text-white/50 mt-1.5">Vui lòng chờ giây lát</p>
+          <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
+            <div className="w-14 h-14 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin"></div>
           </div>
         )}
 
@@ -407,8 +405,8 @@ export default function ChannelPlayer({
           <div className="flex items-center justify-between gap-2">
             
             {/* Left Utility: Volume Controls */}
-            <div className="flex items-center gap-2 bg-white/5 pl-2 pr-2.5 py-1.5 rounded-full border border-white/10 group/vol transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-95">
-              <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-75">
+            <div className="flex items-center gap-2 bg-white/5 pl-2 pr-2.5 py-1.5 rounded-full border border-white/10 group/vol transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-120">
+              <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-135">
                 {muted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
               </button>
               <input
@@ -424,22 +422,19 @@ export default function ChannelPlayer({
 
             {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
             <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3.5">
-              {/* Button 1: Menu list icon */}
+              {/* Button 1: Dynamic Heart Favorite button */}
               <button 
-                onClick={() => {
-                  const targetEl = document.getElementById("channels-grid-section") || document.getElementById("player-anchor");
-                  if (targetEl) targetEl.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
-                title="Danh sách kênh"
+                onClick={onToggleFavorite}
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-130 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer group"
+                title={isFavorite ? "Bỏ yêu thích" : "Yêu thích kênh"}
               >
-                <Menu className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-red-500 fill-red-500 scale-110" : "text-white/80 group-hover:text-red-400 group-hover:scale-110"}`} />
               </button>
 
               {/* Button 2: Skip back */}
               <button 
                 onClick={onPrevChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-130 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Kênh trước"
               >
                 <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
@@ -448,7 +443,7 @@ export default function ChannelPlayer({
               {/* Button 3: Main center Play/Pause button (Larger size) */}
               <button 
                 onClick={togglePlay}
-                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/[0.18] backdrop-blur-[15px] border border-white/25 hover:bg-white/[0.28] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-pointer"
+                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/[0.18] backdrop-blur-[15px] border border-white/25 hover:bg-white/[0.28] hover:scale-115 active:scale-130 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-pointer"
                 title={isPlaying ? "Tạm Dừng" : "Phát"}
               >
                 {isPlaying ? (
@@ -461,7 +456,7 @@ export default function ChannelPlayer({
               {/* Button 4: Skip forward */}
               <button 
                 onClick={onNextChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-130 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Kênh sau"
               >
                 <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
@@ -474,7 +469,7 @@ export default function ChannelPlayer({
                   setIsLoading(true);
                   if (videoRef.current) videoRef.current.load();
                 }}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-130 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
                 title="Tải lại luồng"
               >
                 <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
@@ -484,7 +479,7 @@ export default function ChannelPlayer({
             {/* Right Utility: Fullscreen scale config */}
             <button 
               onClick={handleFullscreen}
-              className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:scale-115 active:scale-80 text-white/70 hover:text-white transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] border border-white/5 cursor-pointer flex items-center justify-center shrink-0"
+              className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:scale-115 active:scale-130 text-white/70 hover:text-white transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] border border-white/5 cursor-pointer flex items-center justify-center shrink-0"
               title="Toàn màn hình"
             >
               <Maximize className="w-4 h-4" />
