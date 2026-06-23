@@ -1,0 +1,497 @@
+import React, { useEffect, useRef, useState } from "react";
+import Hls from "hls.js";
+import { 
+  Play, 
+  Pause, 
+  Volume2, 
+  VolumeX, 
+  Maximize2, 
+  RotateCcw, 
+  Tv, 
+  Radio, 
+  AlertCircle, 
+  Info, 
+  Maximize,
+  ExternalLink,
+  Settings,
+  Flame,
+  Clock,
+  Menu,
+  SkipBack,
+  SkipForward,
+  RefreshCw
+} from "lucide-react";
+import { Channel } from "../data/channels";
+
+interface ChannelPlayerProps {
+  channel: Channel;
+  volume: number;
+  onVolumeChange: (vol: number) => void;
+  muted: boolean;
+  onMutedChange: (muted: boolean) => void;
+  onPrevChannel?: () => void;
+  onNextChannel?: () => void;
+}
+
+export default function ChannelPlayer({
+  channel,
+  volume,
+  onVolumeChange,
+  muted,
+  onMutedChange,
+  onPrevChannel,
+  onNextChannel,
+}: ChannelPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
+  const [isFullHD, setIsFullHD] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [showControls, setShowControls] = useState<boolean>(true);
+  const [controlsTimeout, setControlsTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Dynamic show details mock program info
+  const [programInfo, setProgramInfo] = useState<{
+    current: string;
+    next: string;
+    progress: number;
+    time: string;
+  }>({
+    current: "Chương trình thời sự trực tiếp",
+    next: "Phim truyện đặc sắc giờ vàng",
+    progress: 45,
+    time: "19:00 - 20:00"
+  });
+
+  // Calculate random program mock info relative to channel and search
+  useEffect(() => {
+    const programs = [
+      { current: "Tin tức & Sự kiện 24/7", next: "Ký sự truyền hình Việt Nam", progress: 65, time: "18:30 - 19:15" },
+      { current: "Chương trình Thời Sự trực tiếp", next: "Bản tin Tài chính Kinh doanh", progress: 40, time: "19:00 - 20:00" },
+      { current: "Phim truyền hình Việt Nam đặc sắc", next: "Thế giới thể thao tối", progress: 20, time: "20:00 - 21:00" },
+      { current: "Gương mặt thân quen âm nhạc", next: "Review điện ảnh tuần qua", progress: 85, time: "18:00 - 19:30" },
+      { current: "Giải trí tổng hợp cuối ngày", next: "Dự báo thời tiết & Tin đêm", progress: 50, time: "19:15 - 20:15" },
+      { current: "Kinh tế - Xã hội đầu tuần", next: "Toạ đàm văn hoá nghệ thuật", progress: 10, time: "19:00 - 19:45" },
+    ];
+    
+    const radioPrograms = [
+      { current: "Thời sự phát thanh sáng", next: "Giai điệu bình yên", progress: 70, time: "18:00 - 19:00" },
+      { current: "Nhịp sống Sài Gòn trực tiếp", next: "Quà tặng âm nhạc số 45", progress: 35, time: "19:00 - 20:30" },
+      { current: "Bản tin an toàn giao thông đô thị", next: "Kịch truyền thanh đêm khuya", progress: 55, time: "18:30 - 19:15" },
+    ];
+
+    const list = channel.isRadio ? radioPrograms : programs;
+    // Simple deterministic pick based on channel id string length
+    const idx = (channel.id.length + (channel.name ? channel.name.length : 0)) % list.length;
+    
+    // Set simulated current progress bar
+    setProgramInfo({
+      ...list[idx],
+      progress: Math.floor(Math.random() * 60) + 15
+    });
+  }, [channel]);
+
+  // Clean, initialize and play stream
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    setIsLoading(true);
+    setHasError(false);
+    setErrorMessage("");
+    setIsPlaying(true);
+
+    // Destroy existing instance of hls player
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    const playVideo = () => {
+      video.play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.warn("Autoplay block or playback interrupted:", err);
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+    };
+
+    // Check if the source is video format or an absolute m3u8 url
+    if (channel.url.endsWith(".m3u8") || hlsRef.current === null) {
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 90,
+          maxBufferLength: 30,
+          maxBufferSize: 30 * 1000 * 1000, // 30MB
+        });
+
+        hlsRef.current = hls;
+        hls.loadSource(channel.url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          playVideo();
+        });
+
+        hls.on(Hls.Events.ERROR, (_event, data) => {
+          console.error("HLS error:", data);
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                console.log("Fatal network error encountered, attempting to recover...");
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log("Fatal media error encountered, attempting to recover...");
+                hls.recoverMediaError();
+                break;
+              default:
+                console.error("Fatal unrecoverable HLS error");
+                setHasError(true);
+                setErrorMessage(
+                  "Lỗi nhà mạng hoặc luồng phát tạm thời gián đoạn. Link m3u8 bảo mật hoặc chặn CORS tại quốc gia của bạn."
+                );
+                setIsLoading(false);
+                break;
+            }
+          }
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Native HLS (e.g. Safari)
+        video.src = channel.url;
+        video.addEventListener("loadedmetadata", () => {
+          playVideo();
+        });
+        video.addEventListener("error", () => {
+          setHasError(true);
+          setErrorMessage("Thiết bị không hỗ trợ định dạng trực tiếp hoặc lỗi CORS kết nối.");
+          setIsLoading(false);
+        });
+      } else {
+        setHasError(true);
+        setErrorMessage("Trình duyệt không hỗ trợ HLS Player để phát luồng m3u8.");
+        setIsLoading(false);
+      }
+    }
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [channel.url, channel.id]);
+
+  // Handle Play/Pause
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      video.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  };
+
+  // Handle volume change
+  const handleVolumeChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const vol = parseFloat(e.target.value);
+    onVolumeChange(vol);
+    if (videoRef.current) {
+      videoRef.current.volume = vol;
+      videoRef.current.muted = vol === 0;
+    }
+  };
+
+  // Toggle Mute
+  const toggleMute = () => {
+    const newMuted = !muted;
+    onMutedChange(newMuted);
+    if (videoRef.current) {
+      videoRef.current.muted = newMuted;
+    }
+  };
+
+  // Handle Fullscreen
+  const handleFullscreen = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.requestFullscreen) {
+      video.requestFullscreen();
+    } else if ((video as any).webkitRequestFullscreen) {
+      (video as any).webkitRequestFullscreen(); // Safari
+    } else if ((video as any).msRequestFullscreen) {
+      (video as any).msRequestFullscreen(); // IE11
+    }
+  };
+
+  // Handle Mouse Move over Player for Controls fade in/out
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeout) {
+      clearTimeout(controlsTimeout);
+    }
+    const timeout = setTimeout(() => {
+      if (isPlaying && !hasError && !isLoading) {
+        setShowControls(false);
+      }
+    }, 3000);
+    setControlsTimeout(timeout);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeout) clearTimeout(controlsTimeout);
+    };
+  }, [controlsTimeout]);
+
+  // Dynamic status badges
+  const isVtv = channel.group?.toUpperCase().includes("VTV") || false;
+  const isCab = channel.group?.toUpperCase().includes("VTVCAB") || channel.group?.toUpperCase().includes("SCTV") || false;
+
+  return (
+    <div id="channel-player-container font-sans" className="w-full max-w-5xl mx-auto mb-8 animate-fade-in">
+      {/* Player Frame without color tint or ambient blue */}
+      <div 
+        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-white/15 shadow-2xl group"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => isPlaying && !hasError && !isLoading && setShowControls(false)}
+      >
+        {/* Real Video Element */}
+        <video
+          ref={videoRef}
+          className="w-full h-full object-contain bg-black"
+          playsInline
+          autoPlay
+          muted={muted}
+        />
+
+        {/* Loading Spinner */}
+        {isLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm z-20">
+            <div className="relative flex items-center justify-center">
+              <div className="w-16 h-16 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin"></div>
+              <Tv className="absolute w-6 h-6 text-white/70 animate-pulse" />
+            </div>
+            <p className="mt-4 text-white/90 text-sm font-medium tracking-wide">
+              Đang kết nối luồng {channel.name}...
+            </p>
+            <p className="text-xs text-white/50 mt-1.5">Vui lòng chờ giây lát</p>
+          </div>
+        )}
+
+        {/* Error state display */}
+        {hasError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-indigo-950/95 backdrop-blur-md p-6 text-center z-20">
+            <div className="p-4 bg-red-500/10 rounded-full border border-red-500/30 text-red-400 mb-4 animate-bounce">
+              <AlertCircle className="w-10 h-10" />
+            </div>
+            <h3 className="text-white text-lg font-bold mb-2">Không thể phát kênh {channel.name}</h3>
+            <p className="max-w-md text-white/70 text-sm leading-relaxed mb-4">
+              {errorMessage}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                onClick={() => {
+                  setHasError(false);
+                  setIsLoading(true);
+                  if (videoRef.current) {
+                    // Force refresh source
+                    const currentSrc = videoRef.current.src;
+                    videoRef.current.src = "";
+                    videoRef.current.src = currentSrc;
+                    videoRef.current.load();
+                  }
+                }}
+                className="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all text-xs font-semibold border border-white/25 flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Thử kết nối lại
+              </button>
+              
+              <a
+                href={channel.url}
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white transition-all text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20"
+              >
+                Mở link gốc trực tiếp <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <div className="mt-4 text-xs text-white/40 max-w-md">
+              Mẹo: Một số trình duyệt trên PC có thể chặn CORS. Hãy thử cài tiện ích CORS Unblock hoặc sử dụng trên Safari/Điện thoại để chơi luồng m3u8 trực tuyến mượt nhất.
+            </div>
+          </div>
+        )}
+
+        {/* Visual representation fallback for Radio / Audio Only channels */}
+        {channel.isRadio && !isLoading && !hasError && (
+          <div className="absolute inset-0 bg-gradient-to-tr from-purple-950/90 to-rose-950/80 backdrop-blur-lg flex flex-col items-center justify-center pointer-events-none z-10">
+            <div className="relative">
+              {/* Dynamic waveform visualizer animation wrapper */}
+              <div className="absolute -inset-10 bg-white/5 rounded-full animate-ping opacity-25"></div>
+              <div className="w-24 h-24 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-white p-4">
+                <Radio className="w-12 h-12 text-pink-400 animate-pulse" />
+              </div>
+            </div>
+            <p className="mt-5 text-white text-lg font-bold tracking-wide">{channel.name}</p>
+            <p className="text-xs text-white/65 mt-1 tracking-wider uppercase">Phát Thanh Audio Chất Lượng Cao</p>
+            
+            {/* Wave lines simulation */}
+            <div className="flex gap-1.5 mt-6 h-6 items-end">
+              {[...Array(14)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className="w-1 bg-pink-400 rounded-full transition-all duration-300"
+                  style={{ 
+                    height: isPlaying ? `${Math.floor(Math.random() * 20) + 4}px` : '4px',
+                    animation: isPlaying ? `pulse 1.3s ease-in-out infinite alternate` : undefined,
+                    animationDelay: `${i * 0.1}s`
+                  }}
+                ></div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blur Big Play Button on Manual Pause */}
+        {!isPlaying && !isLoading && !hasError && (
+          <button 
+            onClick={togglePlay}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs z-15 group-hover:bg-black/55 transition-all"
+          >
+            <div className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-2xl border-4 border-white/30 transform group-hover:scale-110 duration-200 transition-transform">
+              <Play className="w-8 h-8 fill-black translate-x-0.5" />
+            </div>
+          </button>
+        )}
+
+        {/* Dynamic Frosted Glass Bottom Overlay Controls */}
+        <div className={`absolute bottom-0 inset-x-0 p-4 transition-all duration-300 bg-gradient-to-t from-black/90 via-black/45 to-transparent flex flex-col gap-3.5 z-15 ${showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"}`}>
+
+          {/* 1. Horizontal Progress timeline/slider from mock */}
+          <div className="w-full flex items-center mt-1 px-1 relative group/slider">
+            <div 
+              className="w-full h-1 bg-white/20 rounded-full relative cursor-pointer"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
+                setProgramInfo(prev => ({ ...prev, progress: pct }));
+              }}
+            >
+              {/* Active slider track filled with white */}
+              <div 
+                className="h-full bg-white rounded-full relative" 
+                style={{ width: `${programInfo.progress}%` }}
+              >
+                {/* Thumb dot */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg border border-white/25"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Controls and Buttons row */}
+          <div className="flex items-center justify-between gap-2">
+            
+            {/* Left Utility: Volume Controls */}
+            <div className="flex items-center gap-2 bg-white/5 pl-2 pr-2.5 py-1.5 rounded-full border border-white/10 group/vol transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-95">
+              <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-75">
+                {muted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={muted ? 0 : volume}
+                onChange={handleVolumeChangeLocal}
+                className="w-12 sm:w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white hover:accent-purple-400 transition-all"
+              />
+            </div>
+
+            {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
+            <div className="flex items-center gap-2 sm:gap-3.5">
+              {/* Button 1: Menu list icon */}
+              <button 
+                onClick={() => {
+                  const targetEl = document.getElementById("channels-grid-section") || document.getElementById("player-anchor");
+                  if (targetEl) targetEl.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                title="Danh sách kênh"
+              >
+                <Menu className="w-4.5 h-4.5 text-white" />
+              </button>
+
+              {/* Button 2: Skip back */}
+              <button 
+                onClick={onPrevChannel}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                title="Kênh trước"
+              >
+                <SkipBack className="w-4.5 h-4.5 text-white" />
+              </button>
+
+              {/* Button 3: Main center Play/Pause button (Larger size) */}
+              <button 
+                onClick={togglePlay}
+                className="w-12 h-12 sm:w-15 sm:h-15 rounded-full bg-white/[0.18] backdrop-blur-[15px] border border-white/25 hover:bg-white/[0.28] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-pointer"
+                title={isPlaying ? "Tạm Dừng" : "Phát"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-white text-white" />
+                ) : (
+                  <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-white text-white translate-x-0.5" />
+                )}
+              </button>
+
+              {/* Button 4: Skip forward */}
+              <button 
+                onClick={onNextChannel}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                title="Kênh sau"
+              >
+                <SkipForward className="w-4.5 h-4.5 text-white" />
+              </button>
+
+              {/* Button 5: Loop context / reload button */}
+              <button 
+                onClick={() => {
+                  setHasError(false);
+                  setIsLoading(true);
+                  if (videoRef.current) videoRef.current.load();
+                }}
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/[0.15] backdrop-blur-[15px] border border-white/15 hover:bg-white/[0.25] hover:scale-115 active:scale-80 duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] transition-all flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-pointer"
+                title="Tải lại luồng"
+              >
+                <RefreshCw className="w-4 h-4 text-white" />
+              </button>
+            </div>
+
+            {/* Right Utility: Fullscreen scale config */}
+            <button 
+              onClick={handleFullscreen}
+              className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/10 hover:scale-115 active:scale-80 text-white/70 hover:text-white transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] border border-white/5 cursor-pointer flex items-center justify-center shrink-0"
+              title="Toàn màn hình"
+            >
+              <Maximize className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
