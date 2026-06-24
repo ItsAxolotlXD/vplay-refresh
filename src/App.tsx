@@ -193,6 +193,18 @@ export default function App() {
   
   const [muted, setMuted] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isHeaderSearchExpanded, setIsHeaderSearchExpanded] = useState<boolean>(false);
+  const headerSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus header search input when expanded
+  useEffect(() => {
+    if (isHeaderSearchExpanded && headerSearchInputRef.current) {
+      setTimeout(() => {
+        headerSearchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isHeaderSearchExpanded]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   // Custom M3U8 Url link adder
@@ -405,21 +417,52 @@ export default function App() {
 
           {/* Right Side: Search capsule, notifications, and profile card */}
           <div className="relative z-10 flex items-center gap-3 sm:gap-6">
-            {/* Mini Search input box */}
-            <div className="relative group transition-all duration-300 w-28 xs:w-36 sm:w-48 md:w-56 focus-within:w-40 sm:focus-within:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/50 z-20 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Tìm kênh nhanh..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (activeTab !== "live") {
-                    setActiveTab("live");
-                  }
-                }}
-                className="w-full pl-8 pr-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs bg-white/10 hover:bg-white/15 focus:bg-white/20 border border-white/10 focus:border-white/25 text-white placeholder-white/40 focus:outline-none transition-all duration-300 shadow-inner"
-              />
+            {/* Collapsible Header Search bar */}
+            <div className={`relative transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${
+              isHeaderSearchExpanded || searchQuery 
+                ? "w-40 xs:w-52 sm:w-64 md:w-80" 
+                : "w-8 sm:w-9"
+            }`}>
+              {!(isHeaderSearchExpanded || searchQuery) ? (
+                <button
+                  onClick={() => setIsHeaderSearchExpanded(true)}
+                  className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all shadow-sm cursor-default hover:scale-110 active:scale-120"
+                  title="Tìm kênh nhanh"
+                >
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              ) : (
+                <div className="relative w-full group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 z-20 pointer-events-none animate-fade-in" />
+                  <input
+                    ref={headerSearchInputRef}
+                    type="text"
+                    placeholder="Tìm kênh nhanh..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (activeTab !== "live") {
+                        setActiveTab("live");
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!searchQuery) {
+                        setIsHeaderSearchExpanded(false);
+                      }
+                    }}
+                    className="w-full pl-8 pr-8 py-1 sm:py-1.5 rounded-full text-xs bg-white/10 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 shadow-inner"
+                  />
+                  <button 
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsHeaderSearchExpanded(false);
+                    }} 
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30 cursor-default"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Notification bell icon */}
@@ -465,8 +508,8 @@ export default function App() {
 
             {/* Live tab Search Bar & Add Channel Button Bar - Placed perfectly under the channel player exactly as requested */}
             <div className="w-full max-w-5xl mx-auto mt-6 mb-6 flex items-center justify-center gap-3 z-10 relative px-2">
-              <div className="relative flex-1 max-w-md group transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-110 active:scale-85 focus-within:scale-110">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 z-20 pointer-events-none transition-transform duration-300 group-hover:scale-110" />
+              <div className="relative flex-1 max-w-md group transition-all duration-300">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 z-20 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm kênh Vplay..."
@@ -477,7 +520,7 @@ export default function App() {
                 {searchQuery && (
                   <button 
                     onClick={() => setSearchQuery("")} 
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30 cursor-default"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -486,7 +529,7 @@ export default function App() {
 
               <button
                 onClick={() => setShowCustomModal(true)}
-                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 hover:scale-110 active:scale-120 text-white border border-white/15 backdrop-blur-md transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] text-xs font-semibold flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer"
+                className="px-4 py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-xs font-normal flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
                 title="Thêm link m3u8 của riêng bạn"
               >
                 <Plus className="w-4 h-4 transition-transform duration-300 hover:rotate-90" /> Thêm kênh
@@ -497,7 +540,7 @@ export default function App() {
             <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 pt-1 border-b border-white/5">
               <button
                 onClick={() => setSelectedCategory("all")}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 hover:scale-110 active:scale-125 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer ${
+                className={`px-4 py-1.5 rounded-full text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
                   selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                 }`}
               >
@@ -508,7 +551,7 @@ export default function App() {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 hover:scale-110 active:scale-125 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
                     selectedCategory === cat.id ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                   }`}
                 >
@@ -561,10 +604,10 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-14 xs:h-16 sm:h-20 md:h-24 border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                               isPlaying 
                                 ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/50"
+                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/70 hover:ring-2 hover:ring-white/20"
                             }`}
                             title={ch.name}
                           >
@@ -575,8 +618,8 @@ export default function App() {
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
-                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115 ${
-                                    ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : "w-full h-full"
+                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -666,7 +709,7 @@ export default function App() {
                       }
                       setActiveTab("live");
                     }}
-                    className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-red-600 hover:bg-red-700 text-white font-extrabold shadow-xl hover:shadow-red-600/30 hover:scale-110 active:scale-120 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-red-500/10"
+                     className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-red-600 hover:bg-red-700 text-white font-normal shadow-xl hover:shadow-red-600/30 flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-red-500/10 bouncy-btn"
                   >
                     <Play className="w-4.5 h-4.5 fill-white text-white" /> Thử ngay
                   </button>
@@ -675,13 +718,13 @@ export default function App() {
                   <div className="flex items-center gap-1.5 ml-2">
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev - 1 + homeSlides.length) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 active:scale-130 text-white transition-all cursor-pointer flex items-center justify-center border border-white/5 shadow-lg"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/5 shadow-lg bouncy-btn"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev + 1) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 active:scale-130 text-white transition-all cursor-pointer flex items-center justify-center border border-white/5 shadow-lg"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/5 shadow-lg bouncy-btn"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -721,14 +764,14 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => scrollFavorites("left")}
-                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 shadow"
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
                       title="Quay lại"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => scrollFavorites("right")}
-                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 shadow"
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
                       title="Xem tiếp theo"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -754,10 +797,10 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-22 xs:w-26 sm:w-32 md:w-38 h-11 xs:h-13 sm:h-16 md:h-18 border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-105 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                             isPlaying 
                               ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/50"
+                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/70 hover:ring-2 hover:ring-white/20"
                           }`}
                           title={ch.name}
                         >
@@ -768,8 +811,8 @@ export default function App() {
                                 src={ch.logoImg}
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
-                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-110 active:scale-115 ${
-                                  ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : "w-full h-full"
+                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : "w-full h-full"
                                 }`}
                               />
                             ) : (
@@ -785,7 +828,7 @@ export default function App() {
                               e.stopPropagation();
                               toggleFavorite(ch.id, e);
                             }}
-                            className="absolute top-1 right-1 p-1 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/90 hover:scale-110 active:scale-95 duration-200"
+                            className="absolute top-1 right-1 p-1 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/90 hover:scale-110 active:scale-120 duration-200"
                             title="Xóa khỏi yêu thích"
                           >
                             <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
@@ -1062,7 +1105,7 @@ export default function App() {
                       <button
                         key={item.id}
                         onClick={() => setBgColor(item.id as any)}
-                        className={`p-3.5 rounded-xl text-center text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-110 active:scale-90 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer border ${
+                        className={`p-3.5 rounded-xl text-center text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-110 active:scale-120 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer border ${
                           bgColor === item.id 
                             ? "border-white ring-2 ring-white/15" 
                             : "border-white/10 hover:border-white/25"
@@ -1090,7 +1133,7 @@ export default function App() {
                             setFavorites([]);
                           }
                         }}
-                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-90 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-bold inline-block"
+                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-120 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-normal inline-block"
                       >
                         Xóa tất cả yêu thích
                       </button>
@@ -1109,7 +1152,7 @@ export default function App() {
                             setCustomChannels([]);
                           }
                         }}
-                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-90 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-bold inline-block"
+                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-120 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-normal inline-block"
                       >
                         Xoá danh sách kênh tự thêm
                       </button>
@@ -1153,7 +1196,7 @@ export default function App() {
               <button 
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center justify-center w-14 h-11 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-[1.25] active:scale-[1.4] cursor-pointer z-10 ${
+                className={`relative flex items-center justify-center w-22 h-11 cursor-default z-10 bouncy-btn ${
                   isActive 
                     ? "text-indigo-950 font-black" 
                     : "text-white/65 hover:text-white"
@@ -1163,7 +1206,7 @@ export default function App() {
                   <motion.div
                     layoutId="activeTabPill"
                     transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                    className="absolute inset-0 bg-white rounded-full shadow-lg -z-10"
+                    className="absolute inset-0 bg-white/50 rounded-full shadow-lg -z-10"
                   />
                 )}
                 <Icon className={`w-7.5 h-7.5 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
@@ -1228,7 +1271,7 @@ export default function App() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 hover:scale-110 active:scale-[1.18] text-white font-bold transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] shadow-lg shadow-pink-500/25 cursor-pointer text-center"
+                  className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 hover:scale-110 active:scale-[1.18] text-white font-normal transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] shadow-lg shadow-pink-500/25 cursor-pointer text-center"
                 >
                   Kết Nối Kênh
                 </button>
