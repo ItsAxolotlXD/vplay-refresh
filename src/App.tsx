@@ -604,10 +604,10 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-[3px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                               isPlaying 
                                 ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/70 hover:ring-2 hover:ring-white/20"
+                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
                             }`}
                             title={ch.name}
                           >
@@ -797,10 +797,10 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-2 select-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[3px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                             isPlaying 
                               ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white/70 hover:ring-2 hover:ring-white/20"
+                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
                           }`}
                           title={ch.name}
                         >
