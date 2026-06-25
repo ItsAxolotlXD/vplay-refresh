@@ -42,19 +42,21 @@ import ChannelPlayer from "./components/ChannelPlayer";
 const homeSlides = [
   {
     id: 0,
-    titleTop: "Chào đón",
-    titleMain: "Liquid Glass",
-    titleSub: "trên Vplay",
-    genreText: "THẾ HỆ KÍNH MỜ MỚI",
-    subSlogan: "GIAO DIỆN HOÀN MỸ, NÂNG TẦM TRẢI NGHIỆM TRỞ LẠI",
-    thumbnail: "https://dfjx2uxqg3cgi.cloudfront.net/img/eps/E13027_2x/c/E13027_00.jpg?20250120193127",
-    channelId: "vtv1",
-    channelPlayName: "Vplay Premium: Liquid Glass Dynamic Showcase",
-    ageRating: "T13",
-    ratingText: "Chất lượng UHD | Siêu mượt",
+    titleTop: "Vietnam Wild LIVE",
+    titleMain: "Kết nối thiên nhiên - Lan tỏa nhận thức",
+    titleSub: "",
+    genreText: "SỰ KIỆN TRỰC TIẾP ĐẶC BIỆT",
+    subSlogan: "BẢO TỒN ĐA DẠNG SINH HỌC QUỐC GIA",
+    thumbnail: "https://cdn-images.vtv.vn/66349b6076cb4dee98746cf1/2026/06/20/cover-91667111629561629180275.png",
+    channelId: "vietnam-wild-live",
+    channelPlayName: "Vietnam Wild LIVE",
+    ageRating: "Tất cả",
+    ratingText: "Chất lượng HD | Trực tiếp VTVgo",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
-    vignetteTop: "from-black/45 via-transparent to-transparent"
+    vignetteTop: "from-black/45 via-transparent to-transparent",
+    description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới",
+    showCountdown: true
   },
   {
     id: 1,
@@ -251,6 +253,37 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("glass_tv_amoled_dark", amoledDark ? "true" : "false");
   }, [amoledDark]);
+
+  const [countdown, setCountdown] = useState({
+    days: "00",
+    hours: "00",
+    minutes: "00",
+    seconds: "00"
+  });
+
+  useEffect(() => {
+    const calculateCountdown = () => {
+      const target = new Date("2026-06-30T00:00:00").getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, target - now);
+
+      const secs = Math.floor(diff / 1000);
+      const mins = Math.floor(secs / 60);
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+
+      setCountdown({
+        days: String(days).padStart(2, '0'),
+        hours: String(hours % 24).padStart(2, '0'),
+        minutes: String(mins % 60).padStart(2, '0'),
+        seconds: String(secs % 60).padStart(2, '0')
+      });
+    };
+
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Filter & Search logic
   // Join general channels and custom channels
@@ -611,6 +644,7 @@ export default function App() {
                       <div className="flex items-center gap-3">
                         {/* Custom visual thick turquoise or fuchsia vertical colored sidebars */}
                         <div className={`w-1.5 h-7 rounded-full ${
+                          category.id === 'dac-biet' ? 'bg-emerald-500 animate-pulse' :
                           category.id === 'vtv' ? 'bg-cyan-400' :
                           category.id === 'vtvcab' ? 'bg-fuchsia-500' :
                           category.id === 'sctv' ? 'bg-red-500' :
@@ -719,6 +753,27 @@ export default function App() {
                 <p className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-white/50 tracking-widest uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] -mt-0.5">
                   {homeSlides[currentSlide].subSlogan}
                 </p>
+
+                {homeSlides[currentSlide].description && (
+                  <p className="text-white/80 text-xs sm:text-sm max-w-2xl mt-4 leading-relaxed drop-shadow select-none">
+                    {homeSlides[currentSlide].description}
+                  </p>
+                )}
+
+                {homeSlides[currentSlide].showCountdown && (
+                  <div className="flex flex-col gap-1.5 mt-4 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl select-none max-w-xs shadow-lg">
+                    <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider">Thời gian còn lại của sự kiện</span>
+                    <div className="flex items-center gap-1.5 font-mono text-base sm:text-lg font-extrabold text-teal-400">
+                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.days}d</span>
+                      <span className="text-white/40">:</span>
+                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.hours}h</span>
+                      <span className="text-white/40">:</span>
+                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.minutes}m</span>
+                      <span className="text-white/40">:</span>
+                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.seconds}s</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Film attributes tags metadata */}
                 <div className="flex items-center gap-1.5 sm:gap-2.5 mt-3 text-[10px] xs:text-xs sm:text-sm font-semibold text-white/90 select-none drop-shadow">

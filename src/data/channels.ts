@@ -72,8 +72,20 @@ const processedChannels: Channel[] = rawChannels.map((ch: any) => {
   };
 });
 
+const vietnamWildLiveChannel: Channel = {
+  id: "vietnam-wild-live",
+  name: "Vietnam Wild LIVE",
+  url: "https://events.vtvdigital.vn/livestream/wildlife-720p50fps.m3u8",
+  group: "Đặc biệt",
+  logoText: "Wild LIVE",
+  logoBg: "bg-gradient-to-br from-emerald-600 to-green-800",
+  isRadio: false,
+  logoImg: "https://static.wikia.nocookie.net/logos/images/8/8c/VTVgo_logo.png/revision/latest?cb=20220627071056&path-prefix=vi"
+};
+
 // Category template definitions
 const categoryTemplates = [
+  { id: "dac-biet", name: "Đặc biệt", description: "Các sự kiện và luồng phát đặc biệt" },
   { id: "vtv", name: "Kênh VTV", description: "Các kênh sóng truyền hình quốc gia VTV" },
   { id: "vtvcab", name: "Kênh VTVcab", description: "Kênh giải trí thể thao, phim ảnh tổng hợp đặc sắc" },
   { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh" },
@@ -88,7 +100,9 @@ const categoryTemplates = [
 export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   let matchedChannels: Channel[] = [];
   
-  if (tpl.id === "vtv") {
+  if (tpl.id === "dac-biet") {
+    matchedChannels = [vietnamWildLiveChannel];
+  } else if (tpl.id === "vtv") {
     matchedChannels = processedChannels.filter(c => c.group === "VTV");
   } else if (tpl.id === "vtvcab") {
     matchedChannels = processedChannels.filter(c => c.group === "VTVcab");
@@ -110,7 +124,7 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   const formattedChannels = matchedChannels.map(ch => {
     let cleanName = ch.name;
     const nameUpper = cleanName.toUpperCase();
-    if (!nameUpper.endsWith("HD") && !nameUpper.includes(" HD") && !ch.isRadio && tpl.id !== "thu-nghiem") {
+    if (!nameUpper.endsWith("HD") && !nameUpper.includes(" HD") && !ch.isRadio && tpl.id !== "thu-nghiem" && tpl.id !== "dac-biet") {
       cleanName = `${cleanName.trim()} HD`;
     }
     return { ...ch, name: cleanName };
