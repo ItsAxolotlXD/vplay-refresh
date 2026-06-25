@@ -28,9 +28,14 @@ import {
   Globe,
   Bell,
   Trash2,
-  User
+  User,
+  Palette,
+  Beaker,
+  AlertCircle,
+  Pen,
+  Crown
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel } from "./data/channels";
 import ChannelPlayer from "./components/ChannelPlayer";
 
@@ -113,7 +118,14 @@ export default function App() {
   }, []);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<"home" | "live" | "packages" | "settings">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "live" | "settings" | "search">("home");
+  const [prevTab, setPrevTab] = useState<"home" | "live" | "settings">("home");
+
+  useEffect(() => {
+    if (activeTab !== "search") {
+      setPrevTab(activeTab as any);
+    }
+  }, [activeTab]);
 
   // Scroll Position Tracking for Floating Header
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -208,9 +220,23 @@ export default function App() {
   
   // Custom M3U8 Url link adder
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
+  const [showCopiedNotify, setShowCopiedNotify] = useState<boolean>(false);
+  const [activeSettingSection, setActiveSettingSection] = useState<string | null>(null);
+  const [playbackError, setPlaybackError] = useState<boolean>(false);
+  const [playbackErrorType, setPlaybackErrorType] = useState<"standard" | "timeout" | null>(null);
+  const notifyTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (notifyTimeoutRef.current) {
+        clearTimeout(notifyTimeoutRef.current);
+      }
+    };
+  }, []);
   const [customChannelName, setCustomChannelName] = useState<string>("");
   const [customChannelUrl, setCustomChannelUrl] = useState<string>("");
-  const [customChannelGroup, setCustomChannelGroup] = useState<string>("Bản Tin Riêng");
+  const [customChannelGroup, setCustomChannelGroup] = useState<string>("VTV");
+  const [customGroupInput, setCustomGroupInput] = useState<string>("Nhóm Kênh Mới");
   const [customChannels, setCustomChannels] = useState<Channel[]>(() => {
     const saved = localStorage.getItem("glass_tv_custom_list");
     return saved ? JSON.parse(saved) : [];
@@ -218,6 +244,13 @@ export default function App() {
 
   // Ambient lights themes configuration (default: sunset)
   const [bgColor, setBgColor] = useState<"cosmic" | "deep" | "aurora" | "sunset">("sunset");
+  const [amoledDark, setAmoledDark] = useState<boolean>(() => {
+    return localStorage.getItem("glass_tv_amoled_dark") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("glass_tv_amoled_dark", amoledDark ? "true" : "false");
+  }, [amoledDark]);
 
   // Filter & Search logic
   // Join general channels and custom channels
@@ -271,6 +304,8 @@ export default function App() {
   // Switch channel trigger
   const handleSelectChannel = (channel: Channel) => {
     setSelectedChannel(channel);
+    setPlaybackError(false);
+    setPlaybackErrorType(null);
     // Scroll window smoothly to player on small devices for better viewport coverage
     if (window.innerWidth < 1024) {
       const topEl = document.getElementById("player-anchor");
@@ -303,11 +338,15 @@ export default function App() {
     e.preventDefault();
     if (!customChannelName || !customChannelUrl) return;
 
+    const finalGroup = customChannelGroup === "NEW_GROUP" 
+      ? (customGroupInput.trim() || "Kênh Riêng") 
+      : customChannelGroup;
+
     const newChannel: Channel = {
       id: `custom-${Date.now()}`,
       name: customChannelName,
       url: customChannelUrl.trim(),
-      group: customChannelGroup || "Kênh Riêng",
+      group: finalGroup,
       logoText: customChannelName.slice(0, 3).toUpperCase(),
       logoBg: "bg-gradient-to-br from-indigo-600 to-fuchsia-700"
     };
@@ -316,6 +355,8 @@ export default function App() {
     setSelectedChannel(newChannel);
     setCustomChannelName("");
     setCustomChannelUrl("");
+    setCustomGroupInput("Nhóm Kênh Mới");
+    setCustomChannelGroup("VTV");
     setShowCustomModal(false);
   };
 
@@ -326,6 +367,23 @@ export default function App() {
     if (selectedChannel.id === id) {
       setSelectedChannel(defaultChannel);
     }
+  };
+
+  // Share stream link to clipboard
+  const handleShareChannel = () => {
+    if (!selectedChannel) return;
+    
+    navigator.clipboard.writeText(selectedChannel.url).then(() => {
+      setShowCopiedNotify(true);
+      if (notifyTimeoutRef.current) {
+        clearTimeout(notifyTimeoutRef.current);
+      }
+      notifyTimeoutRef.current = setTimeout(() => {
+        setShowCopiedNotify(false);
+      }, 3000);
+    }).catch((err) => {
+      console.error("Could not copy stream link: ", err);
+    });
   };
 
   // Filter channels based on search on selected category
@@ -362,6 +420,9 @@ export default function App() {
 
   // Ambient backgrounds options config
   const getBgGradient = () => {
+    if (amoledDark) {
+      return "bg-black";
+    }
     switch (bgColor) {
       case "cosmic":
         return "bg-gradient-to-tr from-[#12071a] via-[#1a0e36] to-[#011424]";
@@ -378,9 +439,13 @@ export default function App() {
     <div className={`min-h-screen text-white/95 pb-32 transition-colors duration-1000 overflow-x-hidden ${getBgGradient()}`}>
       
       {/* Decorative ambient glowing circles */}
-      <div className="absolute top-24 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-      <div className="absolute top-1/2 right-10 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[130px] pointer-events-none"></div>
-      <div className="absolute bottom-20 left-10 w-[400px] h-[400px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+      {!amoledDark && (
+        <>
+          <div className="absolute top-24 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+          <div className="absolute top-1/2 right-10 w-[600px] h-[600px] bg-pink-600/10 rounded-full blur-[130px] pointer-events-none"></div>
+          <div className="absolute bottom-20 left-10 w-[400px] h-[400px] bg-orange-600/5 rounded-full blur-[100px] pointer-events-none"></div>
+        </>
+      )}
 
       {/* TV360 STYLE CINEMATIC HEADER (Floating on Top - Exclusively on HOME tab) */}
       {activeTab === "home" && (
@@ -414,66 +479,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Side: Search capsule, notifications, and profile card */}
+          {/* Right Side: notifications and profile card */}
           <div className="relative z-10 flex items-center gap-3 sm:gap-6">
-            {/* Collapsible Header Search bar */}
-            <div className={`relative transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${
-              isHeaderSearchExpanded || searchQuery 
-                ? "w-40 xs:w-52 sm:w-64 md:w-80" 
-                : "w-8 sm:w-9"
-            }`}>
-              {!(isHeaderSearchExpanded || searchQuery) ? (
-                <button
-                  onClick={() => setIsHeaderSearchExpanded(true)}
-                  className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all shadow-sm cursor-default hover:scale-110 active:scale-120"
-                  title="Tìm kênh nhanh"
-                >
-                  <img 
-                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 brightness-0 invert opacity-75 object-contain" 
-                    referrerPolicy="no-referrer"
-                    alt="Search"
-                  />
-                </button>
-              ) : (
-                <div className="relative w-full group">
-                  <img 
-                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 brightness-0 invert opacity-50 z-20 pointer-events-none animate-fade-in object-contain" 
-                    referrerPolicy="no-referrer"
-                    alt="Search"
-                  />
-                  <input
-                    ref={headerSearchInputRef}
-                    type="text"
-                    placeholder="Tìm kênh nhanh..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (activeTab !== "live") {
-                        setActiveTab("live");
-                      }
-                    }}
-                    onBlur={() => {
-                      if (!searchQuery) {
-                        setIsHeaderSearchExpanded(false);
-                      }
-                    }}
-                    className="w-full pl-8 pr-8 py-1 sm:py-1.5 rounded-full text-xs bg-white/10 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 shadow-inner"
-                  />
-                  <button 
-                    onClick={() => {
-                      setSearchQuery("");
-                      setIsHeaderSearchExpanded(false);
-                    }} 
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30 cursor-default"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* Notification bell icon */}
             <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer">
               <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
@@ -500,7 +507,7 @@ export default function App() {
       <main id="player-anchor" className={activeTab === "home" ? "w-full pt-0 z-10 relative" : "w-full max-w-7xl mx-auto px-4 pt-6 z-10 relative"}>
 
         {/* VIEW: LIVE TV BROADCASTING (PRIMARY GRAPHICS) */}
-        {activeTab === "live" && (
+        {(activeTab === "live" || activeTab === "search") && (
           <>
             {/* Integrated Main Channel Video Player */}
             <ChannelPlayer
@@ -513,40 +520,53 @@ export default function App() {
               onPrevChannel={handlePrevChannel}
               isFavorite={favorites.includes(selectedChannel.id)}
               onToggleFavorite={() => toggleFavorite(selectedChannel.id)}
+              onPlaybackError={(err, isTimeout) => {
+                setPlaybackError(err);
+                if (err) {
+                  setPlaybackErrorType(isTimeout ? "timeout" : "standard");
+                } else {
+                  setPlaybackErrorType(null);
+                }
+              }}
             />
 
-            {/* Live tab Search Bar & Add Channel Button Bar - Placed perfectly under the channel player exactly as requested */}
+            {/* Live tab Actions Button Bar - Placed perfectly under the channel player exactly as requested */}
             <div className="w-full max-w-5xl mx-auto mt-6 mb-6 flex items-center justify-center gap-3 z-10 relative px-2">
-              <div className="relative flex-1 max-w-md group transition-all duration-300">
+              {/* Share button */}
+              <button
+                onClick={handleShareChannel}
+                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-xs font-normal"
+                title="Chia sẻ kênh này"
+              >
                 <img 
-                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain" 
+                  src="https://static.wikia.nocookie.net/ep-deo/images/1/10/Share.png/revision/latest?cb=20260625011333" 
+                  className="w-3.5 h-3.5 brightness-0 invert opacity-90 object-contain" 
                   referrerPolicy="no-referrer"
-                  alt="Search"
+                  alt="Share"
                 />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm kênh Vplay..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-full text-sm bg-white/10 border border-white/15 backdrop-blur-md text-white placeholder-white/50 focus:bg-white/15 focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all duration-300 shadow-md focus:outline-none"
-                />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery("")} 
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white hover:scale-125 active:scale-140 transition-all duration-200 z-30 cursor-default"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+                <span>Chia sẻ</span>
+              </button>
 
+              {/* TV button */}
+              <a
+                href={selectedChannel?.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn animate-fade-in text-xs font-normal"
+                title="Mở luồng phát gốc"
+              >
+                <Tv className="w-3.5 h-3.5 text-white opacity-90" />
+                <span>Mở luồng gốc</span>
+              </a>
+
+              {/* Add custom channel button */}
               <button
                 onClick={() => setShowCustomModal(true)}
                 className="px-4 py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-xs font-normal flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
                 title="Thêm link m3u8 của riêng bạn"
               >
-                <Plus className="w-4 h-4 transition-transform duration-300 hover:rotate-90" /> Thêm kênh
+                <Plus className="w-3.5 h-3.5 transition-transform duration-300 hover:rotate-90" />
+                <span>Thêm kênh</span>
               </button>
             </div>
 
@@ -558,7 +578,7 @@ export default function App() {
                   selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                 }`}
               >
-                Tất cả nguồn ({flattenedChannels.length})
+                Tất cả ({flattenedChannels.length})
               </button>
               
               {allAvailableCategoryList.map((cat) => (
@@ -633,7 +653,7 @@ export default function App() {
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[75%] h-[75%] p-0.5" : "w-full h-full"
+                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -826,7 +846,7 @@ export default function App() {
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
                                 className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[75%] h-[75%] p-0.5" : "w-full h-full"
+                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                 }`}
                               />
                             ) : (
@@ -1081,108 +1101,249 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW: DETAILED PACKAGES (CÁC GÓI KÊNH) */}
-        {activeTab === "packages" && (
-          <div className="min-h-[60vh] flex items-center justify-center py-10 animate-fade-in font-google">
-            <div className="text-center p-8 xs:p-10 rounded-3xl glass-panel border border-white/10 max-w-sm mx-auto shadow-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 via-transparent to-teal-500/5 -z-10" />
-              <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6 shadow-inner transition-transform duration-500 group-hover:scale-110">
-                <Package className="w-8 h-8 text-pink-400" />
-              </div>
-              <h2 className="text-2xl font-black tracking-widest text-white mb-3 uppercase">Coming soon</h2>
-              <p className="text-white/50 text-xs sm:text-[13px] leading-relaxed">Tính năng Gói Kênh Premium chất lượng cao đang được hoàn thiện và sẽ sớm ra mắt trong thời gian tới.</p>
-            </div>
-          </div>
-        )}
-
         {/* VIEW: SETTINGS PAGE */}
         {activeTab === "settings" && (
-          <div className="max-w-xl mx-auto py-4 animate-fade-in">
-            <div className="p-6 rounded-2xl glass-panel border border-white/14">
-              <h2 className="text-xl font-bold mb-5 pb-3 border-b border-white/10 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-indigo-400" /> Cài Đặt Hệ Thống
-              </h2>
+          <div className="max-w-5xl mx-auto py-4 animate-fade-in font-sans">
+            <AnimatePresence mode="wait">
+              {!activeSettingSection ? (
+                <motion.div
+                  key="list"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  className="space-y-3"
+                >
+                  {/* Project Details Banner */}
+                  <div className="bg-white/10 backdrop-blur-[20px] rounded-[30px] p-5 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] border border-white/10 flex flex-col gap-4 relative overflow-hidden mb-4">
+                    <div className="space-y-3 z-10 w-full">
+                      <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none">
+                        Project Vplay Refresh
+                      </h2>
+                      <div className="flex flex-col gap-2.5 text-xs sm:text-sm text-white/80">
+                        <div className="flex items-center gap-2">
+                          <Pen className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+                          <span className="font-normal text-white/70">Version: <strong className="text-white font-semibold">26.8.1 (Beta)</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-amber-400 shrink-0 stroke-[2.5]" />
+                          <span className="font-normal text-white/70">Author: <strong className="text-white font-semibold">VNRT</strong></span>
+                        </div>
+                        <div className="flex items-start gap-2 leading-relaxed">
+                          <Heart className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 fill-rose-500/15 stroke-[2.5]" />
+                          <span className="text-white/70">
+                            Supporters: <strong className="text-white font-medium">FTV OFFICIAL, HMG, DHA, - Bsod999, Myyer, Nquinanh, TV Archive Official</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* A subtle absolute glowing visual behind */}
+                    <div className="absolute right-0 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+                  </div>
 
-              <div className="space-y-6">
-                {/* 1. Background glow customization */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold block text-white/85">Màu Sắc Ánh Sáng Nền (Backdrop Glow)</label>
-                  <p className="text-xs text-white/50 mb-3">Tùy biến dải màu chuyển sắc phía dưới lớp kính mờ theo đúng sở thích của bạn.</p>
-                  
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { id: "cosmic", name: "Cosmic", color: "from-pink-600 to-indigo-800" },
-                      { id: "deep", name: "Tối giản", color: "from-neutral-800 to-slate-900" },
-                      { id: "aurora", name: "Cực quang", color: "from-teal-600 to-lime-900" },
-                      { id: "sunset", name: "Mãn nhãn", color: "from-rose-600 to-amber-900" },
-                    ].map((item) => (
+                  {[
+                    {
+                      id: "profile",
+                      title: "Hồ sơ",
+                      subtitle: "Quản lý hồ sơ và tài khoản cá nhân Vplay",
+                      icon: User,
+                    },
+                    {
+                      id: "appearance",
+                      title: "Giao diện",
+                      subtitle: "Tùy biến giao diện và trải nghiệm người dùng theo ý thích",
+                      icon: Palette,
+                    },
+                    {
+                      id: "accessibility",
+                      title: "Trợ năng",
+                      subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
+                      icon: Sliders,
+                    },
+                    {
+                      id: "broadcast",
+                      title: "Phát sóng",
+                      subtitle: "Tùy chỉnh các luồng phát sóng, âm thanh và chất lượng video",
+                      icon: Tv,
+                    },
+                    {
+                      id: "experimental",
+                      title: "Thử nghiệm",
+                      subtitle: "Trải nghiệm sớm các tính năng mới sắp ra mắt của Vplay",
+                      icon: Beaker,
+                    }
+                  ].map((sec) => {
+                    const IconComp = sec.icon;
+                    return (
                       <button
-                        key={item.id}
-                        onClick={() => setBgColor(item.id as any)}
-                        className={`p-3.5 rounded-xl text-center text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-110 active:scale-120 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer border ${
-                          bgColor === item.id 
-                            ? "border-white ring-2 ring-white/15" 
-                            : "border-white/10 hover:border-white/25"
-                        }`}
+                        key={sec.id}
+                        onClick={() => setActiveSettingSection(sec.id)}
+                        className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-3xl py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
                       >
-                        <div className={`absolute inset-0 bg-gradient-to-tr ${item.color} opacity-40 -z-10`}></div>
-                        <span>{item.name}</span>
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
+                          <IconComp className="w-6 h-6 stroke-[1.8]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-white tracking-tight">{sec.title}</h3>
+                          <p className="text-[11.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-white/45 shrink-0" />
                       </button>
-                    ))}
-                  </div>
-                </div>
+                    );
+                  })}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="detail"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="bg-white/10 backdrop-blur-[10px] rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
+                >
+                  <button
+                    onClick={() => setActiveSettingSection(null)}
+                    className="mb-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/95 hover:text-white transition-all border border-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.25)] cursor-default"
+                    title="Quay lại"
+                  >
+                    <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                  </button>
 
-                {/* 2. Device compliance warnings */}
-                <div className="pt-2">
-                  <label className="text-sm font-semibold block text-white/85 mb-2">Đồng Bộ & Lưu Trữ</label>
-                  <div className="p-4 rounded-xl bg-black/30 border border-white/5 space-y-3 text-xs text-white/70">
-                    <div className="flex items-center justify-between">
-                      <span>Tổng số Kênh Yêu Thích</span>
-                      <span className="font-mono text-amber-300 font-bold">{favorites.length} kênh</span>
+                  {activeSettingSection === "appearance" && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                          <Palette className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Giao diện</h3>
+                          <p className="text-xs text-white/60">Tùy biến dải màu chuyển sắc phía dưới lớp kính mờ theo đúng sở thích của bạn.</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-sm font-semibold block text-white/90">Màu Sắc Ánh Sáng Nền (Backdrop Glow)</label>
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {[
+                            { id: "cosmic", name: "Cosmic Glow", color: "from-pink-600 to-indigo-800" },
+                            { id: "deep", name: "Tối giản", color: "from-neutral-800 to-slate-900" },
+                            { id: "aurora", name: "Cực quang", color: "from-teal-600 to-lime-900" },
+                            { id: "sunset", name: "Sunset View", color: "from-rose-600 to-amber-900" },
+                          ].map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => setBgColor(item.id as any)}
+                              className={`p-4 rounded-xl text-left text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-98 cursor-default border ${
+                                bgColor === item.id 
+                                  ? "border-white bg-white/15" 
+                                  : "border-white/10 hover:border-white/20 bg-white/5"
+                              }`}
+                            >
+                              <div className="flex flex-col h-full justify-between">
+                                <span className="text-white font-bold mb-2">{item.name}</span>
+                                <div className={`w-full h-2 rounded bg-gradient-to-r ${item.color} opacity-80`} />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* AMOLED Dark Mode Toggle */}
+                      <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                        <div className="flex-1 pr-4">
+                          <h4 className="text-sm font-semibold text-white">AMOLED Dark</h4>
+                          <p className="text-xs text-white/60 mt-0.5">Chế độ siêu tối giúp bảo vệ mắt</p>
+                        </div>
+                        <button
+                          onClick={() => setAmoledDark(!amoledDark)}
+                          className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 focus:outline-none relative ${
+                            amoledDark ? "bg-[#34c759]" : "bg-white/20"
+                          }`}
+                        >
+                          <motion.div
+                            animate={{ x: amoledDark ? 20 : 0 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            className="w-5 h-5 rounded-full bg-white shadow-md"
+                          />
+                        </button>
+                      </div>
+
                     </div>
-                    {favorites.length > 0 && (
-                      <button 
-                        onClick={() => {
-                          if (confirm("Bạn có đồng ý xóa toàn bộ danh mục yêu thích?")) {
-                            setFavorites([]);
-                          }
-                        }}
-                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-120 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-normal inline-block"
-                      >
-                        Xóa tất cả yêu thích
-                      </button>
-                    )}
+                  )}
 
-                    <hr className="border-white/5" />
+                  {activeSettingSection === "profile" && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                          <User className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Tài khoản & Dữ liệu</h3>
+                          <p className="text-xs text-white/60">Đồng bộ hóa kênh yêu thích và các dữ liệu đã thiết lập trên thiết bị.</p>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center justify-between">
-                      <span>Kênh tự thêm cá nhân</span>
-                      <span className="font-mono text-indigo-300 font-bold">{customChannels.length} kênh</span>
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3.5 text-xs text-white/80">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-white/90">Tổng số Kênh Yêu Thích</span>
+                            <span className="font-mono text-amber-300 font-bold bg-white/5 px-2 py-0.5 rounded">{favorites.length} kênh</span>
+                          </div>
+                          {favorites.length > 0 && (
+                            <button 
+                              onClick={() => {
+                                if (confirm("Bạn có đồng ý xóa toàn bộ danh mục yêu thích?")) {
+                                  setFavorites([]);
+                                }
+                              }}
+                              className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
+                            >
+                              Xóa tất cả yêu thích
+                            </button>
+                          )}
+
+                          <hr className="border-white/5" />
+
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-white/90">Kênh tự thêm cá nhân</span>
+                            <span className="font-mono text-indigo-300 font-bold bg-white/5 px-2 py-0.5 rounded">{customChannels.length} kênh</span>
+                          </div>
+                          {customChannels.length > 0 && (
+                            <button 
+                              onClick={() => {
+                                if (confirm("Bạn có đồng ý xóa tất cả các kênh tự thêm?")) {
+                                  setCustomChannels([]);
+                                }
+                              }}
+                              className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
+                            >
+                              Xoá danh sách kênh tự thêm
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/15 text-xs leading-relaxed text-orange-200">
+                          <div className="font-bold text-orange-300 mb-1">
+                            Thông báo tài khoản trực tuyến
+                          </div>
+                          Tính năng Đăng nhập Tài khoản Đồng bộ Đám mây Vplay Cloud Sync đang được phát triển. Dữ liệu của bạn hiện được lưu trữ an toàn dưới bộ nhớ trình duyệt (LocalStorage).
+                        </div>
+                      </div>
                     </div>
-                    {customChannels.length > 0 && (
-                      <button 
-                        onClick={() => {
-                          if (confirm("Bạn có đồng ý xóa tất cả các kênh tự thêm?")) {
-                            setCustomChannels([]);
-                          }
-                        }}
-                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 hover:scale-110 active:scale-120 text-red-300 border border-red-500/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer font-normal inline-block"
-                      >
-                        Xoá danh sách kênh tự thêm
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  )}
 
-                {/* About technical info */}
-                <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-xs leading-relaxed text-indigo-200">
-                  <div className="flex items-center gap-2 font-bold text-indigo-100 mb-1">
-                    <Info className="w-4 h-4 text-indigo-300" /> Về Vplay m3u8 Player
-                  </div>
-                  Danh sách phát hiển thị được thu thập trực tuyến từ nhiều nguồn cộng đồng khác nhau. Chúng tôi không lưu trữ hay sở hữu bất kỳ luồng video trực tuyến nào. Ứng dụng chạy hoàn toàn dựa trên Javascript khách (Client-Sided HTML5 Hls stream) nên độ an toàn, bảo mật tuyệt đối với dữ liệu của bạn.
-                </div>
-              </div>
-            </div>
+                  {activeSettingSection !== "appearance" && activeSettingSection !== "profile" && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                        <Sparkles className="w-8 h-8" />
+                      </div>
+                      <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">Coming Soon</h3>
+                      <p className="text-xs text-white/60 max-w-xs mx-auto leading-relaxed">
+                        Tính năng này đang được phát triển tích cực và sẽ sớm ra mắt trong phiên bản tiếp theo của Vplay.
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -1194,106 +1355,243 @@ export default function App() {
       </div>
 
       {/* FLOAT GLASSBOTTOM NAVIGATION NAVIGATION TAB DOCK */}
-      <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[450px] z-50">
-        <div className="h-16 rounded-full bg-white/[0.12] backdrop-blur-[20px] saturate-[185%] border border-white/20 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2.5 py-1 relative">
-          
-          {[
-            { id: "home", icon: Home },
-            { id: "live", icon: Compass },
-            { id: "packages", icon: Package },
-            { id: "settings", icon: Settings },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            
-            return (
-              <button 
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center justify-center w-22 h-11 cursor-default z-10 bouncy-btn ${
-                  isActive 
-                    ? "text-indigo-950 font-black" 
-                    : "text-white/65 hover:text-white"
-                }`}
+      <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[480px] z-50 h-20 transform-gpu">
+        {activeTab === "search" ? (
+          <div
+            className="w-full h-20 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-5 gap-3.5 relative transform-gpu"
+          >
+            <img 
+              src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+              className="w-5 h-5 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain ml-1" 
+              referrerPolicy="no-referrer"
+              alt="Search"
+            />
+            <input
+              type="text"
+              placeholder="Tìm kiếm kênh truyền hình..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent border-none text-white text-base focus:outline-none placeholder-white/40 px-2 font-sans"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="p-1 text-white/40 hover:text-white"
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabPill"
-                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                    className="absolute inset-0 bg-white/50 rounded-full shadow-lg -z-10"
-                  />
-                )}
-                <Icon className={`w-7.5 h-7.5 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
+                <X className="w-4 h-4" />
               </button>
-            );
-          })}
+            )}
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setActiveTab(prevTab);
+              }}
+              className="px-5 py-2 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white text-xs font-normal cursor-default"
+            >
+              Hủy
+            </button>
+          </div>
+        ) : (
+          <div
+            className="flex items-center gap-3.5 w-full h-20 transform-gpu"
+          >
+            {/* Main Tab Dock (Pill) */}
+            <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1.5 relative transform-gpu">
+              {showCopiedNotify ? (
+                <div
+                  className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
+                >
+                  <Check className="w-5 h-5 text-emerald-400" />
+                  <span>Copied to clipboard</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-around w-full h-full">
+                  {[
+                    { id: "home", icon: Home, label: "Home" },
+                    { id: "live", icon: Compass, label: "Trực tiếp" },
+                    { id: "settings", icon: Settings, label: "Cài đặt" },
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const Icon = tab.icon;
+                    
+                    return (
+                      <button 
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id as any);
+                        }}
+                        className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-2 transition-all transform-gpu ${
+                          isActive 
+                            ? "text-indigo-950 font-normal" 
+                            : "text-white/65 hover:text-white"
+                        }`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeTabPill"
+                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                            className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                          />
+                        )}
+                        <Icon className={`w-8.5 h-8.5 mb-0.5 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
+                        <span className="text-[9.5px] font-normal tracking-wide text-current opacity-85 leading-none">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-        </div>
+            {/* Separate Search Button */}
+            <button
+              onClick={() => {
+                setPrevTab(activeTab as any);
+                setActiveTab("search");
+              }}
+              className="w-20 h-20 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
+              title="Tìm kiếm"
+            >
+              <Search className="w-6.5 h-6.5 transition-transform duration-300 group-hover:scale-110" />
+            </button>
+          </div>
+        )}
+
+        {/* Playback Error Toast Alert */}
+        <AnimatePresence>
+          {playbackError && (
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="mt-3 mx-auto w-fit px-5 py-2.5 rounded-full bg-red-600/25 backdrop-blur-[12px] border border-red-500/35 text-red-200 text-xs font-normal flex items-center gap-2 shadow-[0_12px_32px_rgba(239,68,68,0.25)] select-none"
+            >
+              <AlertCircle className="w-4.5 h-4.5 text-red-400 animate-pulse" />
+              {playbackErrorType === "timeout" ? (
+                <span className="flex items-center gap-1">
+                  Playback Error. Try to watch directly using <Tv className="w-3.5 h-3.5 text-red-300 inline" />
+                </span>
+              ) : (
+                <span>Playback Error</span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* CUSTOM CHANNEL LINK ADDER MODAL */}
-      {showCustomModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-100 flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl glass-panel border border-white/20 p-6 shadow-2xl relative animate-fade-in">
-            <button 
-              onClick={() => setShowCustomModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 hover:scale-120 active:scale-135 text-white/50 hover:text-white transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] cursor-pointer"
+      <AnimatePresence>
+        {showCustomModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/10 z-[100] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/70 backdrop-blur-[20px] p-5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
-              <X className="w-5 h-5" />
-            </button>
+              <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
+                Tạo kênh
+              </h3>
+              <p className="text-[12px] text-black/60 mb-4 leading-relaxed px-1 mt-1">
+                Thêm luồng kênh mới vào danh sách kênh bằng cách nhập đường dẫn URL của luồng kênh đó
+              </p>
 
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-pink-400">
-              <Plus className="w-5 h-5" /> Liên Kết Kênh Luồng Ngoài
-            </h3>
+              <form onSubmit={handleAddCustomChannel} className="space-y-3.5 text-sm">
+                <div className="space-y-1 text-left">
+                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập tên kênh</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Kênh của tôi"
+                    value={customChannelName}
+                    onChange={(e) => setCustomChannelName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal"
+                  />
+                </div>
 
-            <form onSubmit={handleAddCustomChannel} className="space-y-4 text-sm">
-              <div className="space-y-1.5 text-left">
-                <label className="text-xs font-semibold text-white/70">Tên Kênh Truyền Hình</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ví dụ: VTV3 Luồng Dự Phòng"
-                  value={customChannelName}
-                  onChange={(e) => setCustomChannelName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl glass-input text-white focus:outline-none focus:ring-1 focus:ring-pink-500"
-                />
-              </div>
+                <div className="space-y-1 text-left">
+                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập đường dẫn</label>
+                  <input
+                    required
+                    type="url"
+                    placeholder="https://example.com/live/stream.m3u8"
+                    value={customChannelUrl}
+                    onChange={(e) => setCustomChannelUrl(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal font-mono"
+                  />
+                </div>
 
-              <div className="space-y-1.5 text-left">
-                <label className="text-xs font-semibold text-white/70">Đường Dẫn Luồng (.m3u8)</label>
-                <input
-                  required
-                  type="url"
-                  placeholder="https://example.com/live/stream.m3u8"
-                  value={customChannelUrl}
-                  onChange={(e) => setCustomChannelUrl(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl glass-input text-white focus:outline-none focus:ring-1 focus:ring-pink-500 font-mono"
-                />
-              </div>
+                <div className="space-y-1 text-left">
+                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Chọn nhóm kênh</label>
+                  <select
+                    value={customChannelGroup}
+                    onChange={(e) => setCustomChannelGroup(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal appearance-none cursor-pointer pr-10 relative"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 14px center',
+                      backgroundSize: '14px',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                  >
+                    <option value="VTV">Kênh VTV</option>
+                    <option value="VTVcab">Kênh VTVcab</option>
+                    <option value="HTV">Kênh HTV</option>
+                    <option value="SCTV">Kênh SCTV</option>
+                    <option value="Địa phương">Kênh địa phương & Thiết yếu</option>
+                    <option value="Quốc tế">Kênh Quốc Tế & Đặc Sắc</option>
+                    <option value="Radio">Kênh Phát Thanh (Radio)</option>
+                    <option value="Thử nghiệm">Kênh Thử Nghiệm</option>
+                    <option value="NEW_GROUP">+ Tự tạo nhóm mới...</option>
+                  </select>
+                </div>
 
-              <div className="space-y-1.5 text-left">
-                <label className="text-xs font-semibold text-white/70">Nhóm Kênh / Thể Loại (Tùy chọn)</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Kênh Riêng, Bản Tin"
-                  value={customChannelGroup}
-                  onChange={(e) => setCustomChannelGroup(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl glass-input text-white focus:outline-none focus:ring-1 focus:ring-pink-500"
-                />
-              </div>
+                {customChannelGroup === "NEW_GROUP" && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-1 text-left"
+                  >
+                    <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập tên nhóm mới</label>
+                    <input
+                      required
+                      type="text"
+                      placeholder="Ví dụ: Kênh Riêng"
+                      value={customGroupInput}
+                      onChange={(e) => setCustomGroupInput(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal"
+                    />
+                  </motion.div>
+                )}
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 hover:scale-110 active:scale-[1.18] text-white font-normal transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] shadow-lg shadow-pink-500/25 cursor-pointer text-center"
-                >
-                  Kết Nối Kênh
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="flex items-center gap-3.5 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomModal(false)}
+                    className="flex-1 py-3 px-4 rounded-full bg-black/10 hover:bg-black/15 active:scale-95 transition-all text-[#ff3b30] font-semibold text-[15px] text-center cursor-default"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] active:scale-95 transition-all text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)]"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -34,6 +34,7 @@ interface ChannelPlayerProps {
   onNextChannel?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  onPlaybackError?: (error: boolean, isTimeout?: boolean) => void;
 }
 
 export default function ChannelPlayer({
@@ -46,6 +47,7 @@ export default function ChannelPlayer({
   onNextChannel,
   isFavorite = false,
   onToggleFavorite,
+  onPlaybackError,
 }: ChannelPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -97,6 +99,26 @@ export default function ChannelPlayer({
       progress: Math.floor(Math.random() * 60) + 15
     });
   }, [channel]);
+
+  useEffect(() => {
+    if (onPlaybackError) {
+      onPlaybackError(hasError, false);
+    }
+  }, [hasError, onPlaybackError]);
+
+  useEffect(() => {
+    let timer: any = null;
+    if (isLoading) {
+      timer = setTimeout(() => {
+        if (onPlaybackError) {
+          onPlaybackError(true, true);
+        }
+      }, 10000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isLoading, onPlaybackError]);
 
   // Clean, initialize and play stream
   useEffect(() => {
@@ -399,7 +421,7 @@ export default function ChannelPlayer({
           <div className="flex items-center justify-between gap-2">
             
             {/* Left Utility: Volume Controls with 10% opacity & 10% blur */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-[1.5px] border border-white/5 pl-2 pr-2.5 py-1.5 rounded-full group/vol bouncy-btn">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-[1.5px] border border-white/10 pl-2 pr-2.5 py-1.5 rounded-full group/vol bouncy-btn shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)]">
               <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-135">
                 {muted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
               </button>
@@ -422,7 +444,7 @@ export default function ChannelPlayer({
               {/* Button 1: Dynamic Heart Favorite button */}
               <button 
                 onClick={onToggleFavorite}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/5 bouncy-btn flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-default group"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default group"
                 title={isFavorite ? "Bỏ yêu thích" : "Yêu thích kênh"}
               >
                 <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-red-500 fill-red-500 scale-110" : "text-white/80 group-hover:text-red-400 group-hover:scale-110"}`} />
@@ -431,7 +453,7 @@ export default function ChannelPlayer({
               {/* Button 2: Skip back */}
               <button 
                 onClick={onPrevChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/5 bouncy-btn flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-default"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
                 title="Kênh trước"
               >
                 <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
@@ -440,7 +462,7 @@ export default function ChannelPlayer({
               {/* Button 3: Main center Play/Pause button (Larger size) */}
               <button 
                 onClick={togglePlay}
-                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/5 bouncy-btn flex items-center justify-center text-white shadow-2xl hover:shadow-white/10 cursor-default"
+                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_12px_24px_rgba(0,0,0,0.3)] cursor-default"
                 title={isPlaying ? "Tạm Dừng" : "Phát"}
               >
                 {isPlaying ? (
@@ -453,7 +475,7 @@ export default function ChannelPlayer({
               {/* Button 4: Skip forward */}
               <button 
                 onClick={onNextChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/5 bouncy-btn flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-default"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
                 title="Kênh sau"
               >
                 <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
@@ -466,7 +488,7 @@ export default function ChannelPlayer({
                   setIsLoading(true);
                   if (videoRef.current) videoRef.current.load();
                 }}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/5 bouncy-btn flex items-center justify-center text-white shadow-xl hover:shadow-white/5 cursor-default"
+                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
                 title="Tải lại luồng"
               >
                 <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
@@ -476,7 +498,7 @@ export default function ChannelPlayer({
             {/* Right Utility: Fullscreen scale config */}
             <button 
               onClick={handleFullscreen}
-              className="p-2 sm:p-2.5 rounded-full bg-white/10 backdrop-blur-[1.5px] bouncy-btn text-white/70 hover:text-white border border-white/5 cursor-default flex items-center justify-center shrink-0"
+              className="p-2 sm:p-2.5 rounded-full bg-white/10 backdrop-blur-[1.5px] bouncy-btn text-white/70 hover:text-white border border-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default flex items-center justify-center shrink-0"
               title="Toàn màn hình"
             >
               <Maximize className="w-4 h-4" />
