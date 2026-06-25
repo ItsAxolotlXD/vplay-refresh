@@ -108,7 +108,7 @@ export default function App() {
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
-    }, 1000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 
@@ -141,11 +141,10 @@ export default function App() {
     return () => clearInterval(slideTimer);
   }, [activeTab]);
 
-  const formatTimeWithSeconds = (date: Date) => {
+  const formatTime = (date: Date) => {
     return date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
       hour12: false,
     });
   };
@@ -403,11 +402,11 @@ export default function App() {
               <span className="hidden xs:inline-block font-sans font-black text-lg bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-wider select-none">360</span>
             </div>
 
-            {/* Real-time Ticking Digital Clock with Seconds */}
+            {/* Real-time Ticking Digital Clock */}
             <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-inner select-none transition-all duration-300 hover:scale-105 font-google">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
               <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white font-google drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
-                {formatTimeWithSeconds(time)}
+                {formatTime(time)}
               </span>
               <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10 font-google">
                 {formatDateVietnamese(time)}
@@ -429,11 +428,21 @@ export default function App() {
                   className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all shadow-sm cursor-default hover:scale-110 active:scale-120"
                   title="Tìm kênh nhanh"
                 >
-                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <img 
+                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 brightness-0 invert opacity-75 object-contain" 
+                    referrerPolicy="no-referrer"
+                    alt="Search"
+                  />
                 </button>
               ) : (
                 <div className="relative w-full group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 z-20 pointer-events-none animate-fade-in" />
+                  <img 
+                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 brightness-0 invert opacity-50 z-20 pointer-events-none animate-fade-in object-contain" 
+                    referrerPolicy="no-referrer"
+                    alt="Search"
+                  />
                   <input
                     ref={headerSearchInputRef}
                     type="text"
@@ -509,7 +518,12 @@ export default function App() {
             {/* Live tab Search Bar & Add Channel Button Bar - Placed perfectly under the channel player exactly as requested */}
             <div className="w-full max-w-5xl mx-auto mt-6 mb-6 flex items-center justify-center gap-3 z-10 relative px-2">
               <div className="relative flex-1 max-w-md group transition-all duration-300">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 z-20 pointer-events-none" />
+                <img 
+                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain" 
+                  referrerPolicy="no-referrer"
+                  alt="Search"
+                />
                 <input
                   type="text"
                   placeholder="Tìm kiếm kênh Vplay..."
@@ -604,7 +618,7 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-[3px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                               isPlaying 
                                 ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                                 : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
@@ -619,7 +633,7 @@ export default function App() {
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : "w-full h-full"
+                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[75%] h-[75%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -797,7 +811,7 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[3px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                             isPlaying 
                               ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                               : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
@@ -812,7 +826,7 @@ export default function App() {
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
                                 className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : "w-full h-full"
+                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[75%] h-[75%] p-0.5" : "w-full h-full"
                                 }`}
                               />
                             ) : (
