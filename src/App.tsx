@@ -36,7 +36,7 @@ import {
   Crown
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { CATEGORIES, Category, Channel } from "./data/channels";
+import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
 import ChannelPlayer from "./components/ChannelPlayer";
 
 const homeSlides = [
@@ -55,9 +55,11 @@ const homeSlides = [
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới",
+    description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới.",
     showCountdown: false,
-    logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702"
+    logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
+    btnText: "Xem ngay",
+    btnIcon: "play"
   },
   {
     id: 1,
@@ -74,24 +76,30 @@ const homeSlides = [
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    logo: "https://static.wikia.nocookie.net/logos/images/5/56/VTV6_logo_07.06.2026.png/revision/latest?cb=20260608073805&path-prefix=uk"
+    logo: "https://static.wikia.nocookie.net/logos/images/5/56/VTV6_logo_07.06.2026.png/revision/latest?cb=20260608073805&path-prefix=uk",
+    description: "Các bản tin, chuyên mục, tường thuật về thể thao trong nước và quốc tế do Trung tâm Truyền hình Thể thao sản xuất, với mục tiêu thúc đẩy phong trào thể thao quần chúng, thể thao học đường, thể thao chuyên nghiệp phát triển tại Việt Nam cũng như hướng đến rèn luyện, nâng cao sức khỏe cộng đồng và phát triển toàn diện.",
+    btnText: "Xem ngay",
+    btnIcon: "play"
   },
   {
-    id: 2,
-    titleTop: "Trải nghiệm",
-    titleMain: "Truyền hình đỉnh cao",
+    id: 3,
+    titleTop: "VIETNAM TODAY",
+    titleMain: "Your Window on Vietnam",
     titleSub: "",
-    genreText: "KÍNH MỜ ULTRA HD",
-    subSlogan: "CÔNG NGHỆ CHUYỂN KÊNH TIÊN PHONG, KHÔNG ĐỘ TRỄ",
-    thumbnail: "https://www.shutterstock.com/shutterstock/videos/3766224185/thumb/1.jpg?ip=x480",
-    channelId: "cartoon-network",
-    channelPlayName: "Trải nghiệm truyền hình đỉnh cao cùng Vplay (UltraHD)",
-    ageRating: "T16",
-    ratingText: "Độ trễ bằng 0 | Hỗ trợ m3u8 ngoại luồng",
+    genreText: "ĐỐI NGOẠI & QUỐC TẾ",
+    subSlogan: "CỬA SỔ THÔNG TIN RA THẾ GIỚI",
+    thumbnail: "https://vtv4.vtv.vn/upload/news/3HOPA0OIS_vntoday1-79180073137201066112112-72441177075135673357555.jpg",
+    channelId: "vn_today",
+    channelPlayName: "Vietnam Today HD",
+    ageRating: "Tất cả",
+    ratingText: "Chất lượng HD | Đối ngoại quốc gia",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    logo: "https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
+    logo: "https://static.wikia.nocookie.net/logos/images/c/c7/Vietnam_Today_vertical_v2.png/revision/latest?cb=20250813041048&path-prefix=vi",
+    description: "Cửa sổ thông tin của Việt Nam ra thế giới, phản ánh khách quan và sinh động các vấn đề thời sự, chính trị, kinh tế, văn hóa, du lịch, môi trường, đổi mới sáng tạo, chuyển đổi số và những giá trị đặc trưng, bản sắc, truyền thống và hiện đại của Việt Nam trong công cuộc phát triển đất nước hội nhập quốc tế.",
+    btnText: "Xem ngay",
+    btnIcon: "play"
   }
 ];
 
@@ -101,14 +109,40 @@ export default function App() {
   
   // Immersive Home Slideshow State
   const [currentSlide, setCurrentSlide] = useState<number>(0);
+
+  const [autoSlide, setAutoSlide] = useState<boolean>(() => {
+    const saved = localStorage.getItem("glass_tv_auto_slide");
+    return saved !== null ? saved === "true" : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("glass_tv_auto_slide", autoSlide ? "true" : "false");
+  }, [autoSlide]);
   
   // Favorite channel list horizontal scroll reference
   const favScrollRef = useRef<HTMLDivElement>(null);
+  const recoScrollRef = useRef<HTMLDivElement>(null);
+
+  const recommendedChannels = useMemo(() => {
+    if (!processedChannels || processedChannels.length === 0) return [];
+    const shuffled = [...processedChannels].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 30);
+  }, []);
 
   const scrollFavorites = (direction: "left" | "right") => {
     if (favScrollRef.current) {
       const scrollAmount = 300;
       favScrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  const scrollRecommendations = (direction: "left" | "right") => {
+    if (recoScrollRef.current) {
+      const scrollAmount = 300;
+      recoScrollRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth"
       });
@@ -149,14 +183,14 @@ export default function App() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Slide auto rotation effect every 8 seconds
+  // Slide auto rotation effect every 5 seconds if enabled
   useEffect(() => {
-    if (activeTab !== "home") return;
+    if (activeTab !== "home" || !autoSlide) return;
     const slideTimer = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % homeSlides.length);
-    }, 8000);
+    }, 5000);
     return () => clearInterval(slideTimer);
-  }, [activeTab]);
+  }, [activeTab, autoSlide]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("vi-VN", {
@@ -209,6 +243,18 @@ export default function App() {
   
   const [muted, setMuted] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showVtv5Popup, setShowVtv5Popup] = useState<boolean>(false);
+  const vtv5Options = useMemo(() => {
+    const v5 = processedChannels.find(ch => ch.id === "vtv5");
+    const v5Tnb = processedChannels.find(ch => ch.id === "vtv5_tnb");
+    const v5Tn = processedChannels.find(ch => ch.id === "vtv5_tn");
+    
+    return [
+      { ...(v5 || { id: "vtv5", name: "VTV5", url: "", group: "VTV", logoText: "VTV5", logoBg: "bg-gradient-to-br from-emerald-600 to-emerald-800" }), name: "VTV5 Quốc gia" },
+      { ...(v5Tnb || { id: "vtv5_tnb", name: "VTV5 Tây Nam Bộ", url: "", group: "VTV", logoText: "VTV5 TNB", logoBg: "bg-gradient-to-br from-emerald-600 to-emerald-800" }), name: "VTV5 Tây Nam Bộ" },
+      { ...(v5Tn || { id: "vtv5_tn", name: "VTV5 Tây Nguyên", url: "", group: "VTV", logoText: "VTV5 TN", logoBg: "bg-gradient-to-br from-emerald-600 to-emerald-800" }), name: "VTV5 Tây Nguyên" }
+    ];
+  }, []);
   const [isHeaderSearchExpanded, setIsHeaderSearchExpanded] = useState<boolean>(false);
   const headerSearchInputRef = useRef<HTMLInputElement>(null);
 
@@ -250,7 +296,8 @@ export default function App() {
   // Ambient lights themes configuration (default: sunset)
   const [bgColor, setBgColor] = useState<"cosmic" | "deep" | "aurora" | "sunset">("sunset");
   const [amoledDark, setAmoledDark] = useState<boolean>(() => {
-    return localStorage.getItem("glass_tv_amoled_dark") === "true";
+    const saved = localStorage.getItem("glass_tv_amoled_dark");
+    return saved !== null ? saved === "true" : true;
   });
 
   useEffect(() => {
@@ -338,7 +385,11 @@ export default function App() {
   };
 
   // Switch channel trigger
-  const handleSelectChannel = (channel: Channel) => {
+  const handleSelectChannel = (channel: Channel, bypassVtv5Check = false) => {
+    if (channel.id === "vtv5" && !bypassVtv5Check) {
+      setShowVtv5Popup(true);
+      return;
+    }
     setSelectedChannel(channel);
     setPlaybackError(false);
     setPlaybackErrorType(null);
@@ -682,7 +733,7 @@ export default function App() {
                                   ? "bg-amber-400/10 backdrop-blur-lg border-amber-400"
                                   : "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                                 : isDacBiet
-                                  ? "bg-amber-500/5 backdrop-blur-md border-amber-500/40 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20"
+                                  ? "bg-amber-500/5 backdrop-blur-md border-white/10 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20"
                                   : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
                             }`}
                             title={ch.name}
@@ -834,7 +885,12 @@ export default function App() {
                     }}
                      className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-red-600 hover:bg-red-700 text-white font-normal shadow-xl hover:shadow-red-600/30 flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-red-500/10 bouncy-btn"
                   >
-                    <Play className="w-4.5 h-4.5 fill-white text-white" /> Thử ngay
+                    {homeSlides[currentSlide].btnIcon === "compass" ? (
+                      <Compass className="w-4.5 h-4.5 text-white" />
+                    ) : (
+                      <Play className="w-4.5 h-4.5 fill-white text-white" />
+                    )}
+                    {homeSlides[currentSlide].btnText || "Thử ngay"}
                   </button>
 
                   {/* Slider indicator arrows and paging inside the banner */}
@@ -872,6 +928,98 @@ export default function App() {
 
             {/* LOWER CONTENT SECTIONS (NESTED SAFELY IN MAX-W-7XL MX-AUTO WITH SPACING FOR PERFECT DESIGN COHESION) */}
             <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 py-8 space-y-12">
+
+            {/* ROW: "GỢI Ý CHO BẠN" CAROUSEL SLIDER (ADDED ABOVE KÊNH YÊU THÍCH AS REQUESTED) */}
+            {recommendedChannels.length > 0 && (
+              <div className="space-y-4 relative group/reco-carousel animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1 h-5 rounded bg-blue-500" />
+                    <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Gợi ý cho bạn</h3>
+                    <span className="text-xs text-blue-400/80 font-mono mt-1">({recommendedChannels.length})</span>
+                  </div>
+
+                  {/* Navigation Arrows for Carousel */}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => scrollRecommendations("left")}
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
+                      title="Quay lại"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => scrollRecommendations("right")}
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
+                      title="Xem tiếp theo"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tiles Container */}
+                <div 
+                  ref={recoScrollRef}
+                  className="flex gap-3 overflow-x-auto pb-2 scroll-smooth scrollbar-none snap-x"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  {recommendedChannels.map((ch) => {
+                    const isPlaying = selectedChannel.id === ch.id;
+                    const isFav = favorites.includes(ch.id);
+                    return (
+                      <div
+                        key={ch.id}
+                        className="snap-start shrink-0"
+                      >
+                        <div
+                          onClick={() => {
+                            handleSelectChannel(ch);
+                            setActiveTab("live");
+                          }}
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                            isPlaying 
+                              ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
+                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
+                          }`}
+                          title={ch.name}
+                        >
+                          {/* Logo Graphic Container - fills the box completely */}
+                          <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
+                            {ch.logoImg ? (
+                              <img
+                                src={ch.logoImg}
+                                alt={ch.name}
+                                referrerPolicy="no-referrer"
+                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                }`}
+                              />
+                            ) : (
+                              <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
+                                {ch.logoText}
+                              </div>
+                            )}
+                          </div>
+                      
+                          {/* Heart/Fav Button overlay (shown on top corner) */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(ch.id, e);
+                            }}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/90 hover:scale-110 active:scale-120 duration-200"
+                            title={isFav ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
+                          >
+                            <Heart className={`w-3.5 h-3.5 ${isFav ? "text-red-500 fill-red-500" : "text-white/70 hover:text-white"}`} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* ROW: "KÊNH YÊU THÍCH" CAROUSEL SLIDER (ADDED ABOVE XEM TIẾP SECTIONS EXACTLY AS REQUESTED) */}
             {favoriteChannelsList.length > 0 && (
@@ -1203,7 +1351,7 @@ export default function App() {
                   className="space-y-3"
                 >
                   {/* Project Details Banner */}
-                  <div className="bg-white/10 backdrop-blur-[20px] rounded-[30px] p-5 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] border border-white/10 flex flex-col gap-4 relative overflow-hidden mb-4">
+                  <div className="bg-white/10 backdrop-blur-[20px] rounded-[15px] p-5 sm:p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] border border-white/10 flex flex-col gap-4 relative overflow-hidden mb-4">
                     <div className="space-y-3 z-10 w-full">
                       <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none">
                         Project Vplay Refresh
@@ -1266,7 +1414,7 @@ export default function App() {
                       <button
                         key={sec.id}
                         onClick={() => setActiveSettingSection(sec.id)}
-                        className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-3xl py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
+                        className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
                       >
                         <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
                           <IconComp className="w-6 h-6 stroke-[1.8]" />
@@ -1286,7 +1434,7 @@ export default function App() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="bg-white/10 backdrop-blur-[10px] rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
+                  className="bg-white/10 backdrop-blur-[10px] rounded-[15px] p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
                 >
                   <button
                     onClick={() => setActiveSettingSection(null)}
@@ -1419,7 +1567,52 @@ export default function App() {
                     </div>
                   )}
 
-                  {activeSettingSection !== "appearance" && activeSettingSection !== "profile" && (
+                  {activeSettingSection === "accessibility" && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                          <Sliders className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">Trợ năng</h3>
+                          <p className="text-xs text-white/60">Tùy chỉnh các cài đặt giúp tối ưu hóa khả năng tương tác và trải nghiệm nghe nhìn.</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {/* Option: Tự động trượt hình */}
+                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
+                            <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
+                          </div>
+                          
+                          <div className="flex items-center">
+                            <button
+                              onClick={() => setAutoSlide(!autoSlide)}
+                              className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                              }`}
+                            >
+                              <motion.div
+                                animate={{ x: autoSlide ? 24 : 0 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="relative w-6 h-6 flex items-center justify-center group"
+                              >
+                                {/* Outer hover halo/bubble */}
+                                <div className="absolute w-10 h-10 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                
+                                {/* Knob */}
+                                <div className="w-6 h-6 rounded-full bg-white shadow-md z-10" />
+                              </motion.div>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSettingSection !== "appearance" && activeSettingSection !== "profile" && activeSettingSection !== "accessibility" && (
                     <div className="text-center py-12">
                       <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <Sparkles className="w-8 h-8" />
@@ -1693,6 +1886,115 @@ export default function App() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* VTV5 VERSION SELECTION POPUP */}
+      <AnimatePresence>
+        {showVtv5Popup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-[8px] z-[100] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[420px] rounded-[30px] bg-[#1c1c1e]/85 backdrop-blur-[24px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.05),0_24px_48px_rgba(0,0,0,0.5)] relative border border-white/10 text-white text-left transform-gpu"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[20px] font-bold text-white tracking-tight leading-snug flex items-center gap-2">
+                  <Tv className="w-5.5 h-5.5 text-[#34c759]" /> Truyền hình VTV5
+                </h3>
+                <button
+                  onClick={() => setShowVtv5Popup(false)}
+                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white transition-colors bouncy-btn border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[13px] text-white/55 mb-5 leading-relaxed px-0.5">
+                VTV5 phát sóng các chương trình phục vụ đồng bào các dân tộc thiểu số với 3 phiên bản vùng miền khác nhau. Vui lòng chọn phiên bản bạn muốn xem:
+              </p>
+
+              <div className="space-y-3">
+                {vtv5Options.map((opt) => {
+                  const isCurrentPlaying = selectedChannel.id === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        handleSelectChannel(opt, true);
+                        setActiveTab("live");
+                        setShowVtv5Popup(false);
+                      }}
+                      className={`w-full flex items-center gap-4 p-3.5 rounded-2xl text-left border cursor-pointer transition-all duration-300 bouncy-btn relative group overflow-hidden ${
+                        isCurrentPlaying
+                          ? "bg-white/15 border-white shadow-[0_0_15px_rgba(255,255,255,0.1)] shadow-emerald-500/10"
+                          : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      {/* Left Logo Badges with shiny background */}
+                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
+                        {opt.logoImg ? (
+                          <img
+                            src={opt.logoImg}
+                            alt={opt.name}
+                            className="w-10 h-10 object-contain filter brightness-100"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <span className="text-xs font-bold text-emerald-400">{opt.logoText}</span>
+                        )}
+                      </div>
+
+                      {/* Content Middle */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-semibold text-white text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors">
+                            {opt.name}
+                          </h4>
+                          {isCurrentPlaying && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-[11.5px] text-white/45 truncate mt-0.5">
+                          {opt.id === "vtv5" 
+                            ? "Phiên bản phát sóng toàn quốc" 
+                            : opt.id === "vtv5_tnb" 
+                            ? "Phiên bản dành cho khu vực Tây Nam Bộ" 
+                            : "Phiên bản dành cho khu vực Tây Nguyên"}
+                        </p>
+                      </div>
+
+                      {/* Right Indicator */}
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 border border-white/5 transition-colors">
+                        {isCurrentPlaying ? (
+                          <Check className="w-4 h-4 text-[#34c759]" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-white text-white translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity animate-pulse" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowVtv5Popup(false)}
+                  className="w-full py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 active:scale-97 transition-all text-white font-medium text-[14px] text-center cursor-default bouncy-btn border border-white/5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.2)]"
+                >
+                  Đóng
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

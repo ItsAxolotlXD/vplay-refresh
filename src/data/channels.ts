@@ -58,7 +58,7 @@ const getGradient = (group: string, name: string): string => {
 };
 
 // Map raw channels list to our required application structure
-const processedChannels: Channel[] = rawChannels.map((ch: any) => {
+export const processedChannels: Channel[] = rawChannels.map((ch: any) => {
   const isRadio = ch.group === "Radio" || !!ch.isRadio;
   return {
     id: ch.id,
@@ -103,7 +103,7 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   if (tpl.id === "dac-biet") {
     matchedChannels = [vietnamWildLiveChannel];
   } else if (tpl.id === "vtv") {
-    matchedChannels = processedChannels.filter(c => c.group === "VTV");
+    matchedChannels = processedChannels.filter(c => c.group === "VTV" && c.id !== "vtv5_tn" && c.id !== "vtv5_tnb");
   } else if (tpl.id === "vtvcab") {
     matchedChannels = processedChannels.filter(c => c.group === "VTVcab");
   } else if (tpl.id === "htv") {
