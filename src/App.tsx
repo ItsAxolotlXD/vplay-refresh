@@ -56,7 +56,7 @@ const homeSlides = [
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
     description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới",
-    showCountdown: true
+    showCountdown: false
   },
   {
     id: 1,
@@ -666,16 +666,21 @@ export default function App() {
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
                       {category.channels.map((ch) => {
                         const isPlaying = selectedChannel.id === ch.id;
+                        const isDacBiet = ch.group === "Đặc biệt";
 
                         return (
                           <div
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-2 select-none transition-[transform,background-color,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                               isPlaying 
-                                ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                                : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
+                                ? isDacBiet
+                                  ? "bg-amber-400/10 backdrop-blur-lg border-amber-400 shadow-xl shadow-amber-500/25"
+                                  : "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
+                                : isDacBiet
+                                  ? "bg-amber-500/5 backdrop-blur-md border-amber-500/40 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20"
+                                  : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
                             }`}
                             title={ch.name}
                           >
@@ -687,7 +692,7 @@ export default function App() {
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                    ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    ch.id === "vietnam-wild-live" ? "w-[45%] h-[45%] p-1" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -732,15 +737,15 @@ export default function App() {
               {/* Foreground content details on left - nested in desktop alignment grid */}
               <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col items-start gap-1 justify-end h-full">
                 {/* Calligraphy logo and title text stylistics with Google Sans font */}
-                <div className="flex flex-col select-none mb-3 font-google gap-1">
-                  <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
+                <div className="flex flex-col select-none mb-3 font-google gap-0.5">
+                  <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
                     {homeSlides[currentSlide].titleTop}
                   </div>
-                  <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-2 xs:ml-4 sm:ml-6 -mt-1 uppercase font-google">
+                  <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-1 xs:ml-2 sm:ml-3 -mt-0.5 uppercase font-google">
                     {homeSlides[currentSlide].titleMain}
                   </div>
                   {homeSlides[currentSlide].titleSub && (
-                    <div className="text-xl xs:text-2xl sm:text-3xl font-bold text-white drop-shadow ml-2 xs:ml-4 sm:ml-6 tracking-wide mt-1 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
+                    <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-white drop-shadow ml-1 xs:ml-2 sm:ml-3 tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
                       {homeSlides[currentSlide].titleSub}
                     </div>
                   )}
@@ -1410,23 +1415,23 @@ export default function App() {
       </div>
 
       {/* FLOAT GLASSBOTTOM NAVIGATION NAVIGATION TAB DOCK */}
-      <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[480px] z-50 h-20 transform-gpu">
+      <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[340px] z-50 h-16 transform-gpu">
         {activeTab === "search" ? (
           <div
-            className="w-full h-20 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-5 gap-3.5 relative transform-gpu"
+            className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
           >
             <img 
               src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-              className="w-5 h-5 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain ml-1" 
+              className="w-4 h-4 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain ml-1" 
               referrerPolicy="no-referrer"
               alt="Search"
             />
             <input
               type="text"
-              placeholder="Tìm kiếm kênh truyền hình..."
+              placeholder="Tìm kiếm kênh..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none text-white text-base focus:outline-none placeholder-white/40 px-2 font-sans"
+              className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
               autoFocus
             />
             {searchQuery && (
@@ -1434,7 +1439,7 @@ export default function App() {
                 onClick={() => setSearchQuery("")}
                 className="p-1 text-white/40 hover:text-white"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
             <button
@@ -1442,17 +1447,17 @@ export default function App() {
                 setSearchQuery("");
                 setActiveTab(prevTab);
               }}
-              className="px-5 py-2 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white text-xs font-normal cursor-default"
+              className="px-4 py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white text-xs font-normal cursor-default"
             >
               Hủy
             </button>
           </div>
         ) : (
           <div
-            className="flex items-center gap-3.5 w-full h-20 transform-gpu"
+            className="flex items-center gap-2.5 w-full h-16 transform-gpu"
           >
             {/* Main Tab Dock (Pill) */}
-            <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1.5 relative transform-gpu">
+            <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1 relative transform-gpu">
               {showCopiedNotify ? (
                 <div
                   className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
@@ -1481,6 +1486,7 @@ export default function App() {
                             ? "text-indigo-950 font-normal" 
                             : "text-white/65 hover:text-white"
                         }`}
+                        title={tab.label}
                       >
                         {isActive && (
                           <motion.div
@@ -1489,8 +1495,7 @@ export default function App() {
                             className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
                           />
                         )}
-                        <Icon className={`w-8.5 h-8.5 mb-0.5 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
-                        <span className="text-[9.5px] font-normal tracking-wide text-current opacity-85 leading-none">{tab.label}</span>
+                        <Icon className={`w-7 h-7 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
                       </button>
                     );
                   })}
@@ -1504,10 +1509,10 @@ export default function App() {
                 setPrevTab(activeTab as any);
                 setActiveTab("search");
               }}
-              className="w-20 h-20 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
+              className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
               title="Tìm kiếm"
             >
-              <Search className="w-6.5 h-6.5 transition-transform duration-300 group-hover:scale-110" />
+              <Search className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" />
             </button>
           </div>
         )}
