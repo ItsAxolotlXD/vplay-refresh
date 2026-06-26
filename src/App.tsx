@@ -123,11 +123,13 @@ export default function App() {
   const favScrollRef = useRef<HTMLDivElement>(null);
   const recoScrollRef = useRef<HTMLDivElement>(null);
 
+  const [recoRefreshTrigger, setRecoRefreshTrigger] = useState<number>(0);
+
   const recommendedChannels = useMemo(() => {
     if (!processedChannels || processedChannels.length === 0) return [];
     const shuffled = [...processedChannels].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 30);
-  }, []);
+  }, [recoRefreshTrigger]);
 
   const scrollFavorites = (direction: "left" | "right") => {
     if (favScrollRef.current) {
@@ -771,7 +773,7 @@ export default function App() {
           <div className="w-full animate-fade-in space-y-0 bg-[#07050f]/60 min-h-screen relative pt-0">
             
             {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
-            <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[460px] sm:min-h-[580px] md:min-h-[660px] lg:min-h-[720px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
+            <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
               
               {/* Background cover image representing selected slide */}
               <div className="absolute inset-0 z-0 overflow-hidden">
@@ -794,13 +796,13 @@ export default function App() {
                     {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10`} />
                     <div className={`absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t ${homeSlides[currentSlide].vignetteBottom} z-10`} />
-                    <div className={`absolute inset-x-0 top-0 h-36 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10`} />
+                    <div className={`absolute inset-x-0 top-0 h-44 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10`} />
                   </motion.div>
                 </AnimatePresence>
               </div>
 
               {/* Foreground content details on left - nested in desktop alignment grid */}
-              <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col items-start gap-1 justify-end h-full">
+              <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col items-start gap-1 justify-end h-full pt-28 sm:pt-36 md:pt-40">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentSlide}
@@ -941,6 +943,13 @@ export default function App() {
 
                   {/* Navigation Arrows for Carousel */}
                   <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setRecoRefreshTrigger(prev => prev + 1)}
+                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow mr-1 group/refresh-btn"
+                      title="Làm mới gợi ý"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 group-hover/refresh-btn:rotate-180 transition-transform duration-500" />
+                    </button>
                     <button 
                       onClick={() => scrollRecommendations("left")}
                       className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
@@ -1741,7 +1750,7 @@ export default function App() {
                   setPrevTab(activeTab as any);
                   setActiveTab("search");
                 }}
-                className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
+                className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white bouncy-btn hover:border-white/40 group shrink-0 transform-gpu"
                 title="Tìm kiếm"
               >
                 <img 
@@ -1766,13 +1775,9 @@ export default function App() {
               className="mt-3 mx-auto w-fit px-5 py-2.5 rounded-full bg-red-600/25 backdrop-blur-[12px] border border-red-500/35 text-red-200 text-xs font-normal flex items-center gap-2 shadow-[0_12px_32px_rgba(239,68,68,0.25)] select-none"
             >
               <AlertCircle className="w-4.5 h-4.5 text-red-400 animate-pulse" />
-              {playbackErrorType === "timeout" ? (
-                <span className="flex items-center gap-1">
-                  Playback Error. Try to watch directly using <Tv className="w-3.5 h-3.5 text-red-300 inline" />
-                </span>
-              ) : (
-                <span>Playback Error</span>
-              )}
+              <span className="flex items-center gap-1">
+                Playback Error. Try to watch directly using <Tv className="w-3.5 h-3.5 text-red-300 inline" />
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1899,27 +1904,27 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-[8px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/10 z-[100] flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[420px] rounded-[30px] bg-[#1c1c1e]/85 backdrop-blur-[24px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.05),0_24px_48px_rgba(0,0,0,0.5)] relative border border-white/10 text-white text-left transform-gpu"
+              className="w-full max-w-[380px] rounded-[30px] bg-[#e5e5ea]/70 backdrop-blur-[20px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[20px] font-bold text-white tracking-tight leading-snug flex items-center gap-2">
-                  <Tv className="w-5.5 h-5.5 text-[#34c759]" /> Truyền hình VTV5
+                <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug flex items-center gap-2">
+                  <Tv className="w-5.5 h-5.5 text-blue-600" /> Truyền hình VTV5
                 </h3>
                 <button
                   onClick={() => setShowVtv5Popup(false)}
-                  className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center text-white/70 hover:text-white transition-colors bouncy-btn border border-white/5"
+                  className="w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-black/60 hover:text-black transition-colors bouncy-btn border border-black/5"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-[13px] text-white/55 mb-5 leading-relaxed px-0.5">
+              <p className="text-[12px] text-black/60 mb-5 leading-relaxed px-1 mt-1">
                 VTV5 phát sóng các chương trình phục vụ đồng bào các dân tộc thiểu số với 3 phiên bản vùng miền khác nhau. Vui lòng chọn phiên bản bạn muốn xem:
               </p>
 
@@ -1934,14 +1939,14 @@ export default function App() {
                         setActiveTab("live");
                         setShowVtv5Popup(false);
                       }}
-                      className={`w-full flex items-center gap-4 p-3.5 rounded-2xl text-left border cursor-pointer transition-all duration-300 bouncy-btn relative group overflow-hidden ${
+                      className={`w-full flex items-center gap-4 p-3 rounded-2xl text-left border cursor-pointer transition-all duration-300 bouncy-btn relative group overflow-hidden ${
                         isCurrentPlaying
-                          ? "bg-white/15 border-white shadow-[0_0_15px_rgba(255,255,255,0.1)] shadow-emerald-500/10"
-                          : "bg-white/5 hover:bg-white/10 border-white/10 hover:border-white/20"
+                          ? "bg-white border-blue-500/30 text-black shadow-sm"
+                          : "bg-white/45 hover:bg-white/75 border-black/5 hover:border-black/10"
                       }`}
                     >
                       {/* Left Logo Badges with shiny background */}
-                      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
+                      <div className="w-12 h-12 rounded-xl bg-white/95 border border-black/5 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
                         {opt.logoImg ? (
                           <img
                             src={opt.logoImg}
@@ -1950,21 +1955,21 @@ export default function App() {
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <span className="text-xs font-bold text-emerald-400">{opt.logoText}</span>
+                          <span className="text-xs font-bold text-emerald-600">{opt.logoText}</span>
                         )}
                       </div>
 
                       {/* Content Middle */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-semibold text-white text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors">
+                          <h4 className="font-semibold text-black text-[14px] tracking-tight group-hover:text-blue-600 transition-colors">
                             {opt.name}
                           </h4>
                           {isCurrentPlaying && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
                           )}
                         </div>
-                        <p className="text-[11.5px] text-white/45 truncate mt-0.5">
+                        <p className="text-[11px] text-black/55 truncate mt-0.5">
                           {opt.id === "vtv5" 
                             ? "Phiên bản phát sóng toàn quốc" 
                             : opt.id === "vtv5_tnb" 
@@ -1974,11 +1979,11 @@ export default function App() {
                       </div>
 
                       {/* Right Indicator */}
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 border border-white/5 transition-colors">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black/5 group-hover:bg-black/10 border border-black/5 transition-colors">
                         {isCurrentPlaying ? (
-                          <Check className="w-4 h-4 text-[#34c759]" />
+                          <Check className="w-4 h-4 text-blue-600" />
                         ) : (
-                          <Play className="w-3.5 h-3.5 fill-white text-white translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity animate-pulse" />
+                          <Play className="w-3.5 h-3.5 fill-black text-black translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity animate-pulse" />
                         )}
                       </div>
                     </button>
@@ -1990,7 +1995,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowVtv5Popup(false)}
-                  className="w-full py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 active:scale-97 transition-all text-white font-medium text-[14px] text-center cursor-default bouncy-btn border border-white/5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.2)]"
+                  className="w-full py-3 px-4 rounded-full bg-black/10 hover:bg-black/15 active:scale-95 transition-all text-[#ff3b30] font-semibold text-[15px] text-center cursor-default"
                 >
                   Đóng
                 </button>
