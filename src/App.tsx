@@ -1290,7 +1290,7 @@ export default function App() {
                 >
                   <button
                     onClick={() => setActiveSettingSection(null)}
-                    className="mb-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/95 hover:text-white transition-all border border-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.25)] cursor-default"
+                    className="mb-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/95 hover:text-white border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default bouncy-btn"
                     title="Quay lại"
                   >
                     <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
@@ -1443,113 +1443,124 @@ export default function App() {
         <div className="progressive-blur-dock" />
       </div>
 
-      {/* FLOAT GLASSBOTTOM NAVIGATION NAVIGATION TAB DOCK */}
       <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[340px] z-50 h-16 transform-gpu">
-        {activeTab === "search" ? (
-          <div
-            className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
-          >
-            <img 
-              src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-              className="w-4 h-4 brightness-0 invert opacity-80 drop-shadow-[0_0_0.5px_rgba(255,255,255,0.85)] z-20 pointer-events-none object-contain ml-1" 
-              referrerPolicy="no-referrer"
-              alt="Search"
-            />
-            <input
-              type="text"
-              placeholder="Tìm kiếm kênh..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
-              autoFocus
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="p-1 text-white/40 hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setActiveTab(prevTab);
-              }}
-              className="px-4 py-1.5 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 transition-all text-white text-xs font-normal cursor-default"
-            >
-              Hủy
-            </button>
-          </div>
-        ) : (
-          <div
-            className="flex items-center gap-2.5 w-full h-16 transform-gpu"
-          >
-            {/* Main Tab Dock (Pill) */}
-            <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1 relative transform-gpu">
-              {showCopiedNotify ? (
-                <div
-                  className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
-                >
-                  <Check className="w-5 h-5 text-emerald-400" />
-                  <span>Copied to clipboard</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-around w-full h-full">
-                  {[
-                    { id: "home", icon: Home, label: "Home" },
-                    { id: "live", icon: Compass, label: "Trực tiếp" },
-                    { id: "settings", icon: Settings, label: "Cài đặt" },
-                  ].map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    const Icon = tab.icon;
-                    
-                    return (
-                      <button 
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id as any);
-                        }}
-                        className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-2 transition-all transform-gpu ${
-                          isActive 
-                            ? "text-indigo-950 font-normal" 
-                            : "text-white/65 hover:text-white"
-                        }`}
-                        title={tab.label}
-                      >
-                        {isActive && (
-                          <motion.div
-                            layoutId="activeTabPill"
-                            transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                            className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
-                          />
-                        )}
-                        <Icon className={`w-7 h-7 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Separate Search Button */}
-            <button
-              onClick={() => {
-                setPrevTab(activeTab as any);
-                setActiveTab("search");
-              }}
-              className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
-              title="Tìm kiếm"
+        <AnimatePresence mode="wait">
+          {activeTab === "search" ? (
+            <motion.div
+              key="search-bar-dock"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
             >
               <img 
                 src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                className="w-6.5 h-6.5 brightness-0 invert opacity-100 filter drop-shadow-[0_0_1.2px_rgba(255,255,255,1)] drop-shadow-[0_0_0.6px_rgba(255,255,255,1)] transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
+                className="w-5.5 h-5.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
                 referrerPolicy="no-referrer"
                 alt="Search"
               />
-            </button>
-          </div>
-        )}
+              <input
+                type="text"
+                placeholder="Search channels"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
+                autoFocus
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="p-1 text-white/40 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveTab(prevTab);
+                }}
+                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] flex items-center justify-center text-white cursor-default shrink-0 bouncy-btn"
+                title="Hủy"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="main-bar-dock"
+              initial={{ y: 0, opacity: 1 }}
+              exit={{ y: 25, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-2.5 w-full h-16 transform-gpu"
+            >
+              {/* Main Tab Dock (Pill) */}
+              <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1 relative transform-gpu">
+                {showCopiedNotify ? (
+                  <div
+                    className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
+                  >
+                    <Check className="w-5 h-5 text-emerald-400" />
+                    <span>Copied to clipboard</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-around w-full h-full">
+                    {[
+                      { id: "home", icon: Home, label: "Home" },
+                      { id: "live", icon: Compass, label: "Trực tiếp" },
+                      { id: "settings", icon: Settings, label: "Cài đặt" },
+                    ].map((tab) => {
+                      const isActive = activeTab === tab.id;
+                      const Icon = tab.icon;
+                      
+                      return (
+                        <button 
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id as any);
+                          }}
+                          className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-2 transition-all transform-gpu ${
+                            isActive 
+                              ? "text-indigo-950 font-normal" 
+                              : "text-white/65 hover:text-white"
+                          }`}
+                          title={tab.label}
+                        >
+                          {isActive && (
+                            <motion.div
+                              layoutId="activeTabPill"
+                              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                              className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                            />
+                          )}
+                          <Icon className={`w-7 h-7 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Separate Search Button */}
+              <button
+                onClick={() => {
+                  setPrevTab(activeTab as any);
+                  setActiveTab("search");
+                }}
+                className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
+                title="Tìm kiếm"
+              >
+                <img 
+                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                  className="w-6.5 h-6.5 brightness-0 invert opacity-95 transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
+                  referrerPolicy="no-referrer"
+                  alt="Search"
+                />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Playback Error Toast Alert */}
         <AnimatePresence>
