@@ -56,7 +56,8 @@ const homeSlides = [
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
     description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới",
-    showCountdown: false
+    showCountdown: false,
+    logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702"
   },
   {
     id: 1,
@@ -72,7 +73,8 @@ const homeSlides = [
     ratingText: "Trực tiếp Thể thao | Bản quyền",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
-    vignetteTop: "from-black/45 via-transparent to-transparent"
+    vignetteTop: "from-black/45 via-transparent to-transparent",
+    logo: "https://static.wikia.nocookie.net/ftv/images/c/c1/V6.png/revision/latest/scale-to-width-down/1000?cb=20260601093700&path-prefix=vi"
   },
   {
     id: 2,
@@ -88,7 +90,8 @@ const homeSlides = [
     ratingText: "Độ trễ bằng 0 | Hỗ trợ m3u8 ngoại luồng",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
-    vignetteTop: "from-black/45 via-transparent to-transparent"
+    vignetteTop: "from-black/45 via-transparent to-transparent",
+    logo: "https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
   }
 ];
 
@@ -736,60 +739,73 @@ export default function App() {
 
               {/* Foreground content details on left - nested in desktop alignment grid */}
               <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 flex flex-col items-start gap-1 justify-end h-full">
-                {/* Calligraphy logo and title text stylistics with Google Sans font */}
-                <div className="flex flex-col select-none mb-3 font-google gap-0.5">
-                  <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
-                    {homeSlides[currentSlide].titleTop}
-                  </div>
-                  <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-1 xs:ml-2 sm:ml-3 -mt-0.5 uppercase font-google">
-                    {homeSlides[currentSlide].titleMain}
-                  </div>
-                  {homeSlides[currentSlide].titleSub && (
-                    <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-white drop-shadow ml-1 xs:ml-2 sm:ml-3 tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
-                      {homeSlides[currentSlide].titleSub}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentSlide}
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -50, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="flex flex-col items-start gap-1 w-full"
+                  >
+                    {/* Calligraphy logo and title text stylistics with Google Sans font */}
+                    <div className="flex flex-col select-none mb-3 font-google gap-0.5">
+                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
+                        {homeSlides[currentSlide].titleTop}
+                      </div>
+                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-1 xs:ml-2 sm:ml-3 -mt-0.5 uppercase font-google">
+                        {homeSlides[currentSlide].titleMain}
+                      </div>
+                      {homeSlides[currentSlide].titleSub && (
+                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-white drop-shadow ml-1 xs:ml-2 sm:ml-3 tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
+                          {homeSlides[currentSlide].titleSub}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Special Channel Logo instead of slogans */}
-                <div className="mt-1 mb-2 select-none pointer-events-none">
-                  <img 
-                    src="https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702" 
-                    alt="VTV Đặc biệt" 
-                    referrerPolicy="no-referrer"
-                    className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
-                  />
-                </div>
+                    {/* Special Channel Logo instead of slogans */}
+                    {homeSlides[currentSlide].logo && (
+                      <div className="mt-1 mb-2 select-none pointer-events-none">
+                        <img 
+                          src={homeSlides[currentSlide].logo} 
+                          alt="Channel Logo" 
+                          referrerPolicy="no-referrer"
+                          className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
+                        />
+                      </div>
+                    )}
 
-                {homeSlides[currentSlide].description && (
-                  <p className="text-white/80 text-xs sm:text-sm max-w-2xl mt-4 leading-relaxed drop-shadow select-none">
-                    {homeSlides[currentSlide].description}
-                  </p>
-                )}
+                    {homeSlides[currentSlide].description && (
+                      <p className="text-white/80 text-xs sm:text-sm max-w-2xl mt-4 leading-relaxed drop-shadow select-none">
+                        {homeSlides[currentSlide].description}
+                      </p>
+                    )}
 
-                {homeSlides[currentSlide].showCountdown && (
-                  <div className="flex flex-col gap-1.5 mt-4 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl select-none max-w-xs shadow-lg">
-                    <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider">Thời gian còn lại của sự kiện</span>
-                    <div className="flex items-center gap-1.5 font-mono text-base sm:text-lg font-extrabold text-teal-400">
-                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.days}d</span>
-                      <span className="text-white/40">:</span>
-                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.hours}h</span>
-                      <span className="text-white/40">:</span>
-                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.minutes}m</span>
-                      <span className="text-white/40">:</span>
-                      <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.seconds}s</span>
+                    {homeSlides[currentSlide].showCountdown && (
+                      <div className="flex flex-col gap-1.5 mt-4 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-3 rounded-2xl select-none max-w-xs shadow-lg">
+                        <span className="text-[10px] text-white/50 uppercase font-bold tracking-wider">Thời gian còn lại của sự kiện</span>
+                        <div className="flex items-center gap-1.5 font-mono text-base sm:text-lg font-extrabold text-teal-400">
+                          <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.days}d</span>
+                          <span className="text-white/40">:</span>
+                          <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.hours}h</span>
+                          <span className="text-white/40">:</span>
+                          <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.minutes}m</span>
+                          <span className="text-white/40">:</span>
+                          <span className="bg-white/5 border border-white/10 px-2 py-1 rounded-lg shadow-inner">{countdown.seconds}s</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Film attributes tags metadata */}
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 mt-3 text-[10px] xs:text-xs sm:text-sm font-semibold text-white/90 select-none drop-shadow">
+                      <span className="px-1.5 py-0.5 rounded bg-red-600 text-white font-black text-[9px] uppercase tracking-wider shadow shadow-red-500/25">
+                        {homeSlides[currentSlide].ageRating}
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                      <span>{homeSlides[currentSlide].ratingText}</span>
                     </div>
-                  </div>
-                )}
-
-                {/* Film attributes tags metadata */}
-                <div className="flex items-center gap-1.5 sm:gap-2.5 mt-3 text-[10px] xs:text-xs sm:text-sm font-semibold text-white/90 select-none drop-shadow">
-                  <span className="px-1.5 py-0.5 rounded bg-red-600 text-white font-black text-[9px] uppercase tracking-wider shadow shadow-red-500/25">
-                    {homeSlides[currentSlide].ageRating}
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                  <span>{homeSlides[currentSlide].ratingText}</span>
-                </div>
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* Elegant big glass play buttons */}
                 <div className="flex items-center gap-3 mt-6 sm:mt-8">
