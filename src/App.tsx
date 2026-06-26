@@ -62,8 +62,8 @@ const homeSlides = [
   {
     id: 1,
     titleTop: "VTV6",
-    titleMain: "Vì một Việt Nam",
-    titleSub: "khỏe mạnh!",
+    titleMain: "Vì một Việt Nam khỏe mạnh!",
+    titleSub: "",
     genreText: "THỂ THAO & SỨC KHỎE QUỐC GIA",
     subSlogan: "ĐỒNG HÀNH KHÁT VỌNG, LAN TỎA SỨC TRẺ VIỆT NAM",
     thumbnail: "https://i.ytimg.com/vi/cXv_D6qIy0s/maxresdefault.jpg",
@@ -74,13 +74,13 @@ const homeSlides = [
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    logo: "https://static.wikia.nocookie.net/ftv/images/c/c1/V6.png/revision/latest/scale-to-width-down/1000?cb=20260601093700&path-prefix=vi"
+    logo: "https://static.wikia.nocookie.net/logos/images/5/56/VTV6_logo_07.06.2026.png/revision/latest?cb=20260608073805&path-prefix=uk"
   },
   {
     id: 2,
     titleTop: "Trải nghiệm",
     titleMain: "Truyền hình đỉnh cao",
-    titleSub: "cùng Vplay",
+    titleSub: "",
     genreText: "KÍNH MỜ ULTRA HD",
     subSlogan: "CÔNG NGHỆ CHUYỂN KÊNH TIÊN PHONG, KHÔNG ĐỘ TRỄ",
     thumbnail: "https://www.shutterstock.com/shutterstock/videos/3766224185/thumb/1.jpg?ip=x480",
@@ -695,7 +695,7 @@ export default function App() {
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                    ch.id === "vietnam-wild-live" ? "w-[68%] h-[68%] p-1" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -720,21 +720,32 @@ export default function App() {
           <div className="w-full animate-fade-in space-y-0 bg-[#07050f]/60 min-h-screen relative pt-0">
             
             {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
-            <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[460px] sm:min-h-[580px] md:min-h-[660px] lg:min-h-[720px] flex items-end pb-12 sm:pb-16 md:pb-20 lg:pb-24 group/hero">
+            <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[460px] sm:min-h-[580px] md:min-h-[660px] lg:min-h-[720px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
               
               {/* Background cover image representing selected slide */}
-              <div className="absolute inset-0 z-0">
-                <img 
-                  src={homeSlides[currentSlide].thumbnail} 
-                  alt={homeSlides[currentSlide].titleMain} 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center md:object-right transition-all duration-700 ease-out scale-102 group-hover/hero:scale-105"
-                />
-                
-                {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10 transition-all duration-700`} />
-                <div className={`absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t ${homeSlides[currentSlide].vignetteBottom} z-10 transition-all duration-700`} />
-                <div className={`absolute inset-x-0 top-0 h-36 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10 transition-all duration-700`} />
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <AnimatePresence mode="popLayout">
+                  <motion.div
+                    key={currentSlide}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="absolute inset-0"
+                  >
+                    <img 
+                      src={homeSlides[currentSlide].thumbnail} 
+                      alt={homeSlides[currentSlide].titleMain} 
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover object-center md:object-right scale-102"
+                    />
+                    
+                    {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
+                    <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10`} />
+                    <div className={`absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t ${homeSlides[currentSlide].vignetteBottom} z-10`} />
+                    <div className={`absolute inset-x-0 top-0 h-36 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10`} />
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               {/* Foreground content details on left - nested in desktop alignment grid */}
@@ -742,22 +753,22 @@ export default function App() {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentSlide}
-                    initial={{ x: 50, opacity: 0 }}
+                    initial={{ x: 120, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: -50, opacity: 0 }}
-                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    exit={{ x: -120, opacity: 0 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     className="flex flex-col items-start gap-1 w-full"
                   >
                     {/* Calligraphy logo and title text stylistics with Google Sans font */}
                     <div className="flex flex-col select-none mb-3 font-google gap-0.5">
-                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-none text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-white to-pink-200 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
+                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-zinc-300 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
                         {homeSlides[currentSlide].titleTop}
                       </div>
-                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-widest leading-none text-red-500 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] ml-1 xs:ml-2 sm:ml-3 -mt-0.5 uppercase font-google">
+                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-wide leading-none text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-400 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] -mt-1 font-google">
                         {homeSlides[currentSlide].titleMain}
                       </div>
                       {homeSlides[currentSlide].titleSub && (
-                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-white drop-shadow ml-1 xs:ml-2 sm:ml-3 tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 uppercase font-google">
+                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-semibold text-white drop-shadow tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 font-google">
                           {homeSlides[currentSlide].titleSub}
                         </div>
                       )}
@@ -1532,7 +1543,7 @@ export default function App() {
             >
               <img 
                 src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                className="w-6.5 h-6.5 brightness-0 invert opacity-95 group-hover:opacity-100 drop-shadow-[0_0_0.75px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
+                className="w-6.5 h-6.5 brightness-0 invert opacity-100 filter drop-shadow-[0_0_1.2px_rgba(255,255,255,1)] drop-shadow-[0_0_0.6px_rgba(255,255,255,1)] transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
                 referrerPolicy="no-referrer"
                 alt="Search"
               />
