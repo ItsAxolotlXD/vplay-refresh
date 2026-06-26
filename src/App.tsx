@@ -231,6 +231,23 @@ export default function App() {
     return defaultChannel;
   });
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const isFirstMount = useRef(true);
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    if (selectedChannel && selectedChannel.name) {
+      setToastMessage(selectedChannel.name);
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedChannel.id]);
+
   // Favorite Channels State
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem("glass_tv_favorites");
@@ -598,65 +615,68 @@ export default function App() {
         {/* VIEW: LIVE TV BROADCASTING (PRIMARY GRAPHICS) */}
         {(activeTab === "live" || activeTab === "search") && (
           <>
-            {/* Integrated Main Channel Video Player */}
-            <ChannelPlayer
-              channel={selectedChannel}
-              volume={volume}
-              onVolumeChange={setVolume}
-              muted={muted}
-              onMutedChange={setMuted}
-              onNextChannel={handleNextChannel}
-              onPrevChannel={handlePrevChannel}
-              isFavorite={favorites.includes(selectedChannel.id)}
-              onToggleFavorite={() => toggleFavorite(selectedChannel.id)}
-              onPlaybackError={(err, isTimeout) => {
-                setPlaybackError(err);
-                if (err) {
-                  setPlaybackErrorType(isTimeout ? "timeout" : "standard");
-                } else {
-                  setPlaybackErrorType(null);
-                }
-              }}
-            />
+            {/* Sticky Hard-locked Channel Player & Action Controls container (sticky ONLY on mobile/tablet, normal flow on desktop) */}
+            <div className="sticky lg:relative top-24 lg:top-auto z-30 lg:z-10 bg-[#07050f]/85 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none pt-2 pb-5 lg:pb-2 -mx-4 lg:mx-0 px-4 sm:-mx-8 sm:px-8 md:-mx-12 md:px-12 lg:px-0 border-b lg:border-none border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] lg:shadow-none">
+              {/* Integrated Main Channel Video Player */}
+              <ChannelPlayer
+                channel={selectedChannel}
+                volume={volume}
+                onVolumeChange={setVolume}
+                muted={muted}
+                onMutedChange={setMuted}
+                onNextChannel={handleNextChannel}
+                onPrevChannel={handlePrevChannel}
+                isFavorite={favorites.includes(selectedChannel.id)}
+                onToggleFavorite={() => toggleFavorite(selectedChannel.id)}
+                onPlaybackError={(err, isTimeout) => {
+                  setPlaybackError(err);
+                  if (err) {
+                    setPlaybackErrorType(isTimeout ? "timeout" : "standard");
+                  } else {
+                    setPlaybackErrorType(null);
+                  }
+                }}
+              />
 
-            {/* Live tab Actions Button Bar - Placed perfectly under the channel player exactly as requested */}
-            <div className="w-full max-w-5xl mx-auto mt-6 mb-6 flex items-center justify-center gap-3 z-10 relative px-2">
-              {/* Share button */}
-              <button
-                onClick={handleShareChannel}
-                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-xs font-normal"
-                title="Chia sẻ kênh này"
-              >
-                <img 
-                  src="https://static.wikia.nocookie.net/ep-deo/images/1/10/Share.png/revision/latest?cb=20260625011333" 
-                  className="w-3.5 h-3.5 brightness-0 invert opacity-90 object-contain" 
-                  referrerPolicy="no-referrer"
-                  alt="Share"
-                />
-                <span>Chia sẻ</span>
-              </button>
+              {/* Live tab Actions Button Bar - Placed perfectly under the channel player exactly as requested */}
+              <div className="w-full max-w-5xl mx-auto mt-5 flex items-center justify-center gap-3 z-10 relative px-2">
+                {/* Share button */}
+                <button
+                  onClick={handleShareChannel}
+                  className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-xs font-normal"
+                  title="Chia sẻ kênh này"
+                >
+                  <img 
+                    src="https://static.wikia.nocookie.net/ep-deo/images/1/10/Share.png/revision/latest?cb=20260625011333" 
+                    className="w-3.5 h-3.5 brightness-0 invert opacity-90 object-contain" 
+                    referrerPolicy="no-referrer"
+                    alt="Share"
+                  />
+                  <span>Chia sẻ</span>
+                </button>
 
-              {/* TV button */}
-              <a
-                href={selectedChannel?.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn animate-fade-in text-xs font-normal"
-                title="Mở luồng phát gốc"
-              >
-                <Tv className="w-3.5 h-3.5 text-white opacity-90" />
-                <span>Mở luồng gốc</span>
-              </a>
+                {/* TV button */}
+                <a
+                  href={selectedChannel?.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn animate-fade-in text-xs font-normal"
+                  title="Mở luồng phát gốc"
+                >
+                  <Tv className="w-3.5 h-3.5 text-white opacity-90" />
+                  <span>Mở luồng gốc</span>
+                </a>
 
-              {/* Add custom channel button */}
-              <button
-                onClick={() => setShowCustomModal(true)}
-                className="px-4 py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-xs font-normal flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
-                title="Thêm link m3u8 của riêng bạn"
-              >
-                <Plus className="w-3.5 h-3.5 transition-transform duration-300 hover:rotate-90" />
-                <span>Thêm kênh</span>
-              </button>
+                {/* Add custom channel button */}
+                <button
+                  onClick={() => setShowCustomModal(true)}
+                  className="px-4 py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-xs font-normal flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
+                  title="Thêm link m3u8 của riêng bạn"
+                >
+                  <Plus className="w-3.5 h-3.5 transition-transform duration-300 hover:rotate-90" />
+                  <span>Thêm kênh</span>
+                </button>
+              </div>
             </div>
 
             {/* Glass Category Filter row */}
@@ -729,14 +749,14 @@ export default function App() {
                             key={ch.id}
                             id={`card-${ch.id}`}
                             onClick={() => handleSelectChannel(ch)}
-                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-2 select-none transition-[transform,background-color,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                            className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border select-none ${
                               isPlaying 
                                 ? isDacBiet
                                   ? "bg-amber-400/10 backdrop-blur-lg border-amber-400"
-                                  : "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
+                                  : "bg-white/20 backdrop-blur-lg border-white shadow-md shadow-pink-500/10" 
                                 : isDacBiet
-                                  ? "bg-amber-500/5 backdrop-blur-md border-white/10 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20"
-                                  : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
+                                  ? "bg-amber-500/5 backdrop-blur-md border-white/10 hover:border-amber-400"
+                                  : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white"
                             }`}
                             title={ch.name}
                           >
@@ -747,7 +767,7 @@ export default function App() {
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
-                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
                                     ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
@@ -899,13 +919,13 @@ export default function App() {
                   <div className="flex items-center gap-1.5 ml-2">
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev - 1 + homeSlides.length) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/5 shadow-lg bouncy-btn"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev + 1) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/5 shadow-lg bouncy-btn"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -945,21 +965,21 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => setRecoRefreshTrigger(prev => prev + 1)}
-                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow mr-1 group/refresh-btn"
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] mr-1 group/refresh-btn bouncy-btn"
                       title="Làm mới gợi ý"
                     >
                       <RefreshCw className="w-3.5 h-3.5 group-hover/refresh-btn:rotate-180 transition-transform duration-500" />
                     </button>
                     <button 
                       onClick={() => scrollRecommendations("left")}
-                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
                       title="Quay lại"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => scrollRecommendations("right")}
-                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-120 shadow"
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
                       title="Xem tiếp theo"
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -986,10 +1006,10 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border select-none ${
                             isPlaying 
-                              ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
+                              ? "bg-white/20 backdrop-blur-lg border-white shadow-md shadow-pink-500/10" 
+                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white"
                           }`}
                           title={ch.name}
                         >
@@ -1000,7 +1020,7 @@ export default function App() {
                                 src={ch.logoImg}
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
-                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
                                   ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                 }`}
                               />
@@ -1077,10 +1097,10 @@ export default function App() {
                             handleSelectChannel(ch);
                             setActiveTab("live");
                           }}
-                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border-[5px] select-none transition-[transform,background-color,box-shadow] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
+                          className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center w-28 xs:w-34 sm:w-42 md:w-48 h-[56px] xs:h-[68px] sm:h-[84px] md:h-[96px] border select-none ${
                             isPlaying 
-                              ? "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
-                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white hover:ring-2 hover:ring-white/20"
+                              ? "bg-white/20 backdrop-blur-lg border-white shadow-md shadow-pink-500/10" 
+                              : "bg-white/5 backdrop-blur-md border-white/10 hover:border-white"
                           }`}
                           title={ch.name}
                         >
@@ -1091,7 +1111,7 @@ export default function App() {
                                 src={ch.logoImg}
                                 alt={ch.name}
                                 referrerPolicy="no-referrer"
-                                className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
+                                className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
                                   ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                 }`}
                               />
@@ -1445,13 +1465,15 @@ export default function App() {
                   exit={{ opacity: 0, x: -20 }}
                   className="bg-white/10 backdrop-blur-[10px] rounded-[15px] p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
                 >
-                  <button
-                    onClick={() => setActiveSettingSection(null)}
-                    className="mb-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/95 hover:text-white border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default bouncy-btn"
-                    title="Quay lại"
-                  >
-                    <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-                  </button>
+                  <div className="sticky top-[104px] z-30 mb-6 flex items-center bg-black/40 backdrop-blur-md py-2 -mx-2 px-2 rounded-xl border-b border-white/5">
+                    <button
+                      onClick={() => setActiveSettingSection(null)}
+                      className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white/95 hover:text-white border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default bouncy-btn"
+                      title="Quay lại"
+                    >
+                      <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                  </div>
 
                   {activeSettingSection === "appearance" && (
                     <div className="space-y-6">
@@ -1500,15 +1522,18 @@ export default function App() {
                         </div>
                         <button
                           onClick={() => setAmoledDark(!amoledDark)}
-                          className={`w-12 h-7 rounded-full p-1 transition-colors duration-300 focus:outline-none relative ${
+                          className={`w-14 h-7 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
                             amoledDark ? "bg-[#34c759]" : "bg-white/20"
                           }`}
                         >
                           <motion.div
-                            animate={{ x: amoledDark ? 20 : 0 }}
+                            animate={{ x: amoledDark ? 26 : 0 }}
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            className="w-5 h-5 rounded-full bg-white shadow-md"
-                          />
+                            className="relative w-6 h-6 flex items-center justify-center group"
+                          >
+                            <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                            <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-135 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                          </motion.div>
                         </button>
                       </div>
 
@@ -1599,20 +1624,20 @@ export default function App() {
                           <div className="flex items-center">
                             <button
                               onClick={() => setAutoSlide(!autoSlide)}
-                              className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                              className={`w-14 h-7 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
                                 autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
                               }`}
                             >
                               <motion.div
-                                animate={{ x: autoSlide ? 24 : 0 }}
+                                animate={{ x: autoSlide ? 26 : 0 }}
                                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                 className="relative w-6 h-6 flex items-center justify-center group"
                               >
-                                {/* Outer hover halo/bubble */}
-                                <div className="absolute w-10 h-10 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                {/* Outer hover halo/bubble (capsule-shaped matching the pill, expanding on hover) */}
+                                <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
                                 
-                                {/* Knob */}
-                                <div className="w-6 h-6 rounded-full bg-white shadow-md z-10" />
+                                {/* Knob - horizontal pill shape */}
+                                <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-135 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
                               </motion.div>
                             </button>
                           </div>
@@ -1783,6 +1808,21 @@ export default function App() {
         </AnimatePresence>
       </nav>
 
+      {/* Channel Change Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-2 left-1/2 -translate-x-1/2 z-50 px-4 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/10 text-white text-[11px] font-medium tracking-wide shadow-lg select-none pointer-events-none font-sans text-center whitespace-nowrap"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* CUSTOM CHANNEL LINK ADDER MODAL */}
       <AnimatePresence>
         {showCustomModal && (
@@ -1791,14 +1831,14 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/10 z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/70 backdrop-blur-[20px] p-5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
               <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
                 Tạo kênh
@@ -1904,18 +1944,18 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/10 z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[380px] rounded-[30px] bg-[#e5e5ea]/70 backdrop-blur-[20px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[380px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug flex items-center gap-2">
-                  <Tv className="w-5.5 h-5.5 text-blue-600" /> Truyền hình VTV5
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
+                  Chọn kênh
                 </h3>
                 <button
                   onClick={() => setShowVtv5Popup(false)}
@@ -1924,11 +1964,8 @@ export default function App() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-[12px] text-black/60 mb-5 leading-relaxed px-1 mt-1">
-                VTV5 phát sóng các chương trình phục vụ đồng bào các dân tộc thiểu số với 3 phiên bản vùng miền khác nhau. Vui lòng chọn phiên bản bạn muốn xem:
-              </p>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {vtv5Options.map((opt) => {
                   const isCurrentPlaying = selectedChannel.id === opt.id;
                   return (
@@ -1939,51 +1976,28 @@ export default function App() {
                         setActiveTab("live");
                         setShowVtv5Popup(false);
                       }}
-                      className={`w-full flex items-center gap-4 p-3 rounded-2xl text-left border cursor-pointer transition-all duration-300 bouncy-btn relative group overflow-hidden ${
+                      className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-left border cursor-pointer transition-colors duration-200 bouncy-btn relative group overflow-hidden ${
                         isCurrentPlaying
                           ? "bg-white border-blue-500/30 text-black shadow-sm"
                           : "bg-white/45 hover:bg-white/75 border-black/5 hover:border-black/10"
                       }`}
                     >
-                      {/* Left Logo Badges with shiny background */}
-                      <div className="w-12 h-12 rounded-xl bg-white/95 border border-black/5 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
-                        {opt.logoImg ? (
-                          <img
-                            src={opt.logoImg}
-                            alt={opt.name}
-                            className="w-10 h-10 object-contain filter brightness-100"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <span className="text-xs font-bold text-emerald-600">{opt.logoText}</span>
+                      {/* Content Middle */}
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <h4 className="font-semibold text-black text-[14px] tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                          {opt.name}
+                        </h4>
+                        {isCurrentPlaying && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
                         )}
                       </div>
 
-                      {/* Content Middle */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-semibold text-black text-[14px] tracking-tight group-hover:text-blue-600 transition-colors">
-                            {opt.name}
-                          </h4>
-                          {isCurrentPlaying && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-black/55 truncate mt-0.5">
-                          {opt.id === "vtv5" 
-                            ? "Phiên bản phát sóng toàn quốc" 
-                            : opt.id === "vtv5_tnb" 
-                            ? "Phiên bản dành cho khu vực Tây Nam Bộ" 
-                            : "Phiên bản dành cho khu vực Tây Nguyên"}
-                        </p>
-                      </div>
-
                       {/* Right Indicator */}
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-black/5 group-hover:bg-black/10 border border-black/5 transition-colors">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-black/5 group-hover:bg-black/10 border border-black/5 transition-colors shrink-0">
                         {isCurrentPlaying ? (
-                          <Check className="w-4 h-4 text-blue-600" />
+                          <Check className="w-3.5 h-3.5 text-blue-600" />
                         ) : (
-                          <Play className="w-3.5 h-3.5 fill-black text-black translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity animate-pulse" />
+                          <Play className="w-3 h-3 fill-black text-black translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity" />
                         )}
                       </div>
                     </button>
