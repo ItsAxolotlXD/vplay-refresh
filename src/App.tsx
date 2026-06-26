@@ -676,7 +676,7 @@ export default function App() {
                             className={`group relative rounded-xl p-0.5 sm:p-1 cursor-pointer flex items-center justify-center h-[72px] xs:h-[88px] sm:h-[112px] md:h-[128px] border-2 select-none transition-[transform,background-color,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-100 active:scale-112 ${
                               isPlaying 
                                 ? isDacBiet
-                                  ? "bg-amber-400/10 backdrop-blur-lg border-amber-400 shadow-xl shadow-amber-500/25"
+                                  ? "bg-amber-400/10 backdrop-blur-lg border-amber-400"
                                   : "bg-white/20 backdrop-blur-lg border-white shadow-xl shadow-pink-500/10" 
                                 : isDacBiet
                                   ? "bg-amber-500/5 backdrop-blur-md border-amber-500/40 hover:border-amber-400 hover:ring-2 hover:ring-amber-400/20"
@@ -692,7 +692,7 @@ export default function App() {
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none transition-transform duration-300 group-hover:scale-100 active:scale-115 ${
-                                    ch.id === "vietnam-wild-live" ? "w-[45%] h-[45%] p-1" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    ch.id === "vietnam-wild-live" ? "w-[68%] h-[68%] p-1" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
                                   }`}
                                 />
                               ) : (
@@ -751,13 +751,15 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Slogans and distribution tags exactly matching mock layout */}
-                <p className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider text-pink-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] uppercase">
-                  {homeSlides[currentSlide].genreText}
-                </p>
-                <p className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-white/50 tracking-widest uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] -mt-0.5">
-                  {homeSlides[currentSlide].subSlogan}
-                </p>
+                {/* Special Channel Logo instead of slogans */}
+                <div className="mt-1 mb-2 select-none pointer-events-none">
+                  <img 
+                    src="https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702" 
+                    alt="VTV Đặc biệt" 
+                    referrerPolicy="no-referrer"
+                    className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
+                  />
+                </div>
 
                 {homeSlides[currentSlide].description && (
                   <p className="text-white/80 text-xs sm:text-sm max-w-2xl mt-4 leading-relaxed drop-shadow select-none">
@@ -1422,7 +1424,7 @@ export default function App() {
           >
             <img 
               src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-              className="w-4 h-4 brightness-0 invert opacity-50 z-20 pointer-events-none object-contain ml-1" 
+              className="w-4 h-4 brightness-0 invert opacity-80 drop-shadow-[0_0_0.5px_rgba(255,255,255,0.85)] z-20 pointer-events-none object-contain ml-1" 
               referrerPolicy="no-referrer"
               alt="Search"
             />
@@ -1512,7 +1514,12 @@ export default function App() {
               className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 hover:scale-[1.03] hover:border-white/40 active:scale-95 group shrink-0 transform-gpu"
               title="Tìm kiếm"
             >
-              <Search className="w-6 h-6 transition-transform duration-300 group-hover:scale-110" />
+              <img 
+                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                className="w-6.5 h-6.5 brightness-0 invert opacity-95 group-hover:opacity-100 drop-shadow-[0_0_0.75px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
+                referrerPolicy="no-referrer"
+                alt="Search"
+              />
             </button>
           </div>
         )}

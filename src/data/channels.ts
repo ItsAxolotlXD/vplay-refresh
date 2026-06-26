@@ -80,7 +80,7 @@ const vietnamWildLiveChannel: Channel = {
   logoText: "Wild LIVE",
   logoBg: "bg-gradient-to-br from-emerald-600 to-green-800",
   isRadio: false,
-  logoImg: "https://static.wikia.nocookie.net/logos/images/8/8c/VTVgo_logo.png/revision/latest?cb=20220627071056&path-prefix=vi"
+  logoImg: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702"
 };
 
 // Category template definitions
