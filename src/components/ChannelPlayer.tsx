@@ -310,7 +310,19 @@ export default function ChannelPlayer({
         {/* Loading Spinner */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-25 pointer-events-none">
-            <div className="w-14 h-14 border-4 border-white/10 border-t-purple-500 rounded-full animate-spin"></div>
+            <svg className="animate-spin h-14 w-14 text-white" viewBox="0 0 50 50">
+              <circle
+                className="opacity-100"
+                cx="25"
+                cy="25"
+                r="20"
+                stroke="currentColor"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeDasharray="40 150"
+                fill="none"
+              />
+            </svg>
           </div>
         )}
 
