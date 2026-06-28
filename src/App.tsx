@@ -491,12 +491,25 @@ export default function App() {
   const allAvailableCategoryList = useMemo(() => {
     if (customChannels.length === 0) return CATEGORIES;
     
+    // Find the max channel number among regular channels to continue the sequence
+    const regularChannels = CATEGORIES.flatMap(cat => cat.channels);
+    const wildLive = regularChannels.find(ch => ch.id === "vietnam-wild-live");
+    const lastNum = wildLive && wildLive.channelNumber ? parseInt(wildLive.channelNumber, 10) : regularChannels.length;
+
+    const formattedCustomChannels = customChannels.map((ch, idx) => {
+      const customNum = String(lastNum + 1 + idx).padStart(3, '0');
+      return {
+        ...ch,
+        channelNumber: customNum
+      };
+    });
+
     // Add custom category dynamically if there are custom channels
     const customCategory: Category = {
       id: "custom",
       name: "Kênh Tự Thêm (Cá Nhân)",
       description: "Danh sách luồng phát m3u8 tự liên kết",
-      channels: customChannels
+      channels: formattedCustomChannels
     };
     return [...CATEGORIES, customCategory];
   }, [customChannels]);
@@ -1203,22 +1216,31 @@ export default function App() {
                             }`}
                             title={ch.name}
                           >
-                            {/* Logo Graphic Container - fills the box completely */}
-                            <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
-                              {ch.logoImg ? (
-                                <img
-                                  src={ch.logoImg}
-                                  alt={ch.name}
-                                  referrerPolicy="no-referrer"
-                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                    ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
-                                  }`}
-                                />
-                              ) : (
-                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
-                                   {ch.logoText}
-                                </div>
-                              )}
+                            {/* Logo Graphic Container - with vertical split for channel position number */}
+                            <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
+                              {/* Left Part: Channel Number */}
+                              <div className="w-[28%] sm:w-[26%] h-full flex items-center justify-center text-white/80 text-[11px] xs:text-[13px] sm:text-base md:text-lg font-bold tracking-tight font-sans">
+                                {ch.channelNumber || "000"}
+                              </div>
+                              {/* Vertical Divider */}
+                              <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
+                              {/* Right Part: Logo Container */}
+                              <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                                {ch.logoImg ? (
+                                  <img
+                                    src={ch.logoImg}
+                                    alt={ch.name}
+                                    referrerPolicy="no-referrer"
+                                    className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
+                                      ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    }`}
+                                  />
+                                ) : (
+                                  <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
+                                     {ch.logoText}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -1456,22 +1478,31 @@ export default function App() {
                           }`}
                           title={ch.name}
                         >
-                          {/* Logo Graphic Container - fills the box completely */}
-                          <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
-                            {ch.logoImg ? (
-                              <img
-                                src={ch.logoImg}
-                                alt={ch.name}
-                                referrerPolicy="no-referrer"
-                                className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
-                                }`}
-                              />
-                            ) : (
-                              <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
-                                {ch.logoText}
-                              </div>
-                            )}
+                          {/* Logo Graphic Container - with vertical split for channel position number */}
+                          <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
+                            {/* Left Part: Channel Number */}
+                            <div className="w-[28%] sm:w-[26%] h-full flex items-center justify-center text-white/80 text-[11px] xs:text-[13px] sm:text-base md:text-lg font-bold tracking-tight font-sans">
+                              {ch.channelNumber || "000"}
+                            </div>
+                            {/* Vertical Divider */}
+                            <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
+                            {/* Right Part: Logo Container */}
+                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                              {ch.logoImg ? (
+                                <img
+                                  src={ch.logoImg}
+                                  alt={ch.name}
+                                  referrerPolicy="no-referrer"
+                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
+                                    ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                  }`}
+                                />
+                              ) : (
+                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
+                                  {ch.logoText}
+                                </div>
+                              )}
+                            </div>
                           </div>
                       
                           {/* Heart/Fav Button overlay (shown on top corner) */}
@@ -1547,22 +1578,31 @@ export default function App() {
                           }`}
                           title={ch.name}
                         >
-                          {/* Logo Graphic Container - fills the box completely */}
-                          <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
-                            {ch.logoImg ? (
-                              <img
-                                src={ch.logoImg}
-                                alt={ch.name}
-                                referrerPolicy="no-referrer"
-                                className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                  ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
-                                }`}
-                              />
-                            ) : (
-                              <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
-                                {ch.logoText}
-                              </div>
-                            )}
+                          {/* Logo Graphic Container - with vertical split for channel position number */}
+                          <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
+                            {/* Left Part: Channel Number */}
+                            <div className="w-[28%] sm:w-[26%] h-full flex items-center justify-center text-white/80 text-[11px] xs:text-[13px] sm:text-base md:text-lg font-bold tracking-tight font-sans">
+                              {ch.channelNumber || "000"}
+                            </div>
+                            {/* Vertical Divider */}
+                            <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
+                            {/* Right Part: Logo Container */}
+                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                              {ch.logoImg ? (
+                                <img
+                                  src={ch.logoImg}
+                                  alt={ch.name}
+                                  referrerPolicy="no-referrer"
+                                  className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
+                                    ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                  }`}
+                                />
+                              ) : (
+                                <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-emerald-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-xs tracking-wider text-center px-1`}>
+                                  {ch.logoText}
+                                </div>
+                              )}
+                            </div>
                           </div>
                       
                           {/* Heart/Unfav Button overlay (shown on top corner or toggleable) */}
@@ -3309,21 +3349,31 @@ export default function App() {
                               }`}
                               title={ch.name}
                             >
-                              <div className="w-full h-full flex justify-center items-center overflow-hidden rounded-lg">
-                                {ch.logoImg ? (
-                                  <img
-                                    src={ch.logoImg}
-                                    alt={ch.name}
-                                    referrerPolicy="no-referrer"
-                                    className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                      ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
-                                    }`}
-                                  />
-                                ) : (
-                                  <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-indigo-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-[10px] tracking-wider text-center px-1`}>
-                                     {ch.logoText}
-                                  </div>
-                                )}
+                              {/* Logo Graphic Container - with vertical split for channel position number */}
+                              <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
+                                {/* Left Part: Channel Number */}
+                                <div className="w-[28%] sm:w-[26%] h-full flex items-center justify-center text-white/80 text-[11px] xs:text-[13px] sm:text-base md:text-lg font-bold tracking-tight font-sans">
+                                  {ch.channelNumber || "000"}
+                                </div>
+                                {/* Vertical Divider */}
+                                <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
+                                {/* Right Part: Logo Container */}
+                                <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                                  {ch.logoImg ? (
+                                    <img
+                                      src={ch.logoImg}
+                                      alt={ch.name}
+                                      referrerPolicy="no-referrer"
+                                      className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
+                                        ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                      }`}
+                                    />
+                                  ) : (
+                                    <div className={`w-full h-full flex items-center justify-center rounded-lg ${ch.logoBg || "bg-indigo-600"} shadow-inner border border-white/10 font-bold text-white text-[9px] sm:text-[10px] tracking-wider text-center px-1`}>
+                                       {ch.logoText}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </button>
                           );

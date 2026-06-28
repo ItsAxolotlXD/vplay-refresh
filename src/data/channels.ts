@@ -10,6 +10,7 @@ export interface Channel {
   userAgent?: string;
   isRadio?: boolean;
   logoImg?: string;
+  channelNumber?: string;
 }
 
 export interface Category {
@@ -135,3 +136,66 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
     channels: formattedChannels
   };
 });
+
+// Assign channel position numbers in the format xxx
+const SPECIAL_VTV_NUMBERS: Record<string, string> = {
+  vtv1: "001",
+  vtv2: "002",
+  vtv3: "003",
+  vtv4: "004",
+  vtv5: "005",
+  vtv6: "006",
+  vtv7: "007",
+  vtv8: "008",
+  vtv9: "009",
+  vtv10: "010",
+  vtv5_tnb: "011",
+  vtv5_tn: "012",
+};
+
+let nextNum = 13;
+
+// First pass: assign numbers to all channels inside categories (except dac-biet)
+CATEGORIES.forEach(category => {
+  if (category.id === "dac-biet") return;
+  category.channels.forEach(ch => {
+    if (SPECIAL_VTV_NUMBERS[ch.id]) {
+      ch.channelNumber = SPECIAL_VTV_NUMBERS[ch.id];
+    } else {
+      ch.channelNumber = String(nextNum).padStart(3, '0');
+      nextNum++;
+    }
+  });
+});
+
+// Assign numbers to the raw processedChannels for consistency
+processedChannels.forEach(ch => {
+  if (SPECIAL_VTV_NUMBERS[ch.id]) {
+    ch.channelNumber = SPECIAL_VTV_NUMBERS[ch.id];
+  } else if (ch.id === "vietnam-wild-live") {
+    // Handled separately below
+  } else {
+    // Match the number already assigned in CATEGORIES
+    const matched = CATEGORIES.flatMap(cat => cat.channels).find(c => c.id === ch.id);
+    if (matched && matched.channelNumber) {
+      ch.channelNumber = matched.channelNumber;
+    } else {
+      ch.channelNumber = String(nextNum).padStart(3, '0');
+      nextNum++;
+    }
+  }
+});
+
+// Explicitly ensure the VTV5 subchannels are correctly numbered in processedChannels
+const tnbChan = processedChannels.find(c => c.id === "vtv5_tnb");
+if (tnbChan) tnbChan.channelNumber = "011";
+const tnChan = processedChannels.find(c => c.id === "vtv5_tn");
+if (tnChan) tnChan.channelNumber = "012";
+
+// Assign the last number to dac-biet channel
+const lastNumberStr = String(nextNum).padStart(3, '0');
+vietnamWildLiveChannel.channelNumber = lastNumberStr;
+const dacBietCategory = CATEGORIES.find(cat => cat.id === "dac-biet");
+if (dacBietCategory && dacBietCategory.channels[0]) {
+  dacBietCategory.channels[0].channelNumber = lastNumberStr;
+}
