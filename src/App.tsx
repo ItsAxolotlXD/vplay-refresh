@@ -24,6 +24,8 @@ import {
   Bookmark,
   ChevronRight,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   ExternalLink,
   MapPin,
   Globe,
@@ -39,7 +41,11 @@ import {
   Pizza,
   Cpu,
   Layers,
-  Download
+  Download,
+  ArrowLeft,
+  Puzzle,
+  ShoppingBag,
+  Pin
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -238,6 +244,38 @@ export default function App() {
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<any>(null);
+  const triggerToast = (message: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToastMessage(message);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(null);
+      toastTimeoutRef.current = null;
+    }, 2500);
+  };
+
+  const getPluginName = (id: string): string => {
+    const names: Record<string, string> = {
+      export_stream: "Xuất luồng",
+      multiview: "Multiview Grid",
+      pip: "Picture in Picture",
+      open_native: "Mở luồng gốc",
+      quick_switch: "Chuyển kênh nhanh",
+      add_custom: "Thêm kênh mới"
+    };
+    return names[id] || id;
+  };
+
+  const [mergeSearchToDock, setMergeSearchToDock] = useState<boolean>(() => {
+    return localStorage.getItem("vplay_merge_search_to_dock") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("vplay_merge_search_to_dock", String(mergeSearchToDock));
+  }, [mergeSearchToDock]);
+
   const isFirstMount = useRef(true);
 
   useEffect(() => {
@@ -342,7 +380,8 @@ export default function App() {
   
   // Custom M3U8 Url link adder
   const [showCustomModal, setShowCustomModal] = useState<boolean>(false);
-  const [showVtvGoLockedModal, setShowVtvGoLockedModal] = useState<boolean>(false);
+  const [showRemoteModal, setShowRemoteModal] = useState<boolean>(false);
+  const [remoteInputValue, setRemoteInputValue] = useState<string>("");
   const [showCopiedNotify, setShowCopiedNotify] = useState<boolean>(false);
   const [activeSettingSection, setActiveSettingSection] = useState<string | null>(null);
   const [playbackError, setPlaybackError] = useState<boolean>(false);
@@ -360,6 +399,301 @@ export default function App() {
 
   // Picture in Picture states
   const [isPiPActive, setIsPiPActive] = useState<boolean>(false);
+
+  // Vplay Plugin states
+  const [installedPlugins, setInstalledPlugins] = useState<{ [key: string]: "idle" | "installing" | "installed" | "uninstalling" }>(() => {
+    const defaultState: { [key: string]: "idle" | "installing" | "installed" | "uninstalling" } = {
+      export_stream: "idle",
+      multiview: "idle",
+      pip: "idle",
+      open_native: "idle",
+      quick_switch: "idle",
+      add_custom: "idle"
+    };
+    const saved = localStorage.getItem("vplay_installed_plugins");
+    if (saved) {
+      try {
+        return { ...defaultState, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultState;
+      }
+    }
+    return defaultState;
+  });
+  const [pluginProgress, setPluginProgress] = useState<{ [key: string]: number }>({});
+  const [showPluginRequiredModal, setShowPluginRequiredModal] = useState<boolean>(false);
+  const [requiredPluginFeatureName, setRequiredPluginFeatureName] = useState<string>("Xuất luồng");
+  const [pluginSearchQuery, setPluginSearchQuery] = useState<string>("");
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState<string>("");
+  const [settingDetailSearchQuery, setSettingDetailSearchQuery] = useState<string>("");
+  const [showPinChannelPopup, setShowPinChannelPopup] = useState<boolean>(false);
+  const [pinChannelSearchQuery, setPinChannelSearchQuery] = useState<string>("");
+  const [pinChannelSelectedCategory, setPinChannelSelectedCategory] = useState<string>("all");
+
+  const [dockItems, setDockItems] = useState<{ id: string; label: string; enabled: boolean }[]>(() => {
+    const DEFAULT_DOCK_ITEMS = [
+      { id: "home", label: "Trang chủ", enabled: true },
+      { id: "live", label: "Trực tiếp", enabled: true },
+      { id: "settings", label: "Cài đặt", enabled: true },
+      { id: "search", label: "Tìm kiếm", enabled: true },
+      { id: "remote", label: "Chuyển kênh", enabled: true },
+      { id: "profile", label: "Hồ sơ", enabled: false },
+      { id: "plugin_store", label: "Cửa hàng tiện ích", enabled: false },
+      { id: "about", label: "Về ứng dụng này", enabled: false },
+      { id: "reload", label: "Tải lại ứng dụng", enabled: false },
+      { id: "pin", label: "Ghim kênh bất kỳ", enabled: false },
+    ];
+    const saved = localStorage.getItem("vplay_dock_items");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const merged = [...parsed];
+        DEFAULT_DOCK_ITEMS.forEach(defItem => {
+          if (!merged.find(item => item.id === defItem.id)) {
+            merged.push(defItem);
+          }
+        });
+        return merged;
+      } catch (e) {
+        // fallback
+      }
+    }
+    return DEFAULT_DOCK_ITEMS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("vplay_dock_items", JSON.stringify(dockItems));
+  }, [dockItems]);
+
+  useEffect(() => {
+    setSettingDetailSearchQuery("");
+  }, [activeSettingSection]);
+
+  const moveDockItem = (index: number, direction: 'up' | 'down') => {
+    const newItems = [...dockItems];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    
+    // Swap
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+    setDockItems(newItems);
+  };
+
+  const toggleDockItem = (id: string) => {
+    const item = dockItems.find(it => it.id === id);
+    if (!item) return;
+
+    if (item.enabled) {
+      // Trying to disable an item.
+      const enabledCount = dockItems.filter(it => it.enabled).length;
+      if (enabledCount <= 1) {
+        alert("Bạn phải giữ lại ít nhất một mục hiển thị trên thanh Dock!");
+        return;
+      }
+      setDockItems(prev => prev.map(it => {
+        if (it.id === id) {
+          return { ...it, enabled: false };
+        }
+        return it;
+      }));
+    } else {
+      // Trying to enable an item.
+      const currentRenderedCount = dockItems.filter(it => it.enabled && (mergeSearchToDock || it.id !== "search")).length;
+      const willBeRendered = mergeSearchToDock || id !== "search";
+      
+      if (willBeRendered && currentRenderedCount >= 5) {
+        triggerToast("Thanh dock chỉ chứa được 5 mục");
+        return;
+      }
+
+      setDockItems(prev => prev.map(it => {
+        if (it.id === id) {
+          return { ...it, enabled: true };
+        }
+        return it;
+      }));
+    }
+  };
+
+  const getDockItemConfig = (id: string) => {
+    switch (id) {
+      case "home":
+        return { icon: Home, label: "Trang chủ", isImg: false };
+      case "live":
+        return { icon: Compass, label: "Trực tiếp", isImg: false };
+      case "settings":
+        return { icon: Settings, label: "Cài đặt", isImg: false };
+      case "search":
+        return { 
+          icon: "https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi", 
+          label: "Tìm kiếm", 
+          isImg: true 
+        };
+      case "profile":
+        return { icon: User, label: "Hồ sơ", isImg: false };
+      case "remote":
+        return { 
+          icon: "https://static.wikia.nocookie.net/ep-deo/images/a/a3/Remote.png/revision/latest?cb=20260629015905", 
+          label: "Chuyển kênh", 
+          isImg: true 
+        };
+      case "plugin_store":
+        return { icon: ShoppingBag, label: "Cửa hàng tiện ích", isImg: false };
+      case "about":
+        return { icon: Info, label: "Giới thiệu", isImg: false };
+      case "reload":
+        return { icon: RefreshCw, label: "Tải lại", isImg: false };
+      case "pin":
+        return { icon: Pin, label: "Ghim kênh", isImg: false };
+      default:
+        return { icon: HelpCircle, label: "Khác", isImg: false };
+    }
+  };
+
+  const isDockItemActive = (id: string) => {
+    switch (id) {
+      case "home":
+        return activeTab === "home";
+      case "live":
+        return activeTab === "live";
+      case "settings":
+        return activeTab === "settings" && activeSettingSection === null;
+      case "search":
+        return activeTab === "search";
+      case "profile":
+        return activeTab === "settings" && activeSettingSection === "profile";
+      case "plugin_store":
+        return activeTab === "settings" && activeSettingSection === "plugin_store";
+      default:
+        return false;
+    }
+  };
+
+  const handleDockItemClick = (id: string) => {
+    switch (id) {
+      case "home":
+        setActiveTab("home");
+        break;
+      case "live":
+        setActiveTab("live");
+        break;
+      case "settings":
+        setActiveTab("settings");
+        setActiveSettingSection(null);
+        break;
+      case "search":
+        setPrevTab(activeTab as any);
+        setActiveTab("search");
+        break;
+      case "profile":
+        setActiveTab("settings");
+        setActiveSettingSection("profile");
+        break;
+      case "plugin_store":
+        setActiveTab("settings");
+        setActiveSettingSection("plugin_store");
+        break;
+      case "remote":
+        if (installedPlugins.quick_switch !== "installed") {
+          setRequiredPluginFeatureName("Chuyển kênh nhanh");
+          setShowPluginRequiredModal(true);
+        } else {
+          setShowRemoteModal(true);
+          setRemoteInputValue("");
+        }
+        break;
+      case "about":
+        setShowAboutModal(true);
+        break;
+      case "reload":
+        window.location.reload();
+        break;
+      case "pin":
+        setPinChannelSearchQuery("");
+        setPinChannelSelectedCategory("all");
+        setShowPinChannelPopup(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem("vplay_installed_plugins", JSON.stringify(installedPlugins));
+  }, [installedPlugins]);
+
+  // Handle active installation and uninstallation countdowns
+  useEffect(() => {
+    const activeIds = Object.keys(installedPlugins).filter(
+      id => installedPlugins[id] === "installing" || installedPlugins[id] === "uninstalling"
+    );
+    if (activeIds.length === 0) return;
+
+    const interval = setInterval(() => {
+      setInstalledPlugins(prev => {
+        const copy = { ...prev };
+        let updated = false;
+
+        activeIds.forEach(id => {
+          const status = prev[id];
+          const maxTime = status === "installing" ? 30 : 10;
+          const currentProgress = pluginProgress[id] ?? maxTime;
+
+          if (currentProgress <= 1) {
+            const pluginTitle = getPluginName(id);
+            if (status === "installing") {
+              triggerToast(`Cài đặt thành công gói tiện ích **${pluginTitle}**`);
+            } else if (status === "uninstalling") {
+              triggerToast(`Gỡ cài đặt thành công gói tiện ích **${pluginTitle}**`);
+            }
+            copy[id] = status === "installing" ? "installed" : "idle";
+            setPluginProgress(p => {
+              const cp = { ...p };
+              delete cp[id];
+              return cp;
+            });
+            updated = true;
+          } else {
+            setPluginProgress(p => ({
+              ...p,
+              [id]: currentProgress - 1
+            }));
+          }
+        });
+
+        if (updated) {
+          return copy;
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [installedPlugins, pluginProgress]);
+
+  const startInstallPlugin = (id: string) => {
+    setInstalledPlugins(prev => ({
+      ...prev,
+      [id]: "installing"
+    }));
+    setPluginProgress(prev => ({
+      ...prev,
+      [id]: 30
+    }));
+  };
+
+  const startUninstallPlugin = (id: string) => {
+    setInstalledPlugins(prev => ({
+      ...prev,
+      [id]: "uninstalling"
+    }));
+    setPluginProgress(prev => ({
+      ...prev,
+      [id]: 10
+    }));
+  };
 
   const handleOpenMultiviewSelector = () => {
     setShowMultiviewSelectorPopup(true);
@@ -442,6 +776,7 @@ export default function App() {
   const [demoToggleState, setDemoToggleState] = useState<boolean>(false);
   const [activeDockDemoTab, setActiveDockDemoTab] = useState<string>("home");
   const [demoSliderVal, setDemoSliderVal] = useState<number>(0.45);
+  const [showDemoDesignSystemModal, setShowDemoDesignSystemModal] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem("vplay_exp_lowlatency", String(expLowLatency));
@@ -773,6 +1108,18 @@ export default function App() {
 
           {/* Right Side: notifications and profile card and Menu Dropdown */}
           <div className="relative z-10 flex items-center gap-3 sm:gap-4 md:gap-5">
+            {/* Plugin Store Bag Icon */}
+            <button 
+              onClick={() => {
+                setActiveTab("settings");
+                setActiveSettingSection("plugin_store");
+              }}
+              title="Cửa hàng tiện ích"
+              className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer bouncy-btn"
+            >
+              <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+            </button>
+
             {/* Notification bell icon */}
             <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer">
               <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
@@ -829,6 +1176,61 @@ export default function App() {
                         </div>
                         {showClock && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
                       </button>
+
+                      {/* Xuất luồng kênh (Only visible on Live tab) */}
+                      {activeTab === "live" && (
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            if (installedPlugins.export_stream !== "installed") {
+                              setRequiredPluginFeatureName("Xuất luồng");
+                              setShowPluginRequiredModal(true);
+                            } else {
+                              exportChannelsToM3u8();
+                            }
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
+                        >
+                          <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Xuất luồng kênh
+                        </button>
+                      )}
+
+                      {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                      {activeTab === "live" && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.multiview !== "installed") {
+                                setRequiredPluginFeatureName("Multiview");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                handleOpenMultiviewSelector();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
+                          >
+                            <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Xem Multiview
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.pip !== "installed") {
+                                setRequiredPluginFeatureName("Picture in Picture");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                handleTogglePictureInPicture();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
+                          >
+                            <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Picture in Picture
+                          </button>
+                        </>
+                      )}
  
                       {/* Divider */}
                       <div className="border-t border-black/10 my-2" />
@@ -869,46 +1271,6 @@ export default function App() {
                         <Pizza className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
                         Thử nghiệm
                       </button>
-
-                      {/* Xuất luồng kênh (Only visible on Live or VTVgo tab) */}
-                      {(activeTab === "live" || activeTab === "vtvgo") && (
-                        <button
-                          onClick={() => {
-                            setShowDropdownMenu(false);
-                            exportChannelsToM3u8();
-                          }}
-                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                        >
-                          <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                          Xuất luồng kênh
-                        </button>
-                      )}
-
-                      {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
-                      {activeTab === "live" && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setShowDropdownMenu(false);
-                              handleOpenMultiviewSelector();
-                            }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
-                          >
-                            <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Xem Multiview
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowDropdownMenu(false);
-                              handleTogglePictureInPicture();
-                            }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                          >
-                            <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Picture in Picture
-                          </button>
-                        </>
-                      )}
  
                       {/* Open Settings */}
                       <button
@@ -952,6 +1314,7 @@ export default function App() {
               {activeSettingSection === "broadcast" && "Phát sóng"}
               {activeSettingSection === "experimental" && "Thử nghiệm & Tính năng mới"}
               {activeSettingSection === "design_system" && "Vplay Design System"}
+              {activeSettingSection === "plugin_store" && "Cửa hàng tiện ích"}
             </span>
           </div>
         </header>
@@ -1112,9 +1475,16 @@ export default function App() {
 
                   {/* TV button */}
                   <a
-                    href={selectedChannel?.url}
-                    target="_blank"
+                    href={installedPlugins.open_native === "installed" ? selectedChannel?.url : "#"}
+                    target={installedPlugins.open_native === "installed" ? "_blank" : undefined}
                     rel="noopener noreferrer"
+                    onClick={(e) => {
+                      if (installedPlugins.open_native !== "installed") {
+                        e.preventDefault();
+                        setRequiredPluginFeatureName("Mở luồng gốc");
+                        setShowPluginRequiredModal(true);
+                      }
+                    }}
                     className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn animate-fade-in text-[10.5px] sm:text-xs font-normal"
                     title="Mở luồng phát gốc"
                   >
@@ -1124,7 +1494,14 @@ export default function App() {
 
                   {/* Add custom channel button */}
                   <button
-                    onClick={() => setShowCustomModal(true)}
+                    onClick={() => {
+                      if (installedPlugins.add_custom !== "installed") {
+                        setRequiredPluginFeatureName("Thêm kênh mới");
+                        setShowPluginRequiredModal(true);
+                      } else {
+                        setShowCustomModal(true);
+                      }
+                    }}
                     className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-[10.5px] sm:text-xs font-normal flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
                     title="Thêm link m3u8 của riêng bạn"
                   >
@@ -1195,7 +1572,7 @@ export default function App() {
                     </div>
 
                     {/* Channels responsive grid aligned properly: exactly 3 columns on mobile and 5 columns on desktop */}
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4">
                       {category.channels.map((ch) => {
                         const isPlaying = selectedChannel.id === ch.id;
                         const isDacBiet = ch.group === "Đặc biệt";
@@ -1810,6 +2187,260 @@ export default function App() {
               </div>
             </div>
 
+            {/* ROW 3: PHIM ĐIỆN ẢNH BOM TẤN (16:9 LANDSCAPE WIDESCREEN GRID) */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded bg-amber-400" />
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Phim Điện Ảnh Bom Tấn</h3>
+                <span className="text-xs text-amber-400/80 font-mono mt-1">Chất lượng 4K cực nét</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  {
+                    title: "Lật Mặt 7: Một Điều Ước",
+                    tag: "Gia đình · Tâm lý",
+                    year: "2024",
+                    duration: "138 phút",
+                    img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    title: "Mai (Trấn Thành)",
+                    tag: "Lãng mạn · Bi kịch",
+                    year: "2024",
+                    duration: "131 phút",
+                    img: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=600&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    title: "Bố Già (The Godfather)",
+                    tag: "Kinh điển · Tội phạm",
+                    year: "1972",
+                    duration: "175 phút",
+                    img: "https://images.unsplash.com/photo-1543536448-d209d2d13a1c?w=600&auto=format&fit=crop&q=80"
+                  }
+                ].map((movie, index) => (
+                  <div 
+                    key={index}
+                    onClick={() => {
+                      const v3 = CATEGORIES.flatMap(cat => cat.channels).find(ch => ch.id.includes("vtv3")) || CATEGORIES[0].channels[0];
+                      if (v3) {
+                        handleSelectChannel({
+                          ...v3,
+                          name: `Phim truyện đề xuất: ${movie.title} (HD)`,
+                        });
+                      }
+                      setActiveTab("live");
+                    }}
+                    className="group relative rounded-2xl overflow-hidden glass-panel border border-white/10 hover:border-white/20 shadow-lg hover:shadow-amber-500/5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-103 cursor-pointer"
+                  >
+                    <div className="relative aspect-[16/9]">
+                      <img 
+                        src={movie.img} 
+                        alt={movie.title} 
+                        className="w-full h-full object-cover brightness-[0.7] group-hover:brightness-[0.8] transition-transform duration-500 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                      
+                      {/* Floating Info Tag */}
+                      <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-black/60 text-white font-mono text-[9px] shadow select-none border border-white/10">
+                        {movie.year} · {movie.duration}
+                      </span>
+
+                      {/* Overlap Play Icon */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="w-11 h-11 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-120 duration-300 transition-all">
+                          <Play className="w-4.5 h-4.5 fill-white text-white translate-x-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Content metadata details */}
+                    <div className="p-3.5 select-none font-montserrat">
+                      <h4 className="text-xs sm:text-[13px] font-bold text-white group-hover:text-amber-300 transition-colors duration-200 truncate">
+                        {movie.title}
+                      </h4>
+                      <p className="text-[10px] text-white/45 truncate mt-0.5">
+                        {movie.tag}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ROW 4: TOP 10 PHIM HOT THỊNH HÀNH (NETFLIX STYLE OUTLINE NUMBERS CAROUSEL) */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded bg-pink-500" />
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Top 10 Phim Thịnh Hành</h3>
+                <span className="text-xs text-pink-400/80 font-mono mt-1">Xếp hạng tuần này</span>
+              </div>
+
+              {/* Horizontal Scroll Bar */}
+              <div 
+                className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {[
+                  {
+                    rank: 1,
+                    title: "Dữ Phượng Hành",
+                    tag: "Triệu Lệ Dĩnh · Lâm Canh Tân",
+                    img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    rank: 2,
+                    title: "Câu Chuyện Hoa Hồng",
+                    tag: "Lưu Diệc Phi · Lâm Canh Tân",
+                    img: "https://images.unsplash.com/photo-1513829096999-4978602297f7?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    rank: 3,
+                    title: "Trường Tương Tư 2",
+                    tag: "Dương Tử · Đặng Vi",
+                    img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    rank: 4,
+                    title: "Khánh Dư Niên 2",
+                    tag: "Trương Nhược Quân · Lý Thấm",
+                    img: "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    rank: 5,
+                    title: "Thừa Hoan Ký",
+                    tag: "Dương Tử · Hứa Khải",
+                    img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&auto=format&fit=crop&q=80"
+                  }
+                ].map((movie, index) => (
+                  <div 
+                    key={index}
+                    onClick={() => {
+                      const v3 = CATEGORIES.flatMap(cat => cat.channels).find(ch => ch.id.includes("vtv3")) || CATEGORIES[0].channels[0];
+                      if (v3) {
+                        handleSelectChannel({
+                          ...v3,
+                          name: `Phim truyện đề xuất: ${movie.title} (HD)`,
+                        });
+                      }
+                      setActiveTab("live");
+                    }}
+                    className="relative w-[170px] sm:w-[210px] h-[210px] sm:h-[260px] shrink-0 snap-start group cursor-pointer"
+                  >
+                    {/* Big ranking background number */}
+                    <div className="absolute left-0 bottom-[-15px] sm:bottom-[-20px] text-[110px] sm:text-[140px] font-black leading-none select-none text-white/10 italic font-mono pointer-events-none group-hover:text-pink-500/15 transition-all duration-300">
+                      {movie.rank}
+                    </div>
+
+                    {/* Movie Card */}
+                    <div className="absolute right-2 top-2 bottom-2 left-10 rounded-2xl overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-300 shadow-lg group-hover:scale-102 flex flex-col justify-end bg-black">
+                      <img 
+                        src={movie.img} 
+                        alt={movie.title} 
+                        className="absolute inset-0 w-full h-full object-cover brightness-[0.7] group-hover:scale-105 transition-all duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                      
+                      {/* Inner Details */}
+                      <div className="relative p-3 select-none font-montserrat">
+                        <h4 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-pink-300 truncate">
+                          {movie.title}
+                        </h4>
+                        <p className="text-[9px] text-white/45 truncate mt-0.5">
+                          {movie.tag}
+                        </p>
+                      </div>
+
+                      {/* Hot Badge */}
+                      <span className="absolute top-2 right-2 px-1 rounded bg-pink-500 text-white font-mono text-[8px] tracking-wide select-none">
+                        TOP {movie.rank}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ROW 5: ANIME & HOẠT HÌNH (LAYOUT 3 - ASPECT 1.5/1 LANDSCAPE CARDS IN ROW) */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded bg-teal-400" />
+                <h3 className="text-sm sm:text-base font-bold tracking-tight text-white/95 font-google">Vũ Trụ Anime & Hoạt Hình</h3>
+                <span className="text-xs text-teal-400/80 font-mono mt-1">Phiêu lưu kỳ thú</span>
+              </div>
+
+              {/* Horizontal Scroll Bar */}
+              <div 
+                className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                {[
+                  {
+                    title: "One Piece (Đảo Hải Tặc)",
+                    tag: "Luffy · Hành trình mới",
+                    img: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    title: "Doraemon: Bản Giao Hưởng",
+                    tag: "Doraemon & Nobita",
+                    img: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    title: "Mộ Đom Đóm (Ghibli)",
+                    tag: "Chiến tranh · Tình anh em",
+                    img: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&auto=format&fit=crop&q=80"
+                  },
+                  {
+                    title: "Thám Tử Lừng Danh Conan",
+                    tag: "Kudo Shinichi · Edogawa",
+                    img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&auto=format&fit=crop&q=80"
+                  }
+                ].map((movie, index) => (
+                  <div 
+                    key={index}
+                    onClick={() => {
+                      const v3 = CATEGORIES.flatMap(cat => cat.channels).find(ch => ch.id.includes("vtv3")) || CATEGORIES[0].channels[0];
+                      if (v3) {
+                        handleSelectChannel({
+                          ...v3,
+                          name: `Anime đề xuất: ${movie.title} (HD)`,
+                        });
+                      }
+                      setActiveTab("live");
+                    }}
+                    className="snap-start shrink-0 group flex flex-col gap-2 cursor-pointer w-[160px] sm:w-[200px]"
+                  >
+                    <div className="relative aspect-[1.5/1] rounded-2xl overflow-hidden glass-panel border border-white/10 hover:border-white/20 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-104 shadow-md">
+                      <img 
+                        src={movie.img} 
+                        alt={movie.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                      
+                      {/* Overlap Play Icon */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="w-8 h-8 rounded-full bg-teal-400 text-white flex items-center justify-center shadow-lg hover:scale-110 duration-200">
+                          <Play className="w-3.5 h-3.5 fill-white text-white translate-x-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Content metadata details */}
+                    <div className="px-1 select-none font-montserrat">
+                      <h4 className="text-[11px] sm:text-xs font-normal text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
+                        {movie.title}
+                      </h4>
+                      <p className="text-[10px] text-white/45 truncate mt-0.5">
+                        {movie.tag}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Quick stats grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center pt-2">
               {[
@@ -1871,7 +2502,7 @@ export default function App() {
                       <div className="flex flex-col gap-2.5 text-xs sm:text-sm text-white/80">
                         <div className="flex items-center gap-2">
                           <Pen className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
-                          <span className="font-normal text-white/70">Version: <strong className="text-white font-semibold">26.8.1 (Beta)</strong></span>
+                          <span className="font-normal text-white/70">Version: <strong className="text-white font-semibold">26.8.3 (Beta)</strong></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Crown className="w-4 h-4 text-amber-400 shrink-0 stroke-[2.5]" />
@@ -1880,7 +2511,7 @@ export default function App() {
                         <div className="flex items-start gap-2 leading-relaxed">
                           <Heart className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 fill-rose-500/15 stroke-[2.5]" />
                           <span className="text-white/70">
-                            Supporters: <strong className="text-white font-medium">FTV OFFICIAL, HMG, DHA, - Bsod999, Myyer, Nquinanh, TV Archive Official</strong>
+                            Supporters: <strong className="text-white font-medium">FTV Official, HMG, DHA, Bsod999, Myyer, Nquinanh, TV Archive Official, VNTV Official</strong>
                           </span>
                         </div>
                       </div>
@@ -1889,89 +2520,164 @@ export default function App() {
                     <div className="absolute right-0 bottom-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
                   </div>
 
-                  {[
-                    {
-                      id: "profile",
-                      title: "Hồ sơ",
-                      subtitle: "Quản lý hồ sơ và tài khoản cá nhân Vplay",
-                      icon: User,
-                    },
-                    {
-                      id: "appearance",
-                      title: "Giao diện",
-                      subtitle: "Tùy biến giao diện và trải nghiệm người dùng theo ý thích",
-                      icon: Palette,
-                    },
-                    {
-                      id: "accessibility",
-                      title: "Trợ năng",
-                      subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
-                      icon: Sliders,
-                    },
-                    {
-                      id: "broadcast",
-                      title: "Phát sóng",
-                      subtitle: "Tùy chỉnh các luồng phát sóng, âm thanh và chất lượng video",
-                      icon: Tv,
-                    }
-                  ].map((sec) => {
-                    const IconComp = sec.icon;
-                    return (
-                      <button
-                        key={sec.id}
-                        onClick={() => setActiveSettingSection(sec.id)}
-                        className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
-                      >
-                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
-                          <IconComp className="w-6 h-6 stroke-[1.8]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold text-white tracking-tight">{sec.title}</h3>
-                          <p className="text-[11.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-white/45 shrink-0" />
-                      </button>
-                    );
-                  })}
-
-                  {/* Developer Options Heading */}
-                  <div className="pt-4 pb-1.5 px-2 flex items-center gap-2 text-white/50 text-[11px] font-bold tracking-wider uppercase select-none font-sans">
-                    <Cpu className="w-3.5 h-3.5 stroke-[2.5]" />
-                    <span>Tùy chọn nhà phát triển</span>
+                  {/* Settings Search Section styled exactly like Plugin Store with custom glass icon */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 pt-2">
+                    <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                      <Settings className="w-5 h-5 text-indigo-400" />
+                      Cấu hình & Cài đặt
+                    </h3>
+                    <div className="relative w-full sm:max-w-[280px]">
+                      <input
+                        type="text"
+                        value={settingsSearchQuery}
+                        onChange={(e) => setSettingsSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm cài đặt..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                      />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                        <img 
+                          src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                          className="w-4 h-4 brightness-0 invert opacity-60" 
+                          referrerPolicy="no-referrer"
+                          alt="Search"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {[
-                    {
-                      id: "experimental",
-                      title: "Thử nghiệm",
-                      subtitle: "Trải nghiệm sớm các tính năng mới sắp ra mắt của Vplay",
-                      icon: Beaker,
-                    },
-                    {
-                      id: "design_system",
-                      title: "Design system",
-                      subtitle: "Ngôn ngữ thiết kế và thư viện thành phần giao diện của Vplay",
-                      icon: Layers,
+                  {(() => {
+                    const normalSecs = [
+                      {
+                        id: "profile",
+                        title: "Hồ sơ",
+                        subtitle: "Quản lý hồ sơ và tài khoản cá nhân Vplay",
+                        icon: User,
+                        keywords: ["profile", "hồ sơ", "tài khoản", "yêu thích", "cá nhân", "đồng bộ", "dữ liệu", "xóa", "vấn đề"]
+                      },
+                      {
+                        id: "appearance",
+                        title: "Giao diện",
+                        subtitle: "Tùy biến giao diện và trải nghiệm người dùng theo ý thích",
+                        icon: Palette,
+                        keywords: ["giao diện", "màu sắc", "ánh sáng", "backdrop", "glow", "amoled", "tối", "dark", "chủ đề", "theme"]
+                      },
+                      {
+                        id: "accessibility",
+                        title: "Trợ năng",
+                        subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
+                        icon: Sliders,
+                        keywords: ["trợ năng", "slide", "trượt hình", "tự động", "tiếp cận"]
+                      },
+                      {
+                        id: "broadcast",
+                        title: "Phát sóng",
+                        subtitle: "Tùy chỉnh các luồng phát sóng, âm thanh và chất lượng video",
+                        icon: Tv,
+                        keywords: ["phát sóng", "luồng", "âm thanh", "chất lượng", "video", "coming soon"]
+                      }
+                    ];
+
+                    const devSecs = [
+                      {
+                        id: "experimental",
+                        title: "Thử nghiệm",
+                        subtitle: "Trải nghiệm sớm các tính năng mới sắp ra mắt của Vplay",
+                        icon: Beaker,
+                        keywords: ["thử nghiệm", "tính năng mới", "độ trễ", "low latency", "bộ đệm", "cache", "ram", "ambient glow", "viền động", "playground", "m3u8", "mp4"]
+                      },
+                      {
+                        id: "design_system",
+                        title: "Design system",
+                        subtitle: "Ngôn ngữ thiết kế và thư viện thành phần giao diện của Vplay",
+                        icon: Layers,
+                        keywords: ["design system", "thiết kế", "giao diện", "button", "slider", "checkbox", "thành phần"]
+                      },
+                      {
+                        id: "plugin_store",
+                        title: "Cửa hàng tiện ích",
+                        subtitle: "Cài đặt các gói tiện ích và tính năng mở rộng cao cấp của Vplay",
+                        icon: Puzzle,
+                        keywords: ["cửa hàng tiện ích", "plugin", "tiện ích", "xuất luồng", "multiview", "pip", "picture in picture", "mở luồng gốc", "chuyển kênh nhanh", "thêm kênh"]
+                      }
+                    ];
+
+                    const query = settingsSearchQuery.trim().toLowerCase();
+                    const filterFn = (sec: any) => {
+                      if (!query) return true;
+                      return sec.title.toLowerCase().includes(query) ||
+                             sec.subtitle.toLowerCase().includes(query) ||
+                             sec.keywords.some((k: string) => k.toLowerCase().includes(query));
+                    };
+
+                    const filteredNormal = normalSecs.filter(filterFn);
+                    const filteredDev = devSecs.filter(filterFn);
+
+                    if (filteredNormal.length === 0 && filteredDev.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-white/40 text-sm">
+                          Không tìm thấy mục cài đặt phù hợp với từ khóa tìm kiếm.
+                        </div>
+                      );
                     }
-                  ].map((sec) => {
-                    const IconComp = sec.icon;
+
                     return (
-                      <button
-                        key={sec.id}
-                        onClick={() => setActiveSettingSection(sec.id)}
-                        className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
-                      >
-                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
-                          <IconComp className="w-6 h-6 stroke-[1.8]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base font-semibold text-white tracking-tight">{sec.title}</h3>
-                          <p className="text-[11.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-white/45 shrink-0" />
-                      </button>
+                      <>
+                        {filteredNormal.length > 0 && (
+                          <div className="space-y-3">
+                            {filteredNormal.map((sec) => {
+                              const IconComp = sec.icon;
+                              return (
+                                <button
+                                  key={sec.id}
+                                  onClick={() => setActiveSettingSection(sec.id)}
+                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
+                                >
+                                  <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
+                                    <IconComp className="w-6 h-6 stroke-[1.8]" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-semibold text-white tracking-tight">{sec.title}</h3>
+                                    <p className="text-[11.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-white/45 shrink-0" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {filteredDev.length > 0 && (
+                          <div className="space-y-3 pt-2">
+                            {/* Developer Options Heading */}
+                            <div className="pt-2 pb-1.5 px-2 flex items-center gap-2 text-white/50 text-[11px] font-bold tracking-wider uppercase select-none font-sans">
+                              <Cpu className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>Tùy chọn nhà phát triển</span>
+                            </div>
+
+                            {filteredDev.map((sec) => {
+                              const IconComp = sec.icon;
+                              return (
+                                <button
+                                  key={sec.id}
+                                  onClick={() => setActiveSettingSection(sec.id)}
+                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-4.5 px-5 sm:py-5.5 sm:px-6 flex items-center gap-3.5 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default"
+                                >
+                                  <div className="w-10 h-10 flex items-center justify-center shrink-0 text-white">
+                                    <IconComp className="w-6 h-6 stroke-[1.8]" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-semibold text-white tracking-tight">{sec.title}</h3>
+                                    <p className="text-[11.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-white/45 shrink-0" />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </motion.div>
               ) : (
                 <motion.div
@@ -1981,746 +2687,1248 @@ export default function App() {
                   exit={{ opacity: 0, x: -20 }}
                   className="mt-16 sm:mt-20 bg-white/10 backdrop-blur-[10px] rounded-[15px] p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
                 >
-                  {activeSettingSection === "appearance" && (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                          <Palette className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Giao diện</h3>
-                          <p className="text-xs text-white/60">Tùy biến dải màu chuyển sắc phía dưới lớp kính mờ theo đúng sở thích của bạn.</p>
-                        </div>
-                      </div>
+                  {activeSettingSection === "appearance" && (() => {
+                    const isMatched = (text: string) => {
+                      const q = settingDetailSearchQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return text.toLowerCase().includes(q);
+                    };
 
-                      <div className="space-y-3">
-                        <label className="text-sm font-semibold block text-white/90">Màu Sắc Ánh Sáng Nền (Backdrop Glow)</label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {[
-                            { id: "cosmic", name: "Cosmic Glow", color: "from-pink-600 to-indigo-800" },
-                            { id: "deep", name: "Tối giản", color: "from-neutral-800 to-slate-900" },
-                            { id: "aurora", name: "Cực quang", color: "from-teal-600 to-lime-900" },
-                            { id: "sunset", name: "Sunset View", color: "from-rose-600 to-amber-900" },
-                          ].map((item) => (
-                            <button
-                              key={item.id}
-                              onClick={() => setBgColor(item.id as any)}
-                              className={`p-4 rounded-xl text-left text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-98 cursor-default border ${
-                                bgColor === item.id 
-                                  ? "border-white bg-white/15" 
-                                  : "border-white/10 hover:border-white/20 bg-white/5"
-                              }`}
-                            >
-                              <div className="flex flex-col h-full justify-between">
-                                <span className="text-white font-bold mb-2">{item.name}</span>
-                                <div className={`w-full h-2 rounded bg-gradient-to-r ${item.color} opacity-80`} />
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    const matchGlow = isMatched("Màu Sắc Ánh Sáng Nền") || isMatched("Backdrop Glow") || isMatched("cosmic") || isMatched("sunset") || isMatched("aurora") || isMatched("tối giản") || isMatched("chủ đề") || isMatched("màu");
+                    const matchAmoled = isMatched("AMOLED Dark") || isMatched("siêu tối") || isMatched("bảo vệ mắt") || isMatched("tối");
+                    const matchDock = isMatched("Tùy biến thanh điều hướng Dock") || isMatched("thanh Dock") || isMatched("Dock Customizer") || isMatched("rearrange") || isMatched("trang chủ") || isMatched("trực tiếp") || isMatched("cài đặt") || isMatched("tìm kiếm") || isMatched("tải lại") || isMatched("ghim") || isMatched("hồ sơ") || isMatched("cửa hàng") || isMatched("về ứng dụng");
 
-                      {/* AMOLED Dark Mode Toggle */}
-                      <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                        <div className="flex-1 pr-4">
-                          <h4 className="text-sm font-semibold text-white">AMOLED Dark</h4>
-                          <p className="text-xs text-white/60 mt-0.5">Chế độ siêu tối giúp bảo vệ mắt</p>
-                        </div>
-                        <button
-                          onClick={() => setAmoledDark(!amoledDark)}
-                          className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                            amoledDark ? "bg-[#34c759]" : "bg-white/20"
-                          }`}
-                        >
-                          <motion.div
-                            animate={{ x: amoledDark ? 20 : 0 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            className="relative w-6 h-5 flex items-center justify-center group"
-                          >
-                            <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                            <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                          </motion.div>
-                        </button>
-                      </div>
+                    const hasResults = matchGlow || matchAmoled || matchDock;
 
-                    </div>
-                  )}
-
-                  {activeSettingSection === "profile" && (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                          <User className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Tài khoản & Dữ liệu</h3>
-                          <p className="text-xs text-white/60">Đồng bộ hóa kênh yêu thích và các dữ liệu đã thiết lập trên thiết bị.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3.5 text-xs text-white/80">
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-white/90">Tổng số Kênh Yêu Thích</span>
-                            <span className="font-mono text-amber-300 font-bold bg-white/5 px-2 py-0.5 rounded">{favorites.length} kênh</span>
+                    return (
+                      <div className="space-y-6">
+                        {/* Section Header with Search Bar */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                              <Palette className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Giao diện</h3>
+                              <p className="text-xs text-white/60">Tùy biến dải màu chuyển sắc phía dưới lớp kính mờ theo đúng sở thích của bạn.</p>
+                            </div>
                           </div>
-                          {favorites.length > 0 && (
-                            <button 
-                              onClick={() => {
-                                if (confirm("Bạn có đồng ý xóa toàn bộ danh mục yêu thích?")) {
-                                  setFavorites([]);
-                                }
-                              }}
-                              className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
-                            >
-                              Xóa tất cả yêu thích
-                            </button>
-                          )}
-
-                          <hr className="border-white/5" />
-
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-white/90">Kênh tự thêm cá nhân</span>
-                            <span className="font-mono text-indigo-300 font-bold bg-white/5 px-2 py-0.5 rounded">{customChannels.length} kênh</span>
-                          </div>
-                          {customChannels.length > 0 && (
-                            <button 
-                              onClick={() => {
-                                if (confirm("Bạn có đồng ý xóa tất cả các kênh tự thêm?")) {
-                                  setCustomChannels([]);
-                                }
-                              }}
-                              className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
-                            >
-                              Xoá danh sách kênh tự thêm
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/15 text-xs leading-relaxed text-orange-200">
-                          <div className="font-bold text-orange-300 mb-1">
-                            Thông báo tài khoản trực tuyến
-                          </div>
-                          Tính năng Đăng nhập Tài khoản Đồng bộ Đám mây Vplay Cloud Sync đang được phát triển. Dữ liệu của bạn hiện được lưu trữ an toàn dưới bộ nhớ trình duyệt (LocalStorage).
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeSettingSection === "accessibility" && (
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                          <Sliders className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Trợ năng</h3>
-                          <p className="text-xs text-white/60">Tùy chỉnh các cài đặt giúp tối ưu hóa khả năng tương tác và trải nghiệm nghe nhìn.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* Option: Tự động trượt hình */}
-                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
-                            <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
-                          </div>
-                          
-                          <div className="flex items-center">
-                            <button
-                              onClick={() => setAutoSlide(!autoSlide)}
-                              className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                                autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                              }`}
-                            >
-                              <motion.div
-                                animate={{ x: autoSlide ? 20 : 0 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                className="relative w-6 h-5 flex items-center justify-center group"
-                              >
-                                {/* Outer hover halo/bubble (capsule-shaped matching the pill, expanding on hover) */}
-                                <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                
-                                {/* Knob - horizontal pill shape */}
-                                <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                              </motion.div>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeSettingSection === "experimental" && (
-                    <div className="space-y-6 animate-fade-in">
-                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                          <Beaker className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Thử nghiệm</h3>
-                          <p className="text-xs text-white/60">Kích hoạt các thuật toán kết xuất, truyền tải và tính năng đang phát triển của Vplay.</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {/* Option 1: Low Latency */}
-                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between">
-                          <div className="space-y-1 pr-4 text-left">
-                            <h4 className="text-sm font-semibold text-white">Mô phỏng độ trễ cực thấp (Ultra-Low Latency)</h4>
-                            <p className="text-xs text-white/60 leading-relaxed">Giảm thiểu kích thước bộ đệm HLS để tối ưu hóa thời gian đồng bộ trực tiếp.</p>
-                          </div>
-                          <button
-                            onClick={() => setExpLowLatency(!expLowLatency)}
-                            className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                              expLowLatency ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                            }`}
-                          >
-                            <motion.div
-                              animate={{ x: expLowLatency ? 20 : 0 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              className="relative w-6 h-5 flex items-center justify-center group"
-                            >
-                              <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                              <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                            </motion.div>
-                          </button>
-                        </div>
-
-                        {/* Option 2: Stream Cache */}
-                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between">
-                          <div className="space-y-1 pr-4 text-left">
-                            <h4 className="text-sm font-semibold text-white">Bộ đệm luồng thử nghiệm (Stream Caching)</h4>
-                            <p className="text-xs text-white/60 leading-relaxed">Tăng cường dung lượng RAM đệm trước luồng phát sóng nhằm ngăn chặn gián đoạn.</p>
-                          </div>
-                          <button
-                            onClick={() => setExpCache(!expCache)}
-                            className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                              expCache ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                            }`}
-                          >
-                            <motion.div
-                              animate={{ x: expCache ? 20 : 0 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              className="relative w-6 h-5 flex items-center justify-center group"
-                            >
-                              <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                              <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                            </motion.div>
-                          </button>
-                        </div>
-
-                        {/* Option 3: Ambient Glow */}
-                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between">
-                          <div className="space-y-1 pr-4 text-left">
-                            <h4 className="text-sm font-semibold text-white">Ánh sáng viền động (Dynamic Ambient Glow)</h4>
-                            <p className="text-xs text-white/60 leading-relaxed">Sử dụng thuật toán phân tích màu video thời gian thực để chiếu sáng viền trình phát.</p>
-                          </div>
-                          <button
-                            onClick={() => setExpAmbientGlow(!expAmbientGlow)}
-                            className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                              expAmbientGlow ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                            }`}
-                          >
-                            <motion.div
-                              animate={{ x: expAmbientGlow ? 20 : 0 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              className="relative w-6 h-5 flex items-center justify-center group"
-                            >
-                              <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                              <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                            </motion.div>
-                          </button>
-                        </div>
-
-                        {/* Custom Playground */}
-                        <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
-                          <div className="space-y-1 text-left">
-                            <h4 className="text-sm font-semibold text-white">Bàn thử nghiệm luồng phát (HLS Stream Playground)</h4>
-                            <p className="text-xs text-white/60 leading-relaxed">Phát trực tiếp bất kỳ luồng video .m3u8 nào để kiểm tra hiệu năng trình phát.</p>
-                          </div>
-                          <div className="flex gap-2">
+                          <div className="relative w-full md:max-w-[280px]">
                             <input
                               type="text"
-                              value={testStreamUrl}
-                              onChange={(e) => setTestStreamUrl(e.target.value)}
-                              placeholder="Nhập đường dẫn luồng phát .m3u8 hoặc .mp4..."
-                              className="flex-1 px-4 py-2.5 rounded-[10px] bg-white/10 border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                              value={settingDetailSearchQuery}
+                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                              placeholder="Tìm kiếm cài đặt..."
+                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
                             />
-                            <button
-                              onClick={() => {
-                                if (testStreamUrl) {
-                                  const tempChannel: Channel = {
-                                    id: "exp-test",
-                                    name: "Luồng Thử Nghiệm",
-                                    url: testStreamUrl,
-                                    group: "Thử nghiệm",
-                                    logoText: "TEST",
-                                    logoBg: "bg-gradient-to-br from-indigo-600 to-indigo-900"
-                                  };
-                                  setSelectedChannel(tempChannel);
-                                  setActiveTab("live");
-                                }
-                              }}
-                              className="px-4 py-2.5 rounded-[10px] bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-xs transition-colors duration-200 active:scale-95 flex items-center gap-1 shrink-0"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-white" />
-                              Phát thử
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeSettingSection === "design_system" && (
-                    <div className="space-y-8 animate-fade-in pb-12">
-                      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                        <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                          <Layers className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <div className="text-left">
-                          <h3 className="text-lg font-semibold text-white">Vplay Design System</h3>
-                          <p className="text-xs text-white/60">Hệ thống ngôn ngữ thiết kế, tương tác và thành phần giao diện của Vplay.</p>
-                        </div>
-                      </div>
-
-                      {/* Design System Elements Showcase */}
-                      <div className="space-y-8">
-                        
-                        {/* 1. BUTTONS */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Button</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <span className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)]">
-                                      Placeholder
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <span className="px-5 py-2.5 rounded-full bg-white/20 border border-white/20 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.85),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.4),0_8px_20px_rgba(255,255,255,0.15)] scale-[1.18] transition-all duration-300">
-                                      Placeholder
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <span className="px-5 py-2.5 rounded-full bg-white/30 border border-white/30 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.9),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.5)] scale-[1.28] transition-all duration-300">
-                                      Placeholder
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <button className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/15 text-xs font-semibold text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-pointer bouncy-btn">
-                                      Interact me
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                              <img 
+                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                referrerPolicy="no-referrer"
+                                alt="Search"
+                              />
                             </div>
                           </div>
                         </div>
 
-                        {/* 2. SLIDER */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Slider</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="flex items-center justify-center h-full px-2">
-                                    <div className="relative w-full h-1 bg-white/10 rounded-full">
-                                      <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
-                                      <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-6 h-2 rounded-full bg-white shadow-md border border-white/70" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="flex items-center justify-center h-full px-2">
-                                    <div className="relative w-full h-1 bg-white/15 rounded-full">
-                                      <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
-                                      <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-7 h-2.5 rounded-full bg-white shadow-lg scale-110 transition-all" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="flex items-center justify-center h-full px-2">
-                                    <div className="relative w-full h-1 bg-white/20 rounded-full">
-                                      <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
-                                      <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-8 h-3 rounded-full bg-white shadow-2xl scale-120 transition-all" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="flex items-center w-full justify-center px-2">
-                                      <input
-                                        type="range"
-                                        min="0"
-                                        max="1"
-                                        step="0.01"
-                                        value={demoSliderVal}
-                                        onChange={(e) => setDemoSliderVal(Number(e.target.value))}
-                                        className="w-full h-1 rounded-lg appearance-none cursor-default transition-all range-slider-pill outline-none"
-                                        style={{
-                                          background: `linear-gradient(to right, #0084ff ${demoSliderVal * 100}%, rgba(255, 255, 255, 0.2) ${demoSliderVal * 100}%)`
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                        {!hasResults ? (
+                          <div className="py-12 text-center text-white/50 space-y-2">
+                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
+                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
+                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
                           </div>
-                        </div>
-
-                        {/* 3. TOGGLE SWITCH */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Toggle Switch</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default / Off */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-12 h-6 rounded-full p-0.5 bg-[#3a3a3c] flex items-center">
-                                      <div className="relative w-6 h-5 flex items-center justify-center">
-                                        <div className="w-full h-full rounded-full bg-white shadow-md" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-12 h-6 rounded-full p-0.5 bg-[#3a3a3c] flex items-center">
-                                      <div className="relative w-6 h-5 flex items-center justify-center scale-110 transition-all">
-                                        <div className="absolute -inset-2 rounded-full bg-white/15 scale-100 transition-all pointer-events-none" />
-                                        <div className="w-full h-full rounded-full bg-transparent border-white border backdrop-blur-md shadow-md" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed / On */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-12 h-6 rounded-full p-0.5 bg-[#34c759] flex items-center justify-end">
-                                      <div className="relative w-6 h-5 flex items-center justify-center">
-                                        <div className="w-full h-full rounded-full bg-white shadow-md" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="flex items-center justify-center h-full">
+                        ) : (
+                          <>
+                            {/* Backdrop Glow Toggle */}
+                            {matchGlow && (
+                              <div className="space-y-3">
+                                <label className="text-sm font-semibold block text-white/90 text-left">Màu Sắc Ánh Sáng Nền (Backdrop Glow)</label>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                  {[
+                                    { id: "cosmic", name: "Cosmic Glow", color: "from-pink-600 to-indigo-800" },
+                                    { id: "deep", name: "Tối giản", color: "from-neutral-800 to-slate-900" },
+                                    { id: "aurora", name: "Cực quang", color: "from-teal-600 to-lime-900" },
+                                    { id: "sunset", name: "Sunset View", color: "from-rose-600 to-amber-900" },
+                                  ].map((item) => (
                                     <button
-                                      onClick={() => setDemoToggleState(!demoToggleState)}
-                                      className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                                        demoToggleState ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                      key={item.id}
+                                      onClick={() => setBgColor(item.id as any)}
+                                      className={`p-4 rounded-xl text-left text-xs font-bold relative overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-98 cursor-default border ${
+                                        bgColor === item.id 
+                                          ? "border-white bg-white/15" 
+                                          : "border-white/10 hover:border-white/20 bg-white/5"
                                       }`}
                                     >
-                                      <motion.div
-                                        animate={{ x: demoToggleState ? 20 : 0 }}
-                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                        className="relative w-6 h-5 flex items-center justify-center group"
-                                      >
-                                        <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                        <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                                      </motion.div>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 4. DROPDOWN MENU */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Dropdown Menu</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="py-2.5 px-4 rounded-xl bg-white/5 text-xs text-white/80 flex items-center gap-2.5 select-none text-left mt-2">
-                                    <Clock className="w-4 h-4 text-white/60" />
-                                    <span>Placeholder Item</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="py-2.5 px-4 rounded-xl bg-white/15 text-xs text-white flex items-center justify-between gap-2.5 select-none shadow-sm text-left mt-2">
-                                    <div className="flex items-center gap-2.5">
-                                      <Clock className="w-4 h-4 text-white" />
-                                      <span>Placeholder Item</span>
-                                    </div>
-                                    <Check className="w-4 h-4 text-teal-400 stroke-[3]" />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="py-2.5 px-4 rounded-xl bg-white/25 text-xs text-white/70 flex items-center gap-2.5 scale-97 select-none text-left mt-2">
-                                    <Clock className="w-4 h-4 text-white/40" />
-                                    <span>Placeholder Item</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="relative group mt-2">
-                                    <button className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/25 text-xs text-white/95 hover:text-white flex items-center justify-between gap-2.5 transition-all duration-150 active:scale-97 cursor-pointer text-left">
-                                      <span className="flex items-center gap-2.5">
-                                        <Clock className="w-4 h-4 text-indigo-300" />
-                                        <span>Placeholder Item</span>
-                                      </span>
-                                      <Check className="w-4 h-4 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 5. DOCK */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Dock</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="flex items-center justify-center py-2 h-full">
-                                    <div className="relative flex flex-col items-center justify-center h-12 w-20 text-white/65">
-                                      <Home className="w-6 h-6 stroke-[1.8]" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="flex items-center justify-center py-2 h-full">
-                                    <div className="relative flex flex-col items-center justify-center h-12 w-20 text-white scale-[1.18] transition-transform duration-300">
-                                      <Home className="w-6 h-6 stroke-[2]" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="flex items-center justify-center py-2 h-full">
-                                    <div className="relative flex flex-col items-center justify-center h-12 w-20 text-indigo-950 font-medium z-10 scale-[1.05] transition-all">
-                                      <div className="absolute inset-0 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10" />
-                                      <Home className="w-6 h-6 stroke-[2.2] text-indigo-950" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between min-h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="h-14 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_10px_30px_rgba(0,0,0,0.3)] flex items-center justify-around px-2 py-1 relative w-full max-w-[200px]">
-                                      {[
-                                        { id: "home", icon: Home, label: "Home" },
-                                        { id: "live", icon: Compass, label: "Trực tiếp" }
-                                      ].map((tab) => {
-                                        const isActive = activeDockDemoTab === tab.id;
-                                        const Icon = tab.icon;
-                                        return (
-                                          <button
-                                            key={tab.id}
-                                            onClick={() => setActiveDockDemoTab(tab.id)}
-                                            className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-pointer z-10 bouncy-btn px-2 transition-all duration-300 ${
-                                              isActive ? "text-indigo-950 font-normal" : "text-white/65 hover:text-white"
-                                            }`}
-                                          >
-                                            {isActive && (
-                                              <motion.div
-                                                layoutId="demoActiveTabPill"
-                                                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                                className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
-                                              />
-                                            )}
-                                            <Icon className="w-5.5 h-5.5" />
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 6. CHECKBOX */}
-                        <div className="relative rounded-[20px] p-[1.5px] bg-gradient-to-br from-white/35 via-white/5 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4),0_12px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                          <div className="rounded-[18.5px] bg-[#07050f]/60 p-6 space-y-4">
-                            <div className="text-left">
-                              <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Checkbox</h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                              {/* State: Default */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="relative w-5 h-5 rounded-md p-[1px] bg-gradient-to-br from-white/40 to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)]">
-                                      <div className="w-full h-full rounded-[5px] bg-[#07050f]/40" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Hover */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="relative w-5 h-5 rounded-md p-[1px] bg-gradient-to-br from-teal-400/50 to-white/25 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] scale-110 transition-all">
-                                      <div className="w-full h-full rounded-[5px] bg-[#07050f]/20" />
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* State: Pressed */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-white/20 via-transparent to-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-white/5 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="relative w-5 h-5 rounded-md p-[1px] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)]">
-                                      <div className="w-full h-full rounded-[5px] bg-indigo-500 flex items-center justify-center">
-                                        <Check className="w-3.5 h-3.5 text-white stroke-[3.5]" />
+                                      <div className="flex flex-col h-full justify-between">
+                                        <span className="text-white font-bold mb-2">{item.name}</span>
+                                        <div className={`w-full h-2 rounded bg-gradient-to-r ${item.color} opacity-80`} />
                                       </div>
-                                    </div>
-                                  </div>
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
+                            )}
 
-                              {/* Live Playground */}
-                              <div className="relative rounded-[12px] p-[1px] bg-gradient-to-br from-indigo-500/30 via-transparent to-indigo-500/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] flex flex-col justify-between h-28 overflow-hidden backdrop-blur-md">
-                                <div className="p-4 bg-indigo-500/10 rounded-[11px] h-full flex flex-col justify-between">
-                                  <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                  <div className="flex items-center justify-center h-full">
-                                    <button 
-                                      onClick={() => setExpCache(!expCache)}
-                                      className="focus:outline-none transition-all flex items-center justify-center cursor-pointer relative"
-                                    >
-                                      <div className="relative w-5 h-5 rounded-md p-[1px] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)]">
-                                        <div className="w-full h-full rounded-[5px] bg-[#07050f]/40 flex items-center justify-center">
-                                          {expCache && (
-                                            <motion.div
-                                              initial={{ scale: 0.5, opacity: 0 }}
-                                              animate={{ scale: 1, opacity: 1 }}
-                                              className="absolute inset-0 bg-indigo-500 rounded-[3px] flex items-center justify-center"
-                                            >
-                                              <Check className="w-3.5 h-3.5 text-white stroke-[3.5]" />
-                                            </motion.div>
+                            {/* AMOLED Dark Mode Toggle */}
+                            {matchAmoled && (
+                              <div className="pt-4 border-t border-white/10 flex items-center justify-between text-left">
+                                <div className="flex-1 pr-4">
+                                  <h4 className="text-sm font-semibold text-white">AMOLED Dark</h4>
+                                  <p className="text-xs text-white/60 mt-0.5">Chế độ siêu tối giúp bảo vệ mắt</p>
+                                </div>
+                                <button
+                                  onClick={() => setAmoledDark(!amoledDark)}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                    amoledDark ? "bg-[#34c759]" : "bg-white/20"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: amoledDark ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Dock Customizer Section */}
+                            {matchDock && (
+                              <div className="pt-6 border-t border-white/10 space-y-4 text-left">
+                                <div className="flex flex-col gap-1">
+                                  <h4 className="text-sm font-semibold text-white">Tùy biến thanh điều hướng Dock</h4>
+                                  <p className="text-xs text-white/60">Bật/tắt và thay đổi thứ tự các nút chức năng xuất hiện trên thanh Dock bên dưới.</p>
+                                </div>
+
+                                {/* Miniature live dock preview */}
+                                <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-center">
+                                  <div className="w-full max-w-[340px] h-12 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-around px-2 py-0.5 relative">
+                                    {dockItems.filter(item => item.enabled).map((item) => {
+                                      const config = getDockItemConfig(item.id);
+                                      return (
+                                        <div key={`preview-${item.id}`} className="flex flex-col items-center justify-center text-white/50 w-8 h-8 animate-fade-in" title={config.label}>
+                                          {config.isImg ? (
+                                            <img src={config.icon} className="w-4.5 h-4.5 object-contain opacity-70 filter brightness-0 invert" alt={config.label} referrerPolicy="no-referrer" />
+                                          ) : (
+                                            (() => {
+                                              const IconComponent = config.icon;
+                                              return <IconComponent className="w-4.5 h-4.5" />;
+                                            })()
                                           )}
                                         </div>
-                                      </div>
-                                    </button>
+                                      );
+                                    })}
                                   </div>
                                 </div>
+
+                                {/* List of dock items with toggle & reorder controls */}
+                                <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                                  {dockItems.map((item, idx) => {
+                                    const config = getDockItemConfig(item.id);
+                                    return (
+                                      <div key={item.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all duration-200">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white/80 shrink-0">
+                                            {config.isImg ? (
+                                              <img src={config.icon} className="w-5 h-5 object-contain filter brightness-0 invert opacity-80" alt={config.label} referrerPolicy="no-referrer" />
+                                            ) : (
+                                              (() => {
+                                                const IconComponent = config.icon;
+                                                return <IconComponent className="w-5 h-5" />;
+                                              })()
+                                            )}
+                                          </div>
+                                          <div>
+                                            <div className="text-xs font-bold text-white">{config.label}</div>
+                                            <div className="text-[9px] text-white/40">ID: {item.id}</div>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5">
+                                          {/* Up/Down buttons */}
+                                          <button
+                                            onClick={() => moveDockItem(idx, 'up')}
+                                            disabled={idx === 0}
+                                            className="p-1 rounded bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150"
+                                            title="Di chuyển lên"
+                                          >
+                                            <ChevronUp className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => moveDockItem(idx, 'down')}
+                                            disabled={idx === dockItems.length - 1}
+                                            className="p-1 rounded bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150"
+                                            title="Di chuyển xuống"
+                                          >
+                                            <ChevronDown className="w-3.5 h-3.5" />
+                                          </button>
+
+                                          {/* Toggle active / inactive switch */}
+                                          <button
+                                            onClick={() => toggleDockItem(item.id)}
+                                            className={`ml-1 px-2.5 py-1 text-[10px] font-semibold rounded-md border transition-all duration-200 cursor-pointer ${
+                                              item.enabled
+                                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
+                                                : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
+                                            }`}
+                                          >
+                                            {item.enabled ? "Hiển thị" : "Ẩn"}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Toggle: Merge search into dock */}
+                                <div className="mt-4 flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-all duration-300">
+                                  <div className="space-y-0.5 text-left">
+                                    <div className="text-xs font-bold text-white">Nhập nút tìm kiếm vào thanh dock</div>
+                                    <p className="text-[10px] text-white/50">Tích hợp trực tiếp nút Tìm kiếm vào thanh dock thay vì tách riêng ra ngoài.</p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const searchItem = dockItems.find(it => it.id === "search");
+                                      const searchEnabled = searchItem?.enabled ?? false;
+                                      
+                                      if (!mergeSearchToDock) {
+                                        // Turning ON. If search is enabled, the new rendered count will include the search item.
+                                        const otherEnabledCount = dockItems.filter(it => it.enabled && it.id !== "search").length;
+                                        const newRenderedCount = otherEnabledCount + (searchEnabled ? 1 : 0);
+                                        
+                                        if (newRenderedCount > 5) {
+                                          triggerToast("Thanh dock chỉ chứa được 5 mục");
+                                          return;
+                                        }
+                                      }
+                                      setMergeSearchToDock(!mergeSearchToDock);
+                                    }}
+                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                                      mergeSearchToDock ? "bg-[#34c759]" : "bg-white/20"
+                                    }`}
+                                  >
+                                    <motion.div
+                                      animate={{ x: mergeSearchToDock ? 20 : 0 }}
+                                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                      className="relative w-6 h-5 flex items-center justify-center group"
+                                    >
+                                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                      <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                    </motion.div>
+                                  </button>
+                                </div>
                               </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {activeSettingSection === "profile" && (() => {
+                    const isMatched = (text: string) => {
+                      const q = settingDetailSearchQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return text.toLowerCase().includes(q);
+                    };
+
+                    const matchFav = isMatched("Tổng số Kênh Yêu Thích") || isMatched("yêu thích") || isMatched("xóa") || isMatched("favorites");
+                    const matchCustom = isMatched("Kênh tự thêm cá nhân") || isMatched("tự thêm") || isMatched("custom") || isMatched("m3u8") || isMatched("xóa");
+                    const matchCloud = isMatched("Thông báo tài khoản trực tuyến") || isMatched("Cloud Sync") || isMatched("đám mây") || isMatched("đăng nhập") || isMatched("đồng bộ") || isMatched("tài khoản");
+
+                    const hasResults = matchFav || matchCustom || matchCloud;
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Section Header with Search Bar */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                              <User className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Tài khoản & Dữ liệu</h3>
+                              <p className="text-xs text-white/60">Đồng bộ hóa kênh yêu thích và các dữ liệu đã thiết lập trên thiết bị.</p>
+                            </div>
+                          </div>
+                          <div className="relative w-full md:max-w-[280px]">
+                            <input
+                              type="text"
+                              value={settingDetailSearchQuery}
+                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                              placeholder="Tìm kiếm cài đặt..."
+                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                            />
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                              <img 
+                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                referrerPolicy="no-referrer"
+                                alt="Search"
+                              />
                             </div>
                           </div>
                         </div>
 
+                        {!hasResults ? (
+                          <div className="py-12 text-center text-white/50 space-y-2">
+                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
+                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
+                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {(matchFav || matchCustom) && (
+                              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3.5 text-xs text-white/80 text-left">
+                                {matchFav && (
+                                  <>
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-semibold text-white/90">Tổng số Kênh Yêu Thích</span>
+                                      <span className="font-mono text-amber-300 font-bold bg-white/5 px-2 py-0.5 rounded">{favorites.length} kênh</span>
+                                    </div>
+                                    {favorites.length > 0 && (
+                                      <button 
+                                        onClick={() => {
+                                          if (confirm("Bạn có đồng ý xóa toàn bộ danh mục yêu thích?")) {
+                                            setFavorites([]);
+                                          }
+                                        }}
+                                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
+                                      >
+                                        Xóa tất cả yêu thích
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+
+                                {matchFav && matchCustom && <hr className="border-white/5" />}
+
+                                {matchCustom && (
+                                  <>
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-semibold text-white/90">Kênh tự thêm cá nhân</span>
+                                      <span className="font-mono text-indigo-300 font-bold bg-white/5 px-2 py-0.5 rounded">{customChannels.length} kênh</span>
+                                    </div>
+                                    {customChannels.length > 0 && (
+                                      <button 
+                                        onClick={() => {
+                                          if (confirm("Bạn có đồng ý xóa tất cả các kênh tự thêm?")) {
+                                            setCustomChannels([]);
+                                          }
+                                        }}
+                                        className="py-1.5 px-3 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/25 transition-all cursor-default font-semibold text-[11px]"
+                                      >
+                                        Xoá danh sách kênh tự thêm
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {matchCloud && (
+                              <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/15 text-xs leading-relaxed text-orange-200 text-left">
+                                <div className="font-bold text-orange-300 mb-1">
+                                  Thông báo tài khoản trực tuyến
+                                </div>
+                                Tính năng Đăng nhập Tài khoản Đồng bộ Đám mây Vplay Cloud Sync đang được phát triển. Dữ liệu của bạn hiện được lưu trữ an toàn dưới bộ nhớ trình duyệt (LocalStorage).
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {activeSettingSection === "accessibility" && (() => {
+                    const isMatched = (text: string) => {
+                      const q = settingDetailSearchQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return text.toLowerCase().includes(q);
+                    };
+
+                    const matchAutoSlide = isMatched("Tự động trượt hình") || isMatched("trượt hình") || isMatched("slide") || isMatched("5 giây") || isMatched("thumbnail");
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Section Header with Search Bar */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                              <Sliders className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Trợ năng</h3>
+                              <p className="text-xs text-white/60">Tùy chỉnh các cài đặt giúp tối ưu hóa khả năng tương tác và trải nghiệm nghe nhìn.</p>
+                            </div>
+                          </div>
+                          <div className="relative w-full md:max-w-[280px]">
+                            <input
+                              type="text"
+                              value={settingDetailSearchQuery}
+                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                              placeholder="Tìm kiếm cài đặt..."
+                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                            />
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                              <img 
+                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                referrerPolicy="no-referrer"
+                                alt="Search"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {!matchAutoSlide ? (
+                          <div className="py-12 text-center text-white/50 space-y-2">
+                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
+                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
+                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4 text-left">
+                            {/* Option: Tự động trượt hình */}
+                            <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
+                              <div className="space-y-1">
+                                <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
+                                <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
+                              </div>
+                              
+                              <div className="flex items-center">
+                                <button
+                                  onClick={() => setAutoSlide(!autoSlide)}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                    autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: autoSlide ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {activeSettingSection === "experimental" && (() => {
+                    const isMatched = (text: string) => {
+                      const q = settingDetailSearchQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return text.toLowerCase().includes(q);
+                    };
+
+                    const matchLowLatency = isMatched("Mô phỏng độ trễ cực thấp") || isMatched("Ultra-Low Latency") || isMatched("độ trễ") || isMatched("latency") || isMatched("bộ đệm") || isMatched("hls");
+                    const matchCache = isMatched("Bộ đệm luồng thử nghiệm") || isMatched("Stream Caching") || isMatched("bộ đệm") || isMatched("cache") || isMatched("ram") || isMatched("gián đoạn");
+                    const matchAmbient = isMatched("Ánh sáng viền động") || isMatched("Dynamic Ambient Glow") || isMatched("ambient") || isMatched("glow") || isMatched("viền") || isMatched("video") || isMatched("thuật toán");
+                    const matchPlayground = isMatched("Bàn thử nghiệm luồng phát") || isMatched("HLS Stream Playground") || isMatched("bàn thử nghiệm") || isMatched("playground") || isMatched("m3u8") || isMatched("mp4") || isMatched("phát thử");
+
+                    const hasResults = matchLowLatency || matchCache || matchAmbient || matchPlayground;
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Section Header with Search Bar */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                              <Beaker className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Thử nghiệm</h3>
+                              <p className="text-xs text-white/60">Kích hoạt các thuật toán kết xuất, truyền tải và tính năng đang phát triển của Vplay.</p>
+                            </div>
+                          </div>
+                          <div className="relative w-full md:max-w-[280px]">
+                            <input
+                              type="text"
+                              value={settingDetailSearchQuery}
+                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                              placeholder="Tìm kiếm cài đặt..."
+                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                            />
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                              <img 
+                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                referrerPolicy="no-referrer"
+                                alt="Search"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {!hasResults ? (
+                          <div className="py-12 text-center text-white/50 space-y-2">
+                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
+                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
+                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {/* Option 1: Low Latency */}
+                            {matchLowLatency && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
+                                <div className="space-y-1 pr-4">
+                                  <h4 className="text-sm font-semibold text-white">Mô phỏng độ trễ cực thấp (Ultra-Low Latency)</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Giảm thiểu kích thước bộ đệm HLS để tối ưu hóa thời gian đồng bộ trực tiếp.</p>
+                                </div>
+                                <button
+                                  onClick={() => setExpLowLatency(!expLowLatency)}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                                    expLowLatency ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: expLowLatency ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Option 2: Stream Cache */}
+                            {matchCache && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
+                                <div className="space-y-1 pr-4">
+                                  <h4 className="text-sm font-semibold text-white">Bộ đệm luồng thử nghiệm (Stream Caching)</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Tăng cường dung lượng RAM đệm trước luồng phát sóng nhằm ngăn chặn gián đoạn.</p>
+                                </div>
+                                <button
+                                  onClick={() => setExpCache(!expCache)}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                                    expCache ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: expCache ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Option 3: Ambient Glow */}
+                            {matchAmbient && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
+                                <div className="space-y-1 pr-4">
+                                  <h4 className="text-sm font-semibold text-white">Ánh sáng viền động (Dynamic Ambient Glow)</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Sử dụng thuật toán phân tích màu video thời gian thực để chiếu sáng viền trình phát.</p>
+                                </div>
+                                <button
+                                  onClick={() => setExpAmbientGlow(!expAmbientGlow)}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                                    expAmbientGlow ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: expAmbientGlow ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Custom Playground */}
+                            {matchPlayground && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4 text-left">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-semibold text-white">Bàn thử nghiệm luồng phát (HLS Stream Playground)</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Phát trực tiếp bất kỳ luồng video .m3u8 nào để kiểm tra hiệu năng trình phát.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={testStreamUrl}
+                                    onChange={(e) => setTestStreamUrl(e.target.value)}
+                                    placeholder="Nhập đường dẫn luồng phát .m3u8 hoặc .mp4..."
+                                    className="flex-1 px-4 py-2.5 rounded-[10px] bg-white/10 border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-left"
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      if (testStreamUrl) {
+                                        const tempChannel: Channel = {
+                                          id: "exp-test",
+                                          name: "Luồng Thử Nghiệm",
+                                          url: testStreamUrl,
+                                          group: "Thử nghiệm",
+                                          logoText: "TEST",
+                                          logoBg: "bg-gradient-to-br from-indigo-600 to-indigo-900"
+                                        };
+                                        setSelectedChannel(tempChannel);
+                                        setActiveTab("live");
+                                      }
+                                    }}
+                                    className="px-4 py-2.5 rounded-[10px] bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-xs transition-colors duration-200 active:scale-95 flex items-center gap-1 shrink-0"
+                                  >
+                                    <Play className="w-3.5 h-3.5 fill-white" />
+                                    Phát thử
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {activeSettingSection === "design_system" && (() => {
+                    const isMatched = (text: string) => {
+                      const q = settingDetailSearchQuery.trim().toLowerCase();
+                      if (!q) return true;
+                      return text.toLowerCase().includes(q);
+                    };
+
+                    const matchButtons = isMatched("Button") || isMatched("nút") || isMatched("placeholder") || isMatched("bouncy-btn");
+                    const matchSlider = isMatched("Slider") || isMatched("thanh trượt") || isMatched("âm lượng") || isMatched("volume");
+                    const matchSwitch = isMatched("Switch") || isMatched("Pilled Toggle") || isMatched("công tắc") || isMatched("gạt") || isMatched("demoToggleState");
+                    const matchDropdown = isMatched("Dropdown Menu") || isMatched("trình đơn") || isMatched("clock") || isMatched("check") || isMatched("placeholder item");
+                    const matchDock = isMatched("Dock") || isMatched("thanh dock") || isMatched("home") || isMatched("trực tiếp") || isMatched("compass") || isMatched("activeDockDemoTab");
+                    const matchModal = isMatched("Modal Pop-up") || isMatched("hộp thoại") || isMatched("popup") || isMatched("alert") || isMatched("backdrop") || isMatched("ios-blue") || isMatched("đồng ý") || isMatched("showDemoDesignSystemModal");
+
+                    const hasResults = matchButtons || matchSlider || matchSwitch || matchDropdown || matchDock || matchModal;
+
+                    return (
+                      <div className="space-y-8 animate-fade-in pb-12">
+                        {/* Section Header with Search Bar */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                          <div className="flex items-center gap-3 text-left">
+                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                              <Layers className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Vplay Design System</h3>
+                              <p className="text-xs text-white/60">Hệ thống ngôn ngữ thiết kế, tương tác và thành phần giao diện của Vplay.</p>
+                            </div>
+                          </div>
+                          <div className="relative w-full md:max-w-[280px]">
+                            <input
+                              type="text"
+                              value={settingDetailSearchQuery}
+                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                              placeholder="Tìm kiếm cài đặt..."
+                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                            />
+                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                              <img 
+                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                referrerPolicy="no-referrer"
+                                alt="Search"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {!hasResults ? (
+                          <div className="py-12 text-center text-white/50 space-y-2">
+                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
+                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
+                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-8">
+                        
+                            {/* 1. BUTTONS */}
+                            {matchButtons && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Button</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Default */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <span className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)]">
+                                        Placeholder
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Hover */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <span className="px-5 py-2.5 rounded-full bg-white/20 border border-white/20 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] scale-[1.18] transition-all duration-300">
+                                        Placeholder
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Pressed */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <span className="px-5 py-2.5 rounded-full bg-white/30 border border-white/30 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.5)] scale-[1.28] transition-all duration-300">
+                                        Placeholder
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <button className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/15 text-xs font-semibold text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] cursor-pointer bouncy-btn">
+                                        Interact me
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 2. SLIDER */}
+                            {matchSlider && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Slider</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Default */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
+                                    <div className="flex items-center justify-center h-full px-2">
+                                      <div className="relative w-full h-1 bg-white/10 rounded-full">
+                                        <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
+                                        <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-6 h-2 rounded-full bg-white shadow-md border border-white/70" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Hover */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
+                                    <div className="flex items-center justify-center h-full px-2">
+                                      <div className="relative w-full h-1 bg-white/15 rounded-full">
+                                        <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
+                                        <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-7 h-2.5 rounded-full bg-white shadow-lg scale-110 transition-all" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Pressed */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
+                                    <div className="flex items-center justify-center h-full px-2">
+                                      <div className="relative w-full h-1 bg-white/20 rounded-full">
+                                        <div className="bg-[#0084ff] h-full w-[45%] rounded-full" />
+                                        <div className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 w-8 h-3 rounded-full bg-white shadow-2xl scale-120 transition-all" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <div className="flex items-center w-full justify-center px-2">
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="1"
+                                          step="0.01"
+                                          value={demoSliderVal}
+                                          onChange={(e) => setDemoSliderVal(Number(e.target.value))}
+                                          className="w-full h-1 rounded-lg appearance-none cursor-default transition-all range-slider-pill outline-none"
+                                          style={{
+                                            background: `linear-gradient(to right, #0084ff ${demoSliderVal * 100}%, rgba(255, 255, 255, 0.2) ${demoSliderVal * 100}%)`
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 3. TOGGLE SWITCH */}
+                            {matchSwitch && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Toggle Switch</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Default / Off */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <div className="w-12 h-6 rounded-full p-0.5 bg-[#3a3a3c] flex items-center">
+                                        <div className="relative w-6 h-5 flex items-center justify-center">
+                                          <div className="w-full h-full rounded-full bg-white shadow-md" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Hover */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <div className="w-12 h-6 rounded-full p-0.5 bg-[#3a3a3c] flex items-center">
+                                        <div className="relative w-6 h-5 flex items-center justify-center scale-110 transition-all">
+                                          <div className="absolute -inset-2 rounded-full bg-white/15 scale-100 transition-all pointer-events-none" />
+                                          <div className="w-full h-full rounded-full bg-transparent border-white border backdrop-blur-md shadow-md" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Pressed / On */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <div className="w-12 h-6 rounded-full p-0.5 bg-[#34c759] flex items-center justify-end">
+                                        <div className="relative w-6 h-5 flex items-center justify-center">
+                                          <div className="w-full h-full rounded-full bg-white shadow-md" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <button
+                                        onClick={() => setDemoToggleState(!demoToggleState)}
+                                        className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                          demoToggleState ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                        }`}
+                                      >
+                                        <motion.div
+                                          animate={{ x: demoToggleState ? 20 : 0 }}
+                                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                          className="relative w-6 h-5 flex items-center justify-center group"
+                                        >
+                                          <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                          <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                        </motion.div>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 4. DROPDOWN MENU */}
+                            {matchDropdown && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Dropdown Menu</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Default */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
+                                    <div className="py-2.5 px-4 rounded-xl bg-white/5 text-xs text-white/80 flex items-center gap-2.5 select-none text-left mt-2">
+                                      <Clock className="w-4 h-4 text-white/60" />
+                                      <span>Placeholder Item</span>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Hover */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
+                                    <div className="py-2.5 px-4 rounded-xl bg-white/15 text-xs text-white flex items-center justify-between gap-2.5 select-none shadow-sm text-left mt-2">
+                                      <div className="flex items-center gap-2.5">
+                                        <Clock className="w-4 h-4 text-white" />
+                                        <span>Placeholder Item</span>
+                                      </div>
+                                      <Check className="w-4 h-4 text-teal-400 stroke-[3]" />
+                                    </div>
+                                  </div>
+
+                                  {/* State: Pressed */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
+                                    <div className="py-2.5 px-4 rounded-xl bg-white/25 text-xs text-white/70 flex items-center gap-2.5 scale-97 select-none text-left mt-2">
+                                      <Clock className="w-4 h-4 text-white/40" />
+                                      <span>Placeholder Item</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="relative group mt-2">
+                                      <button className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/25 text-xs text-white/95 hover:text-white flex items-center justify-between gap-2.5 transition-all duration-150 active:scale-97 cursor-pointer text-left">
+                                        <span className="flex items-center gap-2.5">
+                                          <Clock className="w-4 h-4 text-indigo-300" />
+                                          <span>Placeholder Item</span>
+                                        </span>
+                                        <Check className="w-4 h-4 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 5. DOCK */}
+                            {matchDock && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Dock</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Default */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
+                                    <div className="flex items-center justify-center py-2 h-full">
+                                      <div className="relative flex flex-col items-center justify-center h-12 w-20 text-white/65">
+                                        <Home className="w-6 h-6 stroke-[1.8]" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Hover */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
+                                    <div className="flex items-center justify-center py-2 h-full">
+                                      <div className="relative flex flex-col items-center justify-center h-12 w-20 text-white scale-[1.18] transition-transform duration-300">
+                                        <Home className="w-6 h-6 stroke-[2]" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Pressed */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
+                                    <div className="flex items-center justify-center py-2 h-full">
+                                      <div className="relative flex flex-col items-center justify-center h-12 w-20 text-indigo-950 font-medium z-10 scale-[1.05] transition-all">
+                                        <div className="absolute inset-0 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10" />
+                                        <Home className="w-6 h-6 stroke-[2.2] text-indigo-950" />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <div className="h-14 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.3)] flex items-center justify-around px-2 py-1 relative w-full max-w-[200px]">
+                                        {[
+                                          { id: "home", icon: Home, label: "Home" },
+                                          { id: "live", icon: Compass, label: "Trực tiếp" }
+                                        ].map((tab) => {
+                                          const isActive = activeDockDemoTab === tab.id;
+                                          const Icon = tab.icon;
+                                          return (
+                                            <button
+                                              key={tab.id}
+                                              onClick={() => setActiveDockDemoTab(tab.id)}
+                                              className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-pointer z-10 bouncy-btn px-2 transition-all duration-300 ${
+                                                isActive ? "text-indigo-950 font-normal" : "text-white/65 hover:text-white"
+                                              }`}
+                                            >
+                                              {isActive && (
+                                                <motion.div
+                                                  layoutId="demoActiveTabPill"
+                                                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                                  className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                                                />
+                                              )}
+                                              <Icon className="w-5.5 h-5.5" />
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 6. MODAL POP-UP */}
+                            {matchModal && (
+                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                <div className="text-left">
+                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Modal Pop-up</h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                  {/* State: Alert Container */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-white/50 text-left">Alert Container</span>
+                                    <div className="my-auto p-3 rounded-[15px] bg-[#e5e5ea]/85 border border-white/20 text-black shadow-sm text-left">
+                                      <div className="text-[11px] font-bold">Vplay Alert</div>
+                                      <div className="text-[9px] text-black/60 mt-0.5 line-clamp-1">Trải nghiệm giao diện đồng bộ</div>
+                                    </div>
+                                  </div>
+
+                                  {/* State: Alert Backdrop */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Backdrop Blur</span>
+                                    <div className="my-auto p-2 rounded-[12px] bg-black/25 backdrop-blur-[10px] border border-white/5 text-center text-white text-[10px] select-none">
+                                      backdrop-blur-[20px]
+                                    </div>
+                                  </div>
+
+                                  {/* State: iOS-Blue Button */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Blue Button</span>
+                                    <div className="my-auto py-1.5 px-3 rounded-full bg-[#007aff] text-white font-semibold text-[11px] text-center shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] select-none">
+                                      Đồng ý
+                                    </div>
+                                  </div>
+
+                                  {/* Live Playground */}
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                    <div className="flex items-center justify-center h-full">
+                                      <button
+                                        onClick={() => setShowDemoDesignSystemModal(true)}
+                                        className="w-full py-2 px-3 rounded-full bg-[#007aff] hover:bg-[#0066d6] active:scale-95 transition-all text-white font-semibold text-xs text-center cursor-pointer shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                                      >
+                                        Hiện thử nghiệm Popup
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {activeSettingSection === "plugin_store" && (
+                    <div className="space-y-6 animate-fade-in pb-12">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
+                            <Puzzle className="w-6 h-6 animate-pulse text-amber-400" />
+                          </div>
+                          <div className="text-left">
+                            <h3 className="text-lg font-semibold text-white">Cửa hàng tiện ích</h3>
+                            <p className="text-xs text-white/60">Cài đặt và quản lý các gói tiện ích mở rộng cao cấp của Vplay.</p>
+                          </div>
+                        </div>
+                        {/* Search Bar Styled like Design System with custom glass icon */}
+                        <div className="relative w-full md:max-w-[280px]">
+                          <input
+                            type="text"
+                            value={pluginSearchQuery}
+                            onChange={(e) => setPluginSearchQuery(e.target.value)}
+                            placeholder="Tìm kiếm tiện ích..."
+                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                          />
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                            <img 
+                              src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                              className="w-4 h-4 brightness-0 invert opacity-60" 
+                              referrerPolicy="no-referrer"
+                              alt="Search"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {(() => {
+                          const pluginsList = [
+                            {
+                              id: "export_stream",
+                              title: "Xuất luồng",
+                              subtitle: "Hỗ trợ xuất bản danh sách phát m3u8",
+                              desc: "Xuất lưu toàn bộ danh sách kênh truyền hình được cung cấp bởi Vplay thành tệp tin đuôi .m3u8 để sử dụng bất cứ lúc nào.",
+                              icon: Download,
+                              color: "from-blue-500/10 to-indigo-500/5 hover:border-blue-500/20"
+                            },
+                            {
+                              id: "multiview",
+                              title: "Multiview Grid",
+                              subtitle: "Hỗ trợ xem tối đa 4 kênh cùng lúc",
+                              desc: "Hỗ trợ chia nhỏ các luồng kênh, xem đồng thời lên tới 9 kênh cùng lúc.",
+                              icon: Grid,
+                              color: "from-amber-500/10 to-orange-500/5 hover:border-amber-500/20"
+                            },
+                            {
+                              id: "pip",
+                              title: "Picture in Picture",
+                              subtitle: "Hỗ trợ chế độ cửa sổ nổi thu nhỏ",
+                              desc: "Kích hoạt chế độ cửa sổ nổi, cho phép tiếp tục theo dõi chương trình TV yêu thích ở góc màn hình khi đang làm việc hoặc lướt web.",
+                              icon: Layers,
+                              color: "from-teal-500/10 to-emerald-500/5 hover:border-teal-500/20"
+                            },
+                            {
+                              id: "open_native",
+                              title: "Mở luồng gốc",
+                              subtitle: "Hỗ trợ phát luồng trực tiếp bên ngoài",
+                              desc: "Hỗ trợ sao chép URL phát sóng và mở xem trực tiếp luồng stream gốc (.m3u8/hls).",
+                              icon: Tv,
+                              color: "from-pink-500/10 to-rose-500/5 hover:border-pink-500/20"
+                            },
+                            {
+                              id: "quick_switch",
+                              title: "Chuyển kênh nhanh",
+                              subtitle: "Bàn phím ảo chuyển kênh bằng phím số",
+                              desc: "Kích hoạt tính năng bàn phím ảo cho phép chuyển kênh nhanh bằng cách nhập số vị trí kênh (VD: 001, 002, 003, v.v...)",
+                              icon: Puzzle,
+                              color: "from-purple-500/10 to-fuchsia-500/5 hover:border-purple-500/20"
+                            },
+                            {
+                              id: "add_custom",
+                              title: "Thêm kênh mới",
+                              subtitle: "Hỗ trợ dán liên kết luồng phát m3u8 ngoài",
+                              desc: "Hỗ trợ nhập và lưu trữ danh sách các kênh truyền hình riêng tư từ luồng m3u8 bên ngoài một cách thuận tiện.",
+                              icon: Plus,
+                              color: "from-orange-500/10 to-amber-500/5 hover:border-orange-500/20"
+                            }
+                          ];
+
+                          // Sort alphabetically (A-Z) by title
+                          const sortedList = [...pluginsList].sort((a, b) => a.title.localeCompare(b.title, 'vi'));
+
+                          // Filter by pluginSearchQuery
+                          const filteredList = sortedList.filter((p) => {
+                            const query = pluginSearchQuery.trim().toLowerCase();
+                            if (!query) return true;
+                            return p.title.toLowerCase().includes(query) || 
+                                   p.subtitle.toLowerCase().includes(query) || 
+                                   p.desc.toLowerCase().includes(query);
+                          });
+
+                          if (filteredList.length === 0) {
+                            return (
+                              <div className="text-center py-12 text-white/40 text-sm">
+                                Không tìm thấy tiện ích phù hợp với từ khóa tìm kiếm.
+                              </div>
+                            );
+                          }
+
+                          return filteredList.map((plugin) => {
+                            const Icon = plugin.icon;
+                            const status = installedPlugins[plugin.id] || "idle";
+                            const maxTime = status === "installing" ? 30 : 10;
+                            const timeLeft = pluginProgress[plugin.id] ?? maxTime;
+
+                            return (
+                              <div 
+                                key={plugin.id}
+                                className={`rounded-[20px] bg-gradient-to-r ${plugin.color} border border-white/10 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all duration-300 relative overflow-hidden`}
+                              >
+                                {/* Left / Center Info */}
+                                <div className="flex items-start gap-4 flex-1 text-left">
+                                  {/* Enlarged Icon, No background container */}
+                                  <div className="w-14 h-14 flex items-center justify-center text-white shrink-0 bg-transparent border-none p-0">
+                                    {plugin.id === "quick_switch" ? (
+                                      <img 
+                                        src="https://static.wikia.nocookie.net/ep-deo/images/a/a3/Remote.png/revision/latest?cb=20260629015905" 
+                                        className="w-10 h-10 object-contain filter brightness-0 invert opacity-90"
+                                        alt="Remote"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    ) : (
+                                      <Icon className="w-10 h-10" />
+                                    )}
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2.5 flex-wrap">
+                                      <h4 className="text-base font-bold text-white tracking-tight">{plugin.title}</h4>
+                                      {status === "installed" && (
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[9px] font-bold text-emerald-400 font-mono tracking-wider uppercase">
+                                          Đã cài đặt
+                                        </span>
+                                      )}
+                                      {status === "installing" && (
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-[9px] font-bold text-amber-400 font-mono tracking-wider uppercase animate-pulse">
+                                          Đang cài đặt ({timeLeft}s)
+                                        </span>
+                                      )}
+                                      {status === "uninstalling" && (
+                                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-[9px] font-bold text-red-400 font-mono tracking-wider uppercase animate-pulse">
+                                          Đang gỡ bỏ ({timeLeft}s)
+                                        </span>
+                                      )}
+                                      {status === "idle" && (
+                                        <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-white/50 font-mono tracking-wider uppercase">
+                                          Chưa cài đặt
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-[11px] text-white/40">{plugin.subtitle}</p>
+                                    <p className="text-xs text-white/75 leading-relaxed mt-1">{plugin.desc}</p>
+                                  </div>
+                                </div>
+
+                                {/* Action Right Button */}
+                                <div className="shrink-0 w-full md:w-56 text-right relative z-10 flex flex-col gap-2">
+                                  {status === "idle" && (
+                                    <button
+                                      onClick={() => startInstallPlugin(plugin.id)}
+                                      className="w-full py-2.5 px-4 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 border border-indigo-400/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] bouncy-btn transition-all cursor-pointer"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                      Cài đặt gói tiện ích
+                                    </button>
+                                  )}
+                                  {status === "installing" && (
+                                    <button
+                                      disabled
+                                      className="w-full py-2.5 px-4 rounded-full bg-white/5 text-white/40 font-semibold text-xs text-center border border-white/10 cursor-not-allowed animate-pulse"
+                                    >
+                                      Đang cài đặt...
+                                    </button>
+                                  )}
+                                  {status === "uninstalling" && (
+                                    <button
+                                      disabled
+                                      className="w-full py-2.5 px-4 rounded-full bg-white/5 text-white/40 font-semibold text-xs text-center border border-white/10 cursor-not-allowed animate-pulse"
+                                    >
+                                      Đang gỡ bỏ...
+                                    </button>
+                                  )}
+                                  {status === "installed" && (
+                                    <button
+                                      onClick={() => {
+                                        if (confirm(`Bạn có đồng ý gỡ cài đặt ${plugin.title}?`)) {
+                                          startUninstallPlugin(plugin.id);
+                                        }
+                                      }}
+                                      className="w-full py-2.5 px-4 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bouncy-btn"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Gỡ bỏ gói tiện ích
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
                     </div>
                   )}
 
-                  {activeSettingSection !== "appearance" && activeSettingSection !== "profile" && activeSettingSection !== "accessibility" && activeSettingSection !== "experimental" && activeSettingSection !== "design_system" && (
+                  {activeSettingSection !== "appearance" && activeSettingSection !== "profile" && activeSettingSection !== "accessibility" && activeSettingSection !== "experimental" && activeSettingSection !== "design_system" && activeSettingSection !== "plugin_store" && (
                     <div className="text-center py-12">
                       <div className="w-16 h-16 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse">
                         <Sparkles className="w-8 h-8" />
@@ -2744,7 +3952,7 @@ export default function App() {
         <div className="progressive-blur-dock" />
       </div>
 
-      <nav id="bottom-dock-container" className="fixed bottom-6 inset-x-0 mx-auto w-11/12 max-w-[420px] z-50 h-16 transform-gpu">
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${dockItems.filter(item => item.enabled).length > 5 ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
         <AnimatePresence mode="wait">
           {activeTab === "search" ? (
             <motion.div
@@ -2806,91 +4014,54 @@ export default function App() {
                     <span>Copied to clipboard</span>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-around w-full h-full">
-                    {[
-                      { id: "home", icon: Home, label: "Home", isVtvGo: false },
-                      { id: "live", icon: Compass, label: "Trực tiếp", isVtvGo: false },
-                      { id: "settings", icon: Settings, label: "Cài đặt", isVtvGo: false },
-                      { id: "vtvgo", icon: Compass, label: "VTVgo", isVtvGo: true },
-                    ].map((tab) => {
-                      const isActive = tab.isVtvGo 
-                        ? (activeTab === "live" && selectedChannel?.id === "vietnam-wild-live")
-                        : (activeTab === tab.id && !(activeTab === "live" && selectedChannel?.id === "vietnam-wild-live"));
-                      const Icon = tab.icon;
-                      
-                      return (
-                        <button 
-                          key={tab.id}
-                          onClick={() => {
-                            if (tab.isVtvGo) {
-                              const now = new Date();
-                              const timeVal = now.getHours() * 60 + now.getMinutes();
-                              const startVal = 12 * 60 + 30;
-                              const endVal = 14 * 60 + 30;
-                              const isUnlocked = timeVal >= startVal && timeVal <= endVal;
+                  <div className="flex items-center justify-around w-full h-full gap-0.5">
+                    {dockItems
+                      .filter((item) => item.enabled)
+                      .map((tab) => {
+                        const isActive = isDockItemActive(tab.id);
+                        const config = getDockItemConfig(tab.id);
+                        const filterStyle = config.isImg 
+                          ? { filter: isActive ? "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" : "brightness(0) invert(1) opacity(0.8)" } 
+                          : {};
 
-                              if (isUnlocked) {
-                                const wildChannel = flattenedChannels.find(ch => ch.id === "vietnam-wild-live");
-                                if (wildChannel) {
-                                  setSelectedChannel(wildChannel);
-                                  setActiveTab("live");
-                                }
-                              } else {
-                                setShowVtvGoLockedModal(true);
-                              }
-                            } else {
-                              setActiveTab(tab.id as any);
-                            }
-                          }}
-                          className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-2 transition-all transform-gpu ${
-                            isActive 
-                              ? "text-indigo-950 font-normal" 
-                              : "text-white/65 hover:text-white"
-                          }`}
-                          title={tab.label}
-                        >
-                          {isActive && (
-                            <motion.div
-                              layoutId="activeTabPill"
-                              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                              className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
-                            />
-                          )}
-                          {tab.isVtvGo ? (
-                            <div className="relative flex flex-col items-center justify-center">
+                        return (
+                          <button 
+                            key={tab.id}
+                            onClick={() => handleDockItemClick(tab.id)}
+                            className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu ${
+                              isActive 
+                                ? "text-indigo-950 font-bold" 
+                                : "text-white/65 hover:text-white"
+                            }`}
+                            title={config.label}
+                          >
+                            {isActive && (
+                              <motion.div
+                                layoutId="activeTabPill"
+                                transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                              />
+                            )}
+                            {config.isImg ? (
                               <img 
-                                src="https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702" 
-                                className={`w-11 h-11 object-contain rounded-md transition-transform duration-300 ${isActive ? "scale-105" : "opacity-80 hover:opacity-100 hover:scale-105"}`}
-                                alt="Vietnam Wild Live"
+                                src={config.icon} 
+                                className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
+                                style={filterStyle}
+                                alt={config.label}
                                 referrerPolicy="no-referrer"
                               />
-                            </div>
-                          ) : (
-                            <Icon className={`w-7 h-7 transition-transform duration-300 ${isActive ? "scale-105" : ""}`} />
-                          )}
-                        </button>
-                      );
-                    })}
+                            ) : (
+                              (() => {
+                                const IconComponent = config.icon;
+                                return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2]" : "hover:scale-105 stroke-[1.8]"}`} />;
+                              })()
+                            )}
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
               </div>
-
-              {/* Separate Search Button */}
-              <button
-                onClick={() => {
-                  setPrevTab(activeTab as any);
-                  setActiveTab("search");
-                }}
-                className="w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/70 hover:text-white bouncy-btn hover:border-white/40 group shrink-0 transform-gpu"
-                title="Tìm kiếm"
-              >
-                <img 
-                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                  className="w-6.5 h-6.5 brightness-0 invert opacity-95 transition-all duration-300 group-hover:scale-110 pointer-events-none object-contain" 
-                  referrerPolicy="no-referrer"
-                  alt="Search"
-                />
-              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -3042,9 +4213,137 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* VTVGO LOCKED POPUP */}
+      {/* REMOTE CHANNEL SWITCHING KEYPAD MODAL */}
       <AnimatePresence>
-        {showVtvGoLockedModal && (
+        {showRemoteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[320px] rounded-[30px] bg-[#e5e5ea]/85 backdrop-blur-[20px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-center transform-gpu"
+            >
+              <div className="absolute top-4 right-4">
+                <button 
+                  onClick={() => setShowRemoteModal(false)}
+                  className="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 active:bg-black/15 flex items-center justify-center transition-all cursor-pointer text-black/60 hover:text-black"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <h3 className="text-[17px] font-bold text-black tracking-tight leading-snug">
+                Nhập số kênh
+              </h3>
+
+              {/* DIGITAL DISPLAY PANEL */}
+              <div className="bg-black/5 rounded-2xl p-4 text-center font-mono text-3xl tracking-widest font-black text-black h-16 flex items-center justify-center border border-black/5 mb-4 relative overflow-hidden">
+                {remoteInputValue ? (
+                  <motion.span 
+                    key={remoteInputValue}
+                    initial={{ y: -10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="text-black"
+                  >
+                    {remoteInputValue}
+                  </motion.span>
+                ) : (
+                  <span className="text-black/25">_ _ _</span>
+                )}
+              </div>
+
+              {/* KEYPAD GRID */}
+              <div className="grid grid-cols-3 gap-3 justify-items-center mb-1">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <motion.button
+                    key={num}
+                    onClick={() => {
+                      if (remoteInputValue.length < 3) {
+                        setRemoteInputValue(prev => prev + num);
+                      }
+                    }}
+                    whileHover={{ scale: 1.18 }}
+                    whileTap={{ scale: 1.28 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="w-13 h-13 rounded-full bg-black/5 hover:bg-black/10 border border-black/10 flex items-center justify-center font-bold text-lg text-black shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] cursor-pointer select-none bouncy-btn"
+                  >
+                    {num}
+                  </motion.button>
+                ))}
+                
+                {/* CLEAR BUTTON */}
+                <motion.button
+                  onClick={() => setRemoteInputValue("")}
+                  whileHover={{ scale: 1.18 }}
+                  whileTap={{ scale: 1.28 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="w-13 h-13 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center text-red-600 font-bold text-lg cursor-pointer select-none bouncy-btn"
+                  title="Clear"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </motion.button>
+
+                {/* ZERO BUTTON */}
+                <motion.button
+                  onClick={() => {
+                    if (remoteInputValue.length < 3) {
+                      setRemoteInputValue(prev => prev + "0");
+                    }
+                  }}
+                  whileHover={{ scale: 1.18 }}
+                  whileTap={{ scale: 1.28 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="w-13 h-13 rounded-full bg-black/5 hover:bg-black/10 border border-black/10 flex items-center justify-center font-bold text-lg text-black shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] cursor-pointer select-none bouncy-btn"
+                >
+                  0
+                </motion.button>
+
+                {/* OK BUTTON */}
+                <motion.button
+                  onClick={() => {
+                    if (!remoteInputValue) return;
+                    
+                    // Search matching channel
+                    const formatted = remoteInputValue.padStart(3, "0");
+                    const matchedCh = flattenedChannels.find(
+                      ch => ch.channelNumber === formatted || (ch.channelNumber && parseInt(ch.channelNumber, 10) === parseInt(remoteInputValue, 10))
+                    );
+
+                    if (matchedCh) {
+                      setSelectedChannel(matchedCh);
+                      setActiveTab("live");
+                      setShowRemoteModal(false);
+                    } else {
+                      setToastMessage("Không tìm thấy kênh số " + remoteInputValue);
+                      setRemoteInputValue("");
+                      setTimeout(() => {
+                        setToastMessage(null);
+                      }, 2500);
+                    }
+                  }}
+                  whileHover={{ scale: 1.18 }}
+                  whileTap={{ scale: 1.28 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                  className="w-13 h-13 rounded-full bg-[#007aff] hover:bg-[#0066d6] border border-blue-400/20 flex items-center justify-center font-black text-xs text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] cursor-pointer select-none bouncy-btn"
+                >
+                  <Check className="w-5.5 h-5.5 text-white stroke-[3.5]" />
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DESIGN SYSTEM DEMO POPUP */}
+      <AnimatePresence>
+        {showDemoDesignSystemModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -3060,24 +4359,24 @@ export default function App() {
               className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
               <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
-                Chương trình hiện chưa phát sóng
+                Thử nghiệm Modal Pop-up
               </h3>
               <p className="text-[12px] text-black/60 mb-5 leading-relaxed mt-2">
-                Vietnam Wild LIVE sẽ phát sóng vào lúc 12:30 đến 14:30 trên kênh VTV2 và VTVgo, bắt đầu từ 25/06/2026 đến 30/06/2026. Kính mời quý khán giả đón xem!
+                Đây là hộp thoại thông báo mẫu trong hệ thống thiết kế Vplay Refresh, được đồng bộ hóa với phong cách phẳng, mượt mà và trực quan của toàn bộ ứng dụng.
               </p>
               
               <button
-                onClick={() => setShowVtvGoLockedModal(false)}
+                onClick={() => setShowDemoDesignSystemModal(false)}
                 className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
               >
-                Close
+                Đóng thử nghiệm
               </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ABOUT VPLAY360 MODAL */}
+      {/* ABOUT VPLAY REFRESH MODAL */}
       <AnimatePresence>
         {showAboutModal && (
           <motion.div
@@ -3085,35 +4384,41 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#120e24]/90 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.05),0_24px_48px_rgba(0,0,0,0.5)] relative border border-white/10 text-white text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
             >
-              <div className="flex items-center gap-2.5 mb-4">
-                <img 
-                  src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi" 
-                  alt="Vplay Brand Logo"
-                  referrerPolicy="no-referrer"
-                  className="h-7 w-auto object-contain"
-                />
-                <span className="font-sans font-black text-base bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent uppercase tracking-wider select-none">360</span>
-              </div>
-              
-              <h3 className="text-[17px] font-semibold text-white tracking-tight leading-snug">
-                Vplay360 - Phiên bản 2.4.0
+              <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug">
+                Vplay Refresh
               </h3>
-              <p className="text-[12px] text-white/60 mb-5 leading-relaxed mt-2">
-                Trải nghiệm truyền hình trực tuyến chất lượng cao, độ trễ thấp với giao diện hiện đại, mượt mà và tối ưu hóa tối đa cho mọi thiết bị.
-              </p>
+              
+              <div className="space-y-3.5 my-4 text-[12.5px] text-black/75 font-sans leading-relaxed">
+                <div className="flex justify-between items-center border-b border-black/5 pb-1.5">
+                  <span className="font-semibold text-black/80">Phiên bản</span>
+                  <span className="font-mono bg-black/5 px-2 py-0.5 rounded text-[11px] font-bold text-black">
+                    26.8.3 (Beta)
+                  </span>
+                </div>
+                <div className="flex justify-between items-center border-b border-black/5 pb-1.5">
+                  <span className="font-semibold text-black/80">Tác giả</span>
+                  <span className="font-medium text-black/90">VNRT</span>
+                </div>
+                <div className="space-y-1">
+                  <span className="font-semibold text-black/80 block">Đồng hành & Hỗ trợ</span>
+                  <div className="text-[11.5px] text-black/65 bg-black/5 rounded-2xl p-2.5 leading-normal max-h-[110px] overflow-y-auto scrollbar-thin">
+                    FTV Official, HMG, DHA, Bsod999, Myyer, Nquinanh, TV Archive Official, VNTV Official
+                  </div>
+                </div>
+              </div>
               
               <button
                 onClick={() => setShowAboutModal(false)}
-                className="w-full py-3 px-4 rounded-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 hover:scale-[1.03] active:scale-95 transition-all duration-300 text-white font-semibold text-[14px] text-center cursor-default shadow-md transform-gpu"
+                className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
               >
                 Đóng
               </button>
@@ -3332,7 +4637,7 @@ export default function App() {
                       </div>
 
                       {/* Channel Card list - identical to live tab style */}
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                      <div className="grid grid-cols-3 md:grid-cols-4 gap-2.5">
                         {cat.channels.map((ch) => {
                           const isDacBiet = ch.group === "Đặc biệt";
                           return (
@@ -3444,6 +4749,144 @@ export default function App() {
             </div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* REQUIRED PLUGIN MODAL */}
+      <AnimatePresence>
+        {showPluginRequiredModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+            >
+              <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug">
+                Chưa cài đặt Gói tiện ích
+              </h3>
+              <p className="text-[12.5px] text-black/65 mb-5 leading-relaxed mt-2">
+                Để sử dụng tính năng <strong className="text-black font-semibold">{requiredPluginFeatureName}</strong>, vui lòng cài đặt từ Cửa hàng tiện ích.
+              </p>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => {
+                    setShowPluginRequiredModal(false);
+                    setActiveTab("settings");
+                    setActiveSettingSection("plugin_store");
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.02] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
+                >
+                  Đi đến cửa hàng
+                </button>
+                <button
+                  onClick={() => setShowPluginRequiredModal(false)}
+                  className="w-full py-3.5 px-4 rounded-full bg-black/5 hover:bg-black/10 active:scale-95 transition-all duration-300 text-black/80 font-semibold text-[14px] text-center border border-black/5 cursor-default transform-gpu"
+                >
+                  Đóng
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* INSTALLING & UNINSTALLING PROGRESS POPUP MODAL */}
+      <AnimatePresence>
+        {(() => {
+          const activePluginId = Object.keys(installedPlugins).find(
+            id => installedPlugins[id] === "installing" || installedPlugins[id] === "uninstalling"
+          );
+          if (!activePluginId) return null;
+
+          const status = installedPlugins[activePluginId];
+          const isInstalling = status === "installing";
+
+          const pluginName = (() => {
+            switch(activePluginId) {
+              case "export_stream": return "Xuất luồng";
+              case "multiview": return "Multiview Grid";
+              case "pip": return "Picture in Picture";
+              case "open_native": return "Mở luồng gốc";
+              case "quick_switch": return "Chuyển kênh nhanh";
+              case "add_custom": return "Thêm kênh mới";
+              default: return "Gói tiện ích";
+            }
+          })();
+
+          const maxTime = isInstalling ? 30 : 10;
+          const timeLeft = pluginProgress[activePluginId] ?? maxTime;
+          const percent = Math.round(((maxTime - timeLeft) / maxTime) * 100);
+
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 1.15 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.15 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              >
+                <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isInstalling ? 'bg-blue-500' : 'bg-red-500'} animate-ping shrink-0`} />
+                  Vui lòng đợi
+                </h3>
+                <p className="text-[12.5px] text-black/65 mb-5 leading-relaxed mt-2">
+                  {isInstalling ? (
+                    <>Đang cài đặt gói tiện ích <strong className="text-black font-semibold">{pluginName}</strong>...</>
+                  ) : (
+                    <>Đang gỡ bỏ gói tiện ích <strong className="text-black font-semibold">{pluginName}</strong>...</>
+                  )}
+                </p>
+
+                {/* Progress Bar */}
+                <div className="w-full space-y-2 mb-6">
+                  <div className="w-full h-2 rounded-full bg-black/10 overflow-hidden border border-black/5">
+                    <motion.div 
+                      className={`h-full ${isInstalling ? 'bg-blue-500' : 'bg-red-500'} rounded-full`}
+                      style={{ width: `${percent}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-blue-600' : 'text-red-600'} font-mono font-bold`}>
+                    <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    // Cancel action: restore back to previous state
+                    setInstalledPlugins(prev => ({
+                      ...prev,
+                      [activePluginId]: isInstalling ? "idle" : "installed"
+                    }));
+                    setPluginProgress(p => {
+                      const cp = { ...p };
+                      delete cp[activePluginId];
+                      return cp;
+                    });
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-red-500/10 hover:bg-red-500/25 active:scale-95 transition-all duration-300 text-red-600 border border-red-500/20 font-bold text-[14px] text-center cursor-default transform-gpu"
+                >
+                  {isInstalling ? 'Hủy cài đặt gói' : 'Hủy gỡ bỏ gói'}
+                </button>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
 
     </div>
