@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, 
   Heart, 
@@ -45,7 +45,8 @@ import {
   ArrowLeft,
   Puzzle,
   ShoppingBag,
-  Pin
+  Pin,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -70,6 +71,10 @@ const homeSlides = [
     description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới.",
     showCountdown: false,
     logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
+    logos: [
+      "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
+      "https://static.wikia.nocookie.net/logos/images/a/ad/VTV2_2017%2C_2018_%28HD%29.png/revision/latest/scale-to-width-down/1000?cb=20260503062332&path-prefix=vi"
+    ],
     btnText: "Xem ngay",
     btnIcon: "play"
   },
@@ -422,6 +427,7 @@ export default function App() {
   });
   const [pluginProgress, setPluginProgress] = useState<{ [key: string]: number }>({});
   const [showPluginRequiredModal, setShowPluginRequiredModal] = useState<boolean>(false);
+  const [pluginToUninstall, setPluginToUninstall] = useState<any | null>(null);
   const [requiredPluginFeatureName, setRequiredPluginFeatureName] = useState<string>("Xuất luồng");
   const [pluginSearchQuery, setPluginSearchQuery] = useState<string>("");
   const [settingsSearchQuery, setSettingsSearchQuery] = useState<string>("");
@@ -777,6 +783,12 @@ export default function App() {
   const [activeDockDemoTab, setActiveDockDemoTab] = useState<string>("home");
   const [demoSliderVal, setDemoSliderVal] = useState<number>(0.45);
   const [showDemoDesignSystemModal, setShowDemoDesignSystemModal] = useState<boolean>(false);
+  const [designSystemThemeColor, setDesignSystemThemeColor] = useState<string>("#ff9502");
+  const [demoCheckboxState, setDemoCheckboxState] = useState<boolean>(false);
+  const [demoInputText, setDemoInputText] = useState<string>("Vplay Refresh");
+  const [demoTooltipVisible, setDemoTooltipVisible] = useState<boolean>(false);
+  const [demoSnackbarVisible, setDemoSnackbarVisible] = useState<boolean>(false);
+  const [demoDropdownOpen, setDemoDropdownOpen] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem("vplay_exp_lowlatency", String(expLowLatency));
@@ -1313,7 +1325,7 @@ export default function App() {
               {activeSettingSection === "accessibility" && "Trợ năng"}
               {activeSettingSection === "broadcast" && "Phát sóng"}
               {activeSettingSection === "experimental" && "Thử nghiệm & Tính năng mới"}
-              {activeSettingSection === "design_system" && "Vplay Design System"}
+              {activeSettingSection === "design_system" && "Design components"}
               {activeSettingSection === "plugin_store" && "Cửa hàng tiện ích"}
             </span>
           </div>
@@ -1690,7 +1702,19 @@ export default function App() {
                     </div>
 
                     {/* Special Channel Logo instead of slogans */}
-                    {homeSlides[currentSlide].logo && (
+                    {homeSlides[currentSlide].logos ? (
+                      <div className="mt-1 mb-2 select-none pointer-events-none flex items-center gap-3">
+                        {homeSlides[currentSlide].logos.map((logoUrl, lIdx) => (
+                          <img 
+                            key={lIdx}
+                            src={logoUrl} 
+                            alt="Channel Logo" 
+                            referrerPolicy="no-referrer"
+                            className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
+                          />
+                        ))}
+                      </div>
+                    ) : homeSlides[currentSlide].logo ? (
                       <div className="mt-1 mb-2 select-none pointer-events-none">
                         <img 
                           src={homeSlides[currentSlide].logo} 
@@ -1699,7 +1723,7 @@ export default function App() {
                           className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
                         />
                       </div>
-                    )}
+                    ) : null}
 
                     {homeSlides[currentSlide].description && (
                       <p className="text-white/80 text-xs sm:text-sm max-w-2xl mt-4 leading-relaxed drop-shadow select-none">
@@ -1747,12 +1771,12 @@ export default function App() {
                       }
                       setActiveTab("live");
                     }}
-                     className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-red-600 hover:bg-red-700 text-white font-normal shadow-xl hover:shadow-red-600/30 flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-red-500/10 bouncy-btn"
+                    className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:bg-[#b093f4] text-[#381e72] font-bold shadow-xl flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-white/10 bouncy-btn"
                   >
                     {homeSlides[currentSlide].btnIcon === "compass" ? (
-                      <Compass className="w-4.5 h-4.5 text-white" />
+                      <Compass className="w-4.5 h-4.5 text-[#381e72]" />
                     ) : (
-                      <Play className="w-4.5 h-4.5 fill-white text-white" />
+                      <Play className="w-4.5 h-4.5 fill-[#381e72] text-[#381e72]" />
                     )}
                     {homeSlides[currentSlide].btnText || "Thử ngay"}
                   </button>
@@ -2587,10 +2611,10 @@ export default function App() {
                       },
                       {
                         id: "design_system",
-                        title: "Design system",
-                        subtitle: "Ngôn ngữ thiết kế và thư viện thành phần giao diện của Vplay",
+                        title: "Design components",
+                        subtitle: "Hệ thống thành phần và ngôn ngữ thiết kế của Vplay",
                         icon: Layers,
-                        keywords: ["design system", "thiết kế", "giao diện", "button", "slider", "checkbox", "thành phần"]
+                        keywords: ["design components", "design system", "thiết kế", "giao diện", "button", "slider", "checkbox", "thành phần"]
                       },
                       {
                         id: "plugin_store",
@@ -3309,8 +3333,15 @@ export default function App() {
                     const matchDropdown = isMatched("Dropdown Menu") || isMatched("trình đơn") || isMatched("clock") || isMatched("check") || isMatched("placeholder item");
                     const matchDock = isMatched("Dock") || isMatched("thanh dock") || isMatched("home") || isMatched("trực tiếp") || isMatched("compass") || isMatched("activeDockDemoTab");
                     const matchModal = isMatched("Modal Pop-up") || isMatched("hộp thoại") || isMatched("popup") || isMatched("alert") || isMatched("backdrop") || isMatched("ios-blue") || isMatched("đồng ý") || isMatched("showDemoDesignSystemModal");
+                    const matchBadges = isMatched("Icon Badges") || isMatched("nhãn biểu tượng") || isMatched("badge") || isMatched("icon");
+                    const matchCheckbox = isMatched("Checkbox") || isMatched("hộp kiểm") || isMatched("tick") || isMatched("check");
+                    const matchDivider = isMatched("Divider") || isMatched("phần tách") || isMatched("đường kẻ") || isMatched("vạch");
+                    const matchProgress = isMatched("Progress") || isMatched("thanh tiến trình") || isMatched("xoay") || isMatched("loading");
+                    const matchSnackbar = isMatched("Snackbar") || isMatched("notification toast") || isMatched("thông báo") || isMatched("toast");
+                    const matchInput = isMatched("Input Field") || isMatched("ô nhập liệu") || isMatched("nhập") || isMatched("văn bản");
+                    const matchTooltip = isMatched("Tooltip") || isMatched("chú giải") || isMatched("hover") || isMatched("giải thích");
 
-                    const hasResults = matchButtons || matchSlider || matchSwitch || matchDropdown || matchDock || matchModal;
+                    const hasResults = matchButtons || matchSlider || matchSwitch || matchDropdown || matchDock || matchModal || matchBadges || matchCheckbox || matchDivider || matchProgress || matchSnackbar || matchInput || matchTooltip;
 
                     return (
                       <div className="space-y-8 animate-fade-in pb-12">
@@ -3321,25 +3352,44 @@ export default function App() {
                               <Layers className="w-6 h-6 animate-pulse" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-white">Vplay Design System</h3>
+                              <h3 className="text-lg font-semibold text-white">Vplay Design components</h3>
                               <p className="text-xs text-white/60">Hệ thống ngôn ngữ thiết kế, tương tác và thành phần giao diện của Vplay.</p>
                             </div>
                           </div>
-                          <div className="relative w-full md:max-w-[280px]">
-                            <input
-                              type="text"
-                              value={settingDetailSearchQuery}
-                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
-                              placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
-                            />
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                              <img 
-                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                                className="w-4 h-4 brightness-0 invert opacity-60" 
-                                referrerPolicy="no-referrer"
-                                alt="Search"
+                          <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-end">
+                            {/* Color Picker Button */}
+                            <label className="relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10 hover:bg-white/15 transition-all duration-300 text-xs font-semibold text-white cursor-pointer select-none h-8.5 shrink-0">
+                              <Palette className="w-3.5 h-3.5 text-white" />
+                              <span className="text-[10px] font-mono leading-none">{designSystemThemeColor.toUpperCase()}</span>
+                              <div 
+                                className="w-3 h-3 rounded-full border border-white/20 shadow-sm shrink-0" 
+                                style={{ backgroundColor: designSystemThemeColor }}
                               />
+                              <input 
+                                type="color" 
+                                value={designSystemThemeColor} 
+                                onChange={(e) => setDesignSystemThemeColor(e.target.value)} 
+                                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" 
+                              />
+                            </label>
+
+                            {/* Search bar */}
+                            <div className="relative w-full md:w-[240px]">
+                              <input
+                                type="text"
+                                value={settingDetailSearchQuery}
+                                onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
+                                placeholder="Tìm kiếm cài đặt..."
+                                className="w-full pl-10 pr-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left h-8.5"
+                              />
+                              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                                <img 
+                                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                  className="w-4 h-4 brightness-0 invert opacity-60" 
+                                  referrerPolicy="no-referrer"
+                                  alt="Search"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -3359,44 +3409,86 @@ export default function App() {
                                 <div className="text-left">
                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Button</h4>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                                  {/* State: Default */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-white/50 text-left">Default</span>
-                                    <div className="flex items-center justify-center h-full">
-                                      <span className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)]">
-                                        Placeholder
-                                      </span>
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-2">
+                                  {/* Primary Button */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-[120px] p-4 text-left">
+                                    <div>
+                                      <span className="text-[11px] font-semibold text-amber-400 block">Primary button</span>
                                     </div>
-                                  </div>
-
-                                  {/* State: Hover */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Hover</span>
-                                    <div className="flex items-center justify-center h-full">
-                                      <span className="px-5 py-2.5 rounded-full bg-white/20 border border-white/20 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] scale-[1.18] transition-all duration-300">
-                                        Placeholder
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* State: Pressed */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
-                                    <div className="flex items-center justify-center h-full">
-                                      <span className="px-5 py-2.5 rounded-full bg-white/30 border border-white/30 text-xs font-semibold text-white select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.5)] scale-[1.28] transition-all duration-300">
-                                        Placeholder
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Live Playground */}
-                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                    <div className="flex items-center justify-center h-full">
-                                      <button className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/15 text-xs font-semibold text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] cursor-pointer bouncy-btn">
-                                        Interact me
+                                    <div className="flex items-center justify-center h-full pt-3">
+                                      <button className="px-4 py-2 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white text-xs font-semibold select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] cursor-default transition-all duration-200 bouncy-btn">
+                                        Interact me!
                                       </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Secondary Button */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-[120px] p-4 text-left">
+                                    <div>
+                                      <span className="text-[11px] font-semibold text-blue-400 block">Secondary button</span>
+                                    </div>
+                                    <div className="flex items-center justify-center h-full pt-3">
+                                      <button className="px-4 py-2 rounded-full bg-[#007aff] hover:bg-[#0066d6] text-white text-xs font-semibold select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] cursor-default transition-all duration-200 bouncy-btn">
+                                        Interact me!
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Quaternary Button (Swapped to 3rd position) */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-[120px] p-4 text-left">
+                                    <div>
+                                      <span className="text-[11px] font-semibold text-purple-400 block">Quaternary button</span>
+                                    </div>
+                                    <div className="flex items-center justify-center h-full pt-3">
+                                      <button className="px-4 py-2 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:bg-[#b093f4] text-[#381e72] text-xs font-bold select-none cursor-default transition-all duration-200 bouncy-btn">
+                                        Interact me!
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Tertiary Button (Swapped to 4th position) */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-[120px] p-4 text-left">
+                                    <div>
+                                      <span className="text-[11px] font-semibold text-white/60 block">Tertiary button</span>
+                                    </div>
+                                    <div className="flex items-center justify-center h-full pt-3">
+                                      <button className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white text-xs font-semibold select-none border border-white/10 cursor-default transition-all duration-200 bouncy-btn">
+                                        Interact me!
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Destructive Button */}
+                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-[120px] p-4 text-left">
+                                    <div>
+                                      <span className="text-[11px] font-semibold text-red-400 block">Destructive button</span>
+                                    </div>
+                                    <div className="flex items-center justify-center h-full pt-3">
+                                      <button className="px-4 py-2 rounded-full bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 text-red-400 border border-red-500/20 text-xs font-semibold select-none cursor-default transition-all duration-200 bouncy-btn">
+                                        Interact me!
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Component Specs */}
+                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">0% (Không áp dụng)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">100% (Màu đặc) | 10% (Tertiary)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#ff9502 | #007aff | #d0bcff</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                    <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                                      <Check className="w-4 h-4 stroke-[3]" /> Có (Shadow inset trắng 30%-45%)
                                     </div>
                                   </div>
                                 </div>
@@ -3461,6 +3553,28 @@ export default function App() {
                                           }}
                                         />
                                       </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Component Specs */}
+                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">0% (Không áp dụng)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">10% (Track) | 100% (Thumb)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#0084ff (Active) | rgba(255,255,255,0.1)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                    <div className="text-xs font-semibold text-red-400 mt-1 flex items-center gap-1">
+                                      <span className="font-bold">✕</span> Không
                                     </div>
                                   </div>
                                 </div>
@@ -3533,6 +3647,28 @@ export default function App() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Component Specs */}
+                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">0% (Không áp dụng)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">100% (Màu đặc)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#3a3a3c (Tắt) | #34c759 (Bật)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                    <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                                      <Check className="w-4 h-4 stroke-[3]" /> Có (Viền trắng 95% ở thumb hover)
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             )}
 
@@ -3574,16 +3710,64 @@ export default function App() {
                                   </div>
 
                                   {/* Live Playground */}
-                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4 relative">
                                     <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                    <div className="relative group mt-2">
-                                      <button className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/25 text-xs text-white/95 hover:text-white flex items-center justify-between gap-2.5 transition-all duration-150 active:scale-97 cursor-pointer text-left">
+                                    <div className="relative mt-2 z-30">
+                                      <button 
+                                        onClick={() => setDemoDropdownOpen(!demoDropdownOpen)}
+                                        className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/25 text-xs text-white/95 hover:text-white flex items-center justify-between gap-2.5 transition-all duration-150 active:scale-97 cursor-pointer text-left border border-white/5"
+                                      >
                                         <span className="flex items-center gap-2.5">
                                           <Clock className="w-4 h-4 text-indigo-300" />
-                                          <span>Placeholder Item</span>
+                                          <span>Chọn thời gian</span>
                                         </span>
-                                        <Check className="w-4 h-4 text-indigo-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <ChevronDown className={`w-4 h-4 text-indigo-300 transition-transform duration-200 ${demoDropdownOpen ? "rotate-180" : ""}`} />
                                       </button>
+                                      
+                                      <AnimatePresence>
+                                        {demoDropdownOpen && (
+                                          <motion.div
+                                            initial={{ opacity: 0, y: -5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -5 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="absolute left-0 right-0 mt-1.5 rounded-xl bg-[#211f26] border border-white/10 shadow-xl overflow-hidden py-1"
+                                          >
+                                            {["Bản tin Sáng", "Bản tin Trưa", "Bản tin Chiều", "Bản tin Tối"].map((item, idx) => (
+                                              <button
+                                                key={item}
+                                                onClick={() => setDemoDropdownOpen(false)}
+                                                className="w-full py-2 px-3 text-left text-xs text-white/80 hover:text-white hover:bg-white/5 flex items-center justify-between transition-colors cursor-pointer"
+                                              >
+                                                <span>{item}</span>
+                                                {idx === 0 && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                                              </button>
+                                            ))}
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Component Specs */}
+                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">0% (Không áp dụng)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">5% (Default) | 15% (Hover)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">rgba(255,255,255,0.05)</div>
+                                  </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                    <div className="text-xs font-semibold text-red-400 mt-1 flex items-center gap-1">
+                                      <span className="font-bold">✕</span> Không
                                     </div>
                                   </div>
                                 </div>
@@ -3662,56 +3846,478 @@ export default function App() {
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
 
-                            {/* 6. MODAL POP-UP */}
-                            {matchModal && (
-                              <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
-                                <div className="text-left">
-                                  <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Modal Pop-up</h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-                                  {/* State: Alert Container */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-white/50 text-left">Alert Container</span>
-                                    <div className="my-auto p-3 rounded-[15px] bg-[#e5e5ea]/85 border border-white/20 text-black shadow-sm text-left">
-                                      <div className="text-[11px] font-bold">Vplay Alert</div>
-                                      <div className="text-[9px] text-black/60 mt-0.5 line-clamp-1">Trải nghiệm giao diện đồng bộ</div>
-                                    </div>
+                                {/* Component Specs */}
+                                <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">25px (backdrop-blur-[25px])</div>
                                   </div>
-
-                                  {/* State: Alert Backdrop */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-teal-400 text-left">Backdrop Blur</span>
-                                    <div className="my-auto p-2 rounded-[12px] bg-black/25 backdrop-blur-[10px] border border-white/5 text-center text-white text-[10px] select-none">
-                                      backdrop-blur-[20px]
-                                    </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1">12% background | 65% icon</div>
                                   </div>
-
-                                  {/* State: iOS-Blue Button */}
-                                  <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-indigo-400 text-left">Blue Button</span>
-                                    <div className="my-auto py-1.5 px-3 rounded-full bg-[#007aff] text-white font-semibold text-[11px] text-center shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] select-none">
-                                      Đồng ý
-                                    </div>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                    <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">rgba(255,255,255,0.12)</div>
                                   </div>
-
-                                  {/* Live Playground */}
-                                  <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
-                                    <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
-                                    <div className="flex items-center justify-center h-full">
-                                      <button
-                                        onClick={() => setShowDemoDesignSystemModal(true)}
-                                        className="w-full py-2 px-3 rounded-full bg-[#007aff] hover:bg-[#0066d6] active:scale-95 transition-all text-white font-semibold text-xs text-center cursor-pointer shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
-                                      >
-                                        Hiện thử nghiệm Popup
-                                      </button>
+                                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                    <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                                      <Check className="w-4 h-4 stroke-[3]" /> Có (Border trắng opacity 20%)
                                     </div>
                                   </div>
                                 </div>
                               </div>
                             )}
+
+                             {/* 6. MODAL POP-UP */}
+                             {matchModal && (
+                               <div className="rounded-[20px] bg-[#1a162b] shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4">
+                                 <div className="text-left">
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Modal Pop-up</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                   {/* State: Alert Container */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50 text-left">Alert Container</span>
+                                     <div className="my-auto p-3 rounded-[20px] bg-[#211f26] text-white shadow-xl text-left space-y-2">
+                                       <div>
+                                         <div className="text-[11px] font-bold text-white/95">Vplay Alert</div>
+                                         <div className="text-[9px] text-white/60 mt-0.5 line-clamp-1">Trải nghiệm giao diện đồng bộ</div>
+                                       </div>
+                                       <div className="py-1 px-3.5 rounded-full bg-[#d0bcff] text-[#381e72] font-bold text-[9px] text-center">
+                                         Đồng ý
+                                       </div>
+                                     </div>
+                                   </div>
+
+                                   {/* State: Alert Backdrop */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-teal-400 text-left">Backdrop Blur</span>
+                                     <div className="my-auto p-2 rounded-[12px] bg-black/40 backdrop-blur-[20px] border border-white/5 text-center text-white text-[10px] select-none">
+                                       backdrop-blur-[20px]
+                                     </div>
+                                   </div>
+
+                                   {/* State: Purple Button */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-purple-400 text-left">Purple Button</span>
+                                     <div className="my-auto py-1.5 px-3 rounded-full bg-[#d0bcff] text-[#381e72] font-bold text-[11px] text-center shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] select-none">
+                                       Đồng ý
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300 text-left">Live interaction</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <button
+                                         onClick={() => setShowDemoDesignSystemModal(true)}
+                                         className="w-full py-2 px-3 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all text-[#381e72] font-bold text-xs text-center cursor-pointer shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                                       >
+                                         Hiện thử nghiệm Popup
+                                       </button>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Component Specs */}
+                                 <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1">20px (backdrop-blur-[20px])</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1">100% container | 40% backdrop</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#211f26 (Hộp thoại) | #000000 (Backdrop)</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
+                                     <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                                       <Check className="w-4 h-4 stroke-[3]" /> Có (Border trắng opacity 10%)
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 7. ICON BADGES */}
+                             {matchBadges && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Icon Badges</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                   {/* Style 1: Live badge */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Trực tiếp (Live)</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-[10px] font-bold text-red-400 select-none uppercase tracking-wider">
+                                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                         Trực tiếp
+                                       </span>
+                                     </div>
+                                   </div>
+
+                                   {/* Style 2: Tech Badge */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-teal-400">Độ phân giải (HD)</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-mono font-bold text-white/90 select-none tracking-wide">
+                                         1080P HD
+                                       </span>
+                                     </div>
+                                   </div>
+
+                                   {/* Style 3: Crown Premium */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-amber-400">Đặc quyền (Premium)</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-bold text-amber-400 select-none">
+                                         <Crown className="w-3 h-3 text-amber-400" />
+                                         Premium
+                                       </span>
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="flex items-center justify-center h-full gap-2">
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#d0bcff]/20 text-[#d0bcff] font-bold text-[10px] select-none shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] animate-bounce">
+                                          <Sparkles className="w-3 h-3 text-[#d0bcff]" />
+                                          Tương tác
+                                        </span>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Component Specs */}
+                                 <div className="mt-6 pt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ mờ (Blur)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1">0% (Không áp dụng)</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1">5% - 15% Nền</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">rgba(255,255,255,0.05)</div>
+                                   </div>
+                                   <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                     <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu</div>
+                                     <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
+                                       <Check className="w-4 h-4 stroke-[3]" /> Có (Border mảnh opacity 10%)
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 8. CHECKBOX */}
+                             {matchCheckbox && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Checkbox</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                                   {/* Unchecked */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Default Off</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <div className="w-5 h-5 rounded bg-white/5 border border-white/20" />
+                                     </div>
+                                   </div>
+
+                                   {/* Checked */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-teal-400">Default On</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <div className="w-5 h-5 rounded bg-[#d0bcff] flex items-center justify-center text-[#381e72]">
+                                         <Check className="w-3.5 h-3.5 stroke-[3.5]" />
+                                       </div>
+                                     </div>
+                                   </div>
+
+                                   {/* Disabled */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-400">Disabled Checked</span>
+                                     <div className="flex items-center justify-center h-full opacity-40">
+                                       <div className="w-5 h-5 rounded bg-white/20 flex items-center justify-center text-white/40">
+                                         <Check className="w-3.5 h-3.5 stroke-[3.5]" />
+                                       </div>
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <button 
+                                         onClick={() => setDemoCheckboxState(!demoCheckboxState)}
+                                         className="flex items-center gap-2.5 group cursor-pointer focus:outline-none select-none"
+                                       >
+                                         <div className={`w-5 h-5 rounded flex items-center justify-center transition-all duration-200 bouncy-btn ${
+                                           demoCheckboxState ? "bg-[#d0bcff] text-[#381e72]" : "bg-white/5 border border-white/25 group-hover:bg-white/10 group-hover:border-white/40"
+                                         }`}>
+                                           {demoCheckboxState && (
+                                             <motion.div
+                                               initial={{ scale: 0.4, opacity: 0 }}
+                                               animate={{ scale: 1, opacity: 1 }}
+                                               transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                             >
+                                               <Check className="w-3.5 h-3.5 stroke-[3.5]" />
+                                             </motion.div>
+                                           )}
+                                         </div>
+                                         <span className="text-xs text-white/80 group-hover:text-white transition-colors">Chọn mục này</span>
+                                       </button>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 9. DIVIDER */}
+                             {matchDivider && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Divider (horizontal & vertical)</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                   {/* Horizontal Divider */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Horizontal Divider</span>
+                                     <div className="flex flex-col justify-center h-full gap-2">
+                                       <span className="text-[10px] text-white/40">Khung trên</span>
+                                       <div className="h-px bg-white/10 w-full" />
+                                       <span className="text-[10px] text-white/40">Khung dưới</span>
+                                     </div>
+                                   </div>
+
+                                   {/* Vertical Divider */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-teal-400">Vertical Divider</span>
+                                     <div className="flex items-center justify-center h-full gap-4">
+                                       <span className="text-[10px] text-white/40">Kênh 1</span>
+                                       <div className="w-px h-6 bg-white/10" />
+                                       <span className="text-[10px] text-white/40">Kênh 2</span>
+                                       <div className="w-px h-6 bg-white/10" />
+                                       <span className="text-[10px] text-white/40">Kênh 3</span>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 10. PROGRESS */}
+                             {matchProgress && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Progress</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                   {/* Progress Bar */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Progress Bar (75%)</span>
+                                     <div className="flex items-center justify-center h-full px-1">
+                                       <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative">
+                                         <div className="h-full bg-[#d0bcff] rounded-full" style={{ width: "75%" }} />
+                                       </div>
+                                     </div>
+                                   </div>
+
+                                   {/* Spinning Animation */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-teal-400">Spinning Animation</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <Loader2 className="w-6 h-6 text-[#d0bcff] animate-spin" />
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="flex flex-col justify-center h-full gap-3">
+                                       <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden relative">
+                                         <motion.div 
+                                           animate={{ width: `${demoSliderVal * 100}%` }}
+                                           transition={{ type: "spring", stiffness: 120, damping: 15 }}
+                                           className="h-full bg-[#d0bcff] rounded-full" 
+                                         />
+                                       </div>
+                                       <div className="text-[10px] text-white/60 text-center font-mono">
+                                         Tiến độ: {Math.round(demoSliderVal * 100)}%
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 11. SNACKBAR */}
+                             {matchSnackbar && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Snackbar (Notification Toast)</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                   {/* Design Specs */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Giao diện mẫu</span>
+                                     <div className="my-auto py-2.5 px-4 rounded-full bg-[#211f26] border border-white/10 text-white text-[11.5px] font-medium tracking-wide shadow-lg flex items-center justify-between gap-3 max-w-[280px] mx-auto select-none">
+                                       <span className="flex items-center gap-1.5">
+                                         <Bell className="w-3.5 h-3.5 text-amber-400" />
+                                         Đã kết nối máy chủ
+                                       </span>
+                                       <X className="w-3 h-3 text-white/45" />
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <button 
+                                         onClick={() => {
+                                           setDemoSnackbarVisible(true);
+                                           setTimeout(() => setDemoSnackbarVisible(false), 3000);
+                                         }}
+                                         className="px-4 py-2 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] font-bold text-xs select-none cursor-pointer bouncy-btn"
+                                       >
+                                         Kích hoạt Snackbar
+                                       </button>
+                                     </div>
+                                   </div>
+                                 </div>
+
+                                 {/* Floating Real Demonstration */}
+                                 <AnimatePresence>
+                                   {demoSnackbarVisible && (
+                                     <motion.div
+                                       initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                                       animate={{ opacity: 1, y: 0, scale: 1 }}
+                                       exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                                       transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                       className="fixed bottom-26 left-1/2 -translate-x-1/2 z-[150] px-4 py-2.5 rounded-full bg-black/85 backdrop-blur-md border border-white/10 text-white text-[12px] font-semibold tracking-wide shadow-2xl flex items-center gap-2 select-none pointer-events-auto"
+                                     >
+                                       <Bell className="w-4 h-4 text-[#d0bcff] animate-bounce" />
+                                       <span>Chào mừng đến với Vplay Design System!</span>
+                                       <button 
+                                         onClick={() => setDemoSnackbarVisible(false)}
+                                         className="ml-1 w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white"
+                                       >
+                                         <X className="w-3.5 h-3.5" />
+                                       </button>
+                                     </motion.div>
+                                   )}
+                                 </AnimatePresence>
+                               </div>
+                             )}
+
+                             {/* 12. INPUT FIELD */}
+                             {matchInput && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Input Field</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                   {/* Default */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Default state</span>
+                                     <div className="mt-2 py-2 px-3 rounded-xl bg-white/5 text-xs text-white/40 border border-white/5 select-none">
+                                       Nhập nội dung...
+                                     </div>
+                                   </div>
+
+                                   {/* Warning / Error */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-red-400">Error state</span>
+                                     <div className="mt-2 py-2 px-3 rounded-xl bg-red-500/5 text-xs text-red-400 border border-red-500/30 select-none">
+                                       Lỗi nhập liệu
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="relative mt-2">
+                                       <input 
+                                         type="text"
+                                         value={demoInputText}
+                                         onChange={(e) => setDemoInputText(e.target.value)}
+                                         placeholder="Gõ gì đó..."
+                                         className="w-full py-2 pl-3 pr-8 rounded-xl bg-white/5 hover:bg-white/10 focus:bg-white/15 focus:outline-none border border-white/15 focus:border-[#d0bcff] text-xs text-white transition-all text-left"
+                                       />
+                                       {demoInputText && (
+                                         <button 
+                                           onClick={() => setDemoInputText("")}
+                                           className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-white/45 hover:text-white"
+                                         >
+                                           <X className="w-3.5 h-3.5" />
+                                         </button>
+                                       )}
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* 13. TOOLTIP */}
+                             {matchTooltip && (
+                               <div className="rounded-[20px] bg-[#1a162b] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.3)] p-6 space-y-4 text-left">
+                                 <div>
+                                   <h4 className="text-sm font-semibold text-white tracking-wide border-b border-white/5 pb-2">Tooltip</h4>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                   {/* Visual Style */}
+                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
+                                     <span className="text-[11px] font-semibold text-white/50">Visual Design Spec</span>
+                                     <div className="my-auto px-3 py-1.5 rounded-lg bg-[#211f26] border border-white/10 shadow-lg text-[10px] text-white/90 max-w-[150px] mx-auto select-none relative text-center">
+                                       Đây là chú giải Tooltip
+                                       <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[5px] border-x-transparent border-t-[5px] border-t-[#211f26]" />
+                                     </div>
+                                   </div>
+
+                                   {/* Live Playground */}
+                                   <div className="rounded-[12px] bg-indigo-500/10 border border-indigo-500/20 flex flex-col justify-between min-h-28 p-4 relative">
+                                     <span className="text-[11px] font-semibold text-indigo-300">Live interaction</span>
+                                     <div className="flex items-center justify-center h-full">
+                                       <div 
+                                         onMouseEnter={() => setDemoTooltipVisible(true)}
+                                         onMouseLeave={() => setDemoTooltipVisible(false)}
+                                         className="relative inline-block"
+                                       >
+                                         <button className="px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-xs select-none cursor-default">
+                                           Rê chuột vào tôi
+                                         </button>
+                                         <AnimatePresence>
+                                           {demoTooltipVisible && (
+                                             <motion.div
+                                               initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                               animate={{ opacity: 1, y: 0, scale: 1 }}
+                                               exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                                               transition={{ duration: 0.15 }}
+                                               className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg bg-[#211f26] border border-white/10 shadow-lg text-[11px] text-white select-none whitespace-nowrap z-50 text-center"
+                                             >
+                                               Chú giải hiển thị chi tiết!
+                                               <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[5px] border-x-transparent border-t-[5px] border-t-[#211f26]" />
+                                             </motion.div>
+                                           )}
+                                         </AnimatePresence>
+                                       </div>
+                                     </div>
+                                   </div>
+                                 </div>
+                               </div>
+                             )}
 
                           </div>
                         )}
@@ -3884,7 +4490,7 @@ export default function App() {
                                   {status === "idle" && (
                                     <button
                                       onClick={() => startInstallPlugin(plugin.id)}
-                                      className="w-full py-2.5 px-4 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 border border-indigo-400/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.2)] bouncy-btn transition-all cursor-pointer"
+                                      className="w-full py-2.5 px-4 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold text-xs flex items-center justify-center gap-1.5 border border-white/10 bouncy-btn transition-all cursor-pointer"
                                     >
                                       <Download className="w-4 h-4" />
                                       Cài đặt gói tiện ích
@@ -3909,9 +4515,7 @@ export default function App() {
                                   {status === "installed" && (
                                     <button
                                       onClick={() => {
-                                        if (confirm(`Bạn có đồng ý gỡ cài đặt ${plugin.title}?`)) {
-                                          startUninstallPlugin(plugin.id);
-                                        }
+                                        setPluginToUninstall(plugin);
                                       }}
                                       className="w-full py-2.5 px-4 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer bouncy-btn"
                                     >
@@ -3952,15 +4556,15 @@ export default function App() {
         <div className="progressive-blur-dock" />
       </div>
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${dockItems.filter(item => item.enabled).length > 5 ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
         <AnimatePresence mode="wait">
           {activeTab === "search" ? (
             <motion.div
-              key="search-bar-dock"
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              key={`search-bar-dock-${mergeSearchToDock}`}
+              initial={{ y: 50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 50, opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 280, damping: 20 }}
               className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
             >
               <img 
@@ -3998,10 +4602,11 @@ export default function App() {
             </motion.div>
           ) : (
             <motion.div
-              key="main-bar-dock"
-              initial={{ y: 0, opacity: 1 }}
-              exit={{ y: 25, opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              key={`main-bar-dock-${mergeSearchToDock}`}
+              initial={{ y: 50, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 50, opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 280, damping: 20 }}
               className="flex items-center gap-2.5 w-full h-16 transform-gpu"
             >
               {/* Main Tab Dock (Pill) */}
@@ -4016,7 +4621,7 @@ export default function App() {
                 ) : (
                   <div className="flex items-center justify-around w-full h-full gap-0.5">
                     {dockItems
-                      .filter((item) => item.enabled)
+                      .filter((item) => item.enabled && (mergeSearchToDock || item.id !== "search"))
                       .map((tab) => {
                         const isActive = isDockItemActive(tab.id);
                         const config = getDockItemConfig(tab.id);
@@ -4062,6 +4667,45 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {/* Separate Search Button */}
+              {!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled && (() => {
+                const searchTab = dockItems.find(it => it.id === "search")!;
+                const isActive = isDockItemActive("search");
+                const config = getDockItemConfig("search");
+                return (
+                  <button
+                    key="search-separate-btn"
+                    onClick={() => handleDockItemClick("search")}
+                    className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative ${
+                      isActive ? "text-indigo-950 bg-white/50" : "hover:scale-105"
+                    }`}
+                    title={config.label}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTabPill"
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                      />
+                    )}
+                    {config.isImg ? (
+                      <img 
+                        src={config.icon} 
+                        className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
+                        style={config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" }}
+                        alt={config.label}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      (() => {
+                        const IconComponent = config.icon;
+                        return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-indigo-950" : "hover:scale-105 stroke-[1.8]"}`} />;
+                      })()
+                    )}
+                  </button>
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>
@@ -4108,69 +4752,69 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
-              <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
+              <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
                 Tạo kênh
               </h3>
-              <p className="text-[12px] text-black/60 mb-4 leading-relaxed px-1 mt-1">
+              <p className="text-[12px] text-white/60 mb-4 leading-relaxed px-1 mt-1">
                 Thêm luồng kênh mới vào danh sách kênh bằng cách nhập đường dẫn URL của luồng kênh đó
               </p>
 
               <form onSubmit={handleAddCustomChannel} className="space-y-3.5 text-sm">
                 <div className="space-y-1 text-left">
-                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập tên kênh</label>
+                  <label className="text-[11.5px] font-semibold text-white/70 block px-1">Nhập tên kênh</label>
                   <input
                     required
                     type="text"
                     placeholder="Kênh của tôi"
                     value={customChannelName}
                     onChange={(e) => setCustomChannelName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal"
+                    className="w-full px-4 py-2.5 rounded-full bg-white/5 text-white placeholder-white/30 border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-xs font-normal"
                   />
                 </div>
 
                 <div className="space-y-1 text-left">
-                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập đường dẫn</label>
+                  <label className="text-[11.5px] font-semibold text-white/70 block px-1">Nhập đường dẫn</label>
                   <input
                     required
                     type="url"
                     placeholder="https://example.com/live/stream.m3u8"
                     value={customChannelUrl}
                     onChange={(e) => setCustomChannelUrl(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal font-mono"
+                    className="w-full px-4 py-2.5 rounded-full bg-white/5 text-white placeholder-white/30 border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-xs font-normal font-mono"
                   />
                 </div>
 
                 <div className="space-y-1 text-left">
-                  <label className="text-[11.5px] font-semibold text-black/60 block px-1">Chọn nhóm kênh</label>
+                  <label className="text-[11.5px] font-semibold text-white/70 block px-1">Chọn nhóm kênh</label>
                   <select
                     value={customChannelGroup}
                     onChange={(e) => setCustomChannelGroup(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal appearance-none cursor-pointer pr-10 relative"
+                    className="w-full px-4 py-2.5 rounded-full bg-[#2d2a35] text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-xs font-normal appearance-none cursor-pointer pr-10 relative"
                     style={{
-                      backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                      backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                       backgroundPosition: 'right 14px center',
                       backgroundSize: '14px',
                       backgroundRepeat: 'no-repeat'
                     }}
                   >
-                    <option value="VTV">Kênh VTV</option>
-                    <option value="VTVcab">Kênh VTVcab</option>
-                    <option value="HTV">Kênh HTV</option>
-                    <option value="SCTV">Kênh SCTV</option>
-                    <option value="Địa phương">Kênh địa phương & Thiết yếu</option>
-                    <option value="Quốc tế">Kênh Quốc Tế & Đặc Sắc</option>
-                    <option value="Radio">Kênh Phát Thanh (Radio)</option>
-                    <option value="Thử nghiệm">Kênh Thử Nghiệm</option>
-                    <option value="NEW_GROUP">+ Tự tạo nhóm mới...</option>
+                    <option value="VTV" className="bg-[#211f26]">Kênh VTV</option>
+                    <option value="VTVcab" className="bg-[#211f26]">Kênh VTVcab</option>
+                    <option value="HTV" className="bg-[#211f26]">Kênh HTV</option>
+                    <option value="SCTV" className="bg-[#211f26]">Kênh SCTV</option>
+                    <option value="Địa phương" className="bg-[#211f26]">Kênh địa phương & Thiết yếu</option>
+                    <option value="Quốc tế" className="bg-[#211f26]">Kênh Quốc Tế & Đặc Sắc</option>
+                    <option value="Radio" className="bg-[#211f26]">Kênh Phát Thanh (Radio)</option>
+                    <option value="Thử nghiệm" className="bg-[#211f26]">Kênh Thử Nghiệm</option>
+                    <option value="NEW_GROUP" className="bg-[#211f26] font-semibold text-purple-300">+ Tự tạo nhóm mới...</option>
                   </select>
                 </div>
 
@@ -4180,14 +4824,14 @@ export default function App() {
                     animate={{ opacity: 1, height: "auto" }}
                     className="space-y-1 text-left"
                   >
-                    <label className="text-[11.5px] font-semibold text-black/60 block px-1">Nhập tên nhóm mới</label>
+                    <label className="text-[11.5px] font-semibold text-white/70 block px-1">Nhập tên nhóm mới</label>
                     <input
                       required
                       type="text"
                       placeholder="Ví dụ: Kênh Riêng"
                       value={customGroupInput}
                       onChange={(e) => setCustomGroupInput(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-full bg-white/75 text-black placeholder-black/40 border border-black/5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-normal"
+                      className="w-full px-4 py-2.5 rounded-full bg-white/5 text-white placeholder-white/30 border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-xs font-normal"
                     />
                   </motion.div>
                 )}
@@ -4196,15 +4840,15 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setShowCustomModal(false)}
-                    className="flex-1 py-3 px-4 rounded-full bg-black/10 hover:bg-black/15 active:scale-95 transition-all text-[#ff3b30] font-semibold text-[15px] text-center cursor-default"
+                    className="flex-1 py-3 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-[#ff453a] font-semibold text-[14px] text-center border border-white/5 cursor-default"
                   >
-                    Cancel
+                    Hủy bỏ
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] active:scale-95 transition-all text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)]"
+                    className="flex-1 py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all text-[#381e72] font-bold text-[14px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
                   >
-                    Create
+                    Tạo kênh
                   </button>
                 </div>
               </form>
@@ -4228,34 +4872,34 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[320px] rounded-[30px] bg-[#e5e5ea]/85 backdrop-blur-[20px] p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-center transform-gpu"
+              className="w-full max-w-[320px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-center transform-gpu"
             >
               <div className="absolute top-4 right-4">
                 <button 
                   onClick={() => setShowRemoteModal(false)}
-                  className="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 active:bg-black/15 flex items-center justify-center transition-all cursor-pointer text-black/60 hover:text-black"
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center justify-center transition-all cursor-pointer text-white/60 hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <h3 className="text-[17px] font-bold text-black tracking-tight leading-snug">
+              <h3 className="text-[17px] font-bold text-white tracking-tight leading-snug">
                 Nhập số kênh
               </h3>
 
               {/* DIGITAL DISPLAY PANEL */}
-              <div className="bg-black/5 rounded-2xl p-4 text-center font-mono text-3xl tracking-widest font-black text-black h-16 flex items-center justify-center border border-black/5 mb-4 relative overflow-hidden">
+              <div className="bg-white/5 rounded-2xl p-4 text-center font-mono text-3xl tracking-widest font-black text-white h-16 flex items-center justify-center border border-white/10 mb-4 relative overflow-hidden">
                 {remoteInputValue ? (
                   <motion.span 
                     key={remoteInputValue}
                     initial={{ y: -10, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="text-black"
+                    className="text-white"
                   >
                     {remoteInputValue}
                   </motion.span>
                 ) : (
-                  <span className="text-black/25">_ _ _</span>
+                  <span className="text-white/20">_ _ _</span>
                 )}
               </div>
 
@@ -4272,7 +4916,7 @@ export default function App() {
                     whileHover={{ scale: 1.18 }}
                     whileTap={{ scale: 1.28 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                    className="w-13 h-13 rounded-full bg-black/5 hover:bg-black/10 border border-black/10 flex items-center justify-center font-bold text-lg text-black shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] cursor-pointer select-none bouncy-btn"
+                    className="w-13 h-13 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center font-bold text-lg text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] cursor-pointer select-none bouncy-btn"
                   >
                     {num}
                   </motion.button>
@@ -4284,7 +4928,7 @@ export default function App() {
                   whileHover={{ scale: 1.18 }}
                   whileTap={{ scale: 1.28 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="w-13 h-13 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center text-red-600 font-bold text-lg cursor-pointer select-none bouncy-btn"
+                  className="w-13 h-13 rounded-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center text-red-400 font-bold text-lg cursor-pointer select-none bouncy-btn"
                   title="Clear"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -4300,7 +4944,7 @@ export default function App() {
                   whileHover={{ scale: 1.18 }}
                   whileTap={{ scale: 1.28 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="w-13 h-13 rounded-full bg-black/5 hover:bg-black/10 border border-black/10 flex items-center justify-center font-bold text-lg text-black shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.4)] cursor-pointer select-none bouncy-btn"
+                  className="w-13 h-13 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center font-bold text-lg text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] cursor-pointer select-none bouncy-btn"
                 >
                   0
                 </motion.button>
@@ -4331,9 +4975,9 @@ export default function App() {
                   whileHover={{ scale: 1.18 }}
                   whileTap={{ scale: 1.28 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  className="w-13 h-13 rounded-full bg-[#007aff] hover:bg-[#0066d6] border border-blue-400/20 flex items-center justify-center font-black text-xs text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] cursor-pointer select-none bouncy-btn"
+                  className="w-13 h-13 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] border border-white/10 flex items-center justify-center font-black text-xs text-[#381e72] shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] cursor-pointer select-none bouncy-btn"
                 >
-                  <Check className="w-5.5 h-5.5 text-white stroke-[3.5]" />
+                  <Check className="w-5.5 h-5.5 text-[#381e72] stroke-[3.5]" />
                 </motion.button>
               </div>
             </motion.div>
@@ -4349,25 +4993,25 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
-              <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
+              <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
                 Thử nghiệm Modal Pop-up
               </h3>
-              <p className="text-[12px] text-black/60 mb-5 leading-relaxed mt-2">
+              <p className="text-[12px] text-white/60 mb-5 leading-relaxed mt-2">
                 Đây là hộp thoại thông báo mẫu trong hệ thống thiết kế Vplay Refresh, được đồng bộ hóa với phong cách phẳng, mượt mà và trực quan của toàn bộ ứng dụng.
               </p>
               
               <button
                 onClick={() => setShowDemoDesignSystemModal(false)}
-                className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
+                className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transform-gpu"
               >
                 Đóng thử nghiệm
               </button>
@@ -4384,33 +5028,33 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
-              <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug">
+              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug">
                 Vplay Refresh
               </h3>
               
-              <div className="space-y-3.5 my-4 text-[12.5px] text-black/75 font-sans leading-relaxed">
-                <div className="flex justify-between items-center border-b border-black/5 pb-1.5">
-                  <span className="font-semibold text-black/80">Phiên bản</span>
-                  <span className="font-mono bg-black/5 px-2 py-0.5 rounded text-[11px] font-bold text-black">
+              <div className="space-y-3.5 my-4 text-[12.5px] text-white/75 font-sans leading-relaxed">
+                <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
+                  <span className="font-semibold text-white/80">Phiên bản</span>
+                  <span className="font-mono bg-white/5 px-2 py-0.5 rounded text-[11px] font-bold text-white">
                     26.8.3 (Beta)
                   </span>
                 </div>
-                <div className="flex justify-between items-center border-b border-black/5 pb-1.5">
-                  <span className="font-semibold text-black/80">Tác giả</span>
-                  <span className="font-medium text-black/90">VNRT</span>
+                <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
+                  <span className="font-semibold text-white/80">Tác giả</span>
+                  <span className="font-medium text-white/90">VNRT</span>
                 </div>
                 <div className="space-y-1">
-                  <span className="font-semibold text-black/80 block">Đồng hành & Hỗ trợ</span>
-                  <div className="text-[11.5px] text-black/65 bg-black/5 rounded-2xl p-2.5 leading-normal max-h-[110px] overflow-y-auto scrollbar-thin">
+                  <span className="font-semibold text-white/80 block">Đồng hành & Hỗ trợ</span>
+                  <div className="text-[11.5px] text-white/65 bg-white/5 rounded-2xl p-2.5 leading-normal max-h-[110px] overflow-y-auto scrollbar-thin">
                     FTV Official, HMG, DHA, Bsod999, Myyer, Nquinanh, TV Archive Official, VNTV Official
                   </div>
                 </div>
@@ -4418,7 +5062,7 @@ export default function App() {
               
               <button
                 onClick={() => setShowAboutModal(false)}
-                className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
+                className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transform-gpu"
               >
                 Đóng
               </button>
@@ -4435,22 +5079,22 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/25 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[380px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[380px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[18px] font-semibold text-black tracking-tight leading-snug">
+                <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
                   Chọn kênh
                 </h3>
                 <button
                   onClick={() => setShowVtv5Popup(false)}
-                  className="w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-black/60 hover:text-black transition-colors bouncy-btn border border-black/5"
+                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors bouncy-btn border border-white/5"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -4469,26 +5113,26 @@ export default function App() {
                       }}
                       className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-left border cursor-pointer transition-colors duration-200 bouncy-btn relative group overflow-hidden ${
                         isCurrentPlaying
-                          ? "bg-white border-blue-500/30 text-black shadow-sm"
-                          : "bg-white/45 hover:bg-white/75 border-black/5 hover:border-black/10"
+                          ? "bg-white/10 border-[#d0bcff]/40 text-white shadow-sm"
+                          : "bg-white/5 hover:bg-white/10 border-white/5 hover:border-white/10"
                       }`}
                     >
                       {/* Content Middle */}
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <h4 className="font-semibold text-black text-[14px] tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                        <h4 className="font-semibold text-white text-[14px] tracking-tight group-hover:text-[#d0bcff] transition-colors truncate">
                           {opt.name}
                         </h4>
                         {isCurrentPlaying && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#d0bcff] animate-pulse shrink-0" />
                         )}
                       </div>
 
                       {/* Right Indicator */}
-                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-black/5 group-hover:bg-black/10 border border-black/5 transition-colors shrink-0">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-white/5 group-hover:bg-white/10 border border-white/10 transition-colors shrink-0">
                         {isCurrentPlaying ? (
-                          <Check className="w-3.5 h-3.5 text-blue-600" />
+                          <Check className="w-3.5 h-3.5 text-[#d0bcff]" />
                         ) : (
-                          <Play className="w-3 h-3 fill-black text-black translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                          <Play className="w-3 h-3 fill-white text-white translate-x-0.5 opacity-60 group-hover:opacity-100 transition-opacity" />
                         )}
                       </div>
                     </button>
@@ -4500,7 +5144,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowVtv5Popup(false)}
-                  className="w-full py-3 px-4 rounded-full bg-black/10 hover:bg-black/15 active:scale-95 transition-all text-[#ff3b30] font-semibold text-[15px] text-center cursor-default"
+                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all text-[#381e72] font-bold text-[15px] text-center cursor-default"
                 >
                   Đóng
                 </button>
@@ -4525,7 +5169,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[420px] rounded-[30px] bg-[#120e24]/90 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.05),0_24px_48px_rgba(0,0,0,0.5)] relative border border-white/10 text-white text-left transform-gpu"
+              className="w-full max-w-[420px] rounded-[30px] bg-[#120e24]/90 p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -4590,7 +5234,7 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.12 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-4xl max-h-[85vh] rounded-[30px] bg-[#120e24]/95 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.05),0_24px_48px_rgba(0,0,0,0.5)] relative border border-white/10 text-white flex flex-col text-left transform-gpu overflow-hidden"
+              className="w-full max-w-4xl max-h-[85vh] rounded-[30px] bg-[#120e24]/95 p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white flex flex-col text-left transform-gpu overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4 shrink-0">
@@ -4766,13 +5410,13 @@ export default function App() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
             >
-              <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug">
+              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug">
                 Chưa cài đặt Gói tiện ích
               </h3>
-              <p className="text-[12.5px] text-black/65 mb-5 leading-relaxed mt-2">
-                Để sử dụng tính năng <strong className="text-black font-semibold">{requiredPluginFeatureName}</strong>, vui lòng cài đặt từ Cửa hàng tiện ích.
+              <p className="text-[12.5px] text-white/65 mb-5 leading-relaxed mt-2">
+                Để sử dụng tính năng <strong className="text-white font-semibold">{requiredPluginFeatureName}</strong>, vui lòng cài đặt từ Cửa hàng tiện ích.
               </p>
 
               <div className="flex flex-col gap-2.5">
@@ -4782,15 +5426,62 @@ export default function App() {
                     setActiveTab("settings");
                     setActiveSettingSection("plugin_store");
                   }}
-                  className="w-full py-3 px-4 rounded-full bg-[#007aff] hover:bg-[#0066d6] hover:scale-[1.02] active:scale-95 transition-all duration-300 text-white font-semibold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),0_2px_6px_rgba(0,122,255,0.25)] transform-gpu"
+                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] hover:scale-[1.02] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transform-gpu"
                 >
                   Đi đến cửa hàng
                 </button>
                 <button
                   onClick={() => setShowPluginRequiredModal(false)}
-                  className="w-full py-3.5 px-4 rounded-full bg-black/5 hover:bg-black/10 active:scale-95 transition-all duration-300 text-black/80 font-semibold text-[14px] text-center border border-black/5 cursor-default transform-gpu"
+                  className="w-full py-3.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all duration-300 text-white/80 font-semibold text-[14px] text-center border border-white/5 cursor-default transform-gpu"
                 >
                   Đóng
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* UNINSTALL CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {pluginToUninstall && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
+            >
+              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug">
+                Gỡ bỏ gói tiện ích?
+              </h3>
+              <p className="text-[12.5px] text-white/65 mb-5 leading-relaxed mt-2">
+                Bạn có muốn gỡ bỏ gói tiện ích <strong className="text-white font-semibold">{pluginToUninstall.title}</strong> không? Đừng lo, bạn vẫn có thể cài đặt lại sau trong cửa hàng tiện ích.
+              </p>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => {
+                    const id = pluginToUninstall.id;
+                    setPluginToUninstall(null);
+                    startUninstallPlugin(id);
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] hover:scale-[1.02] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[15px] text-center cursor-default transform-gpu"
+                >
+                  Xác nhận
+                </button>
+                <button
+                  onClick={() => setPluginToUninstall(null)}
+                  className="w-full py-3.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all duration-300 text-white/80 font-semibold text-[14px] text-center border border-white/5 cursor-default transform-gpu"
+                >
+                  Hủy
                 </button>
               </div>
             </motion.div>
@@ -4833,57 +5524,57 @@ export default function App() {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 1.15 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.15 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full max-w-[350px] rounded-[30px] bg-[#e5e5ea]/85 p-6 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.2),0_24px_48px_rgba(0,0,0,0.12)] relative border border-white/20 text-black text-left transform-gpu"
-              >
-                <h3 className="text-[18px] font-bold text-black tracking-tight leading-snug flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${isInstalling ? 'bg-blue-500' : 'bg-red-500'} animate-ping shrink-0`} />
-                  Vui lòng đợi
-                </h3>
-                <p className="text-[12.5px] text-black/65 mb-5 leading-relaxed mt-2">
-                  {isInstalling ? (
-                    <>Đang cài đặt gói tiện ích <strong className="text-black font-semibold">{pluginName}</strong>...</>
-                  ) : (
-                    <>Đang gỡ bỏ gói tiện ích <strong className="text-black font-semibold">{pluginName}</strong>...</>
-                  )}
-                </p>
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
+            >
+              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} animate-ping shrink-0`} />
+                Vui lòng đợi
+              </h3>
+              <p className="text-[12.5px] text-white/65 mb-5 leading-relaxed mt-2">
+                {isInstalling ? (
+                  <>Đang cài đặt gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
+                ) : (
+                  <>Đang gỡ bỏ gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
+                )}
+              </p>
 
-                {/* Progress Bar */}
-                <div className="w-full space-y-2 mb-6">
-                  <div className="w-full h-2 rounded-full bg-black/10 overflow-hidden border border-black/5">
-                    <motion.div 
-                      className={`h-full ${isInstalling ? 'bg-blue-500' : 'bg-red-500'} rounded-full`}
-                      style={{ width: `${percent}%` }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                  <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-blue-600' : 'text-red-600'} font-mono font-bold`}>
-                    <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
-                  </div>
+              {/* Progress Bar */}
+              <div className="w-full space-y-2 mb-6">
+                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden border border-white/5">
+                  <motion.div 
+                    className={`h-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} rounded-full`}
+                    style={{ width: `${percent}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
                 </div>
+                <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-[#d0bcff]' : 'text-red-400'} font-mono font-bold`}>
+                  <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
+                </div>
+              </div>
 
-                <button
-                  onClick={() => {
-                    // Cancel action: restore back to previous state
-                    setInstalledPlugins(prev => ({
-                      ...prev,
-                      [activePluginId]: isInstalling ? "idle" : "installed"
-                    }));
-                    setPluginProgress(p => {
-                      const cp = { ...p };
-                      delete cp[activePluginId];
-                      return cp;
-                    });
-                  }}
-                  className="w-full py-3 px-4 rounded-full bg-red-500/10 hover:bg-red-500/25 active:scale-95 transition-all duration-300 text-red-600 border border-red-500/20 font-bold text-[14px] text-center cursor-default transform-gpu"
-                >
-                  {isInstalling ? 'Hủy cài đặt gói' : 'Hủy gỡ bỏ gói'}
-                </button>
-              </motion.div>
+              <button
+                onClick={() => {
+                  // Cancel action: restore back to previous state
+                  setInstalledPlugins(prev => ({
+                    ...prev,
+                    [activePluginId]: isInstalling ? "idle" : "installed"
+                  }));
+                  setPluginProgress(p => {
+                    const cp = { ...p };
+                    delete cp[activePluginId];
+                    return cp;
+                  });
+                }}
+                className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[14px] text-center cursor-default transform-gpu"
+              >
+                {isInstalling ? 'Hủy cài đặt gói' : 'Hủy gỡ bỏ gói'}
+              </button>
+            </motion.div>
             </motion.div>
           );
         })()}
