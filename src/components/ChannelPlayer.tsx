@@ -51,6 +51,9 @@ export default function ChannelPlayer({
 }: ChannelPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const oscRef = useRef<OscillatorNode | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [isFullHD, setIsFullHD] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -125,10 +128,10 @@ export default function ChannelPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    if (channel.id === "vietnam-wild-live") {
+    if (channel.id === "vietnam-wild-live" || channel.id === "vplay_live") {
       setIsLoading(false);
       setHasError(false);
-      setIsPlaying(false);
+      setIsPlaying(true);
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
@@ -228,8 +231,112 @@ export default function ChannelPlayer({
     };
   }, [channel.url, channel.id]);
 
+  // Web Audio API for 1kHz beep on channel 155 ("vplay_live") and VTVgo Event Feed ("vietnam-wild-live")
+  useEffect(() => {
+    const isTestSignalChannel = channel.id === "vplay_live" || channel.id === "vietnam-wild-live";
+    if (!isTestSignalChannel) {
+      // Clean up if we switch away
+      if (oscRef.current) {
+        try { oscRef.current.stop(); oscRef.current.disconnect(); } catch (e) {}
+        oscRef.current = null;
+      }
+      if (gainRef.current) {
+        try { gainRef.current.disconnect(); } catch (e) {}
+        gainRef.current = null;
+      }
+      return;
+    }
+
+    const updateAudioState = () => {
+      const shouldPlayBeep = isPlaying && !muted && volume > 0;
+
+      if (shouldPlayBeep) {
+        try {
+          if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          }
+          const ctx = audioCtxRef.current;
+          
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+
+          if (!oscRef.current) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(1000, ctx.currentTime); // 1kHz
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+
+            oscRef.current = osc;
+            gainRef.current = gain;
+          }
+
+          if (gainRef.current) {
+            // Safe comfortable volume level (0.12 scale)
+            gainRef.current.gain.setValueAtTime(volume * 0.12, ctx.currentTime);
+          }
+        } catch (e) {
+          console.error("Failed to start 1000Hz beep:", e);
+        }
+      } else {
+        if (oscRef.current) {
+          try { oscRef.current.stop(); oscRef.current.disconnect(); } catch (e) {}
+          oscRef.current = null;
+        }
+        if (gainRef.current) {
+          try { gainRef.current.disconnect(); } catch (e) {}
+          gainRef.current = null;
+        }
+      }
+    };
+
+    // Run initially
+    updateAudioState();
+
+    // Listen to user interactions anywhere to immediately start/resume AudioContext
+    const handleUserInteraction = () => {
+      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+        audioCtxRef.current.resume().then(() => {
+          updateAudioState();
+        }).catch(err => console.log("Failed to resume context:", err));
+      } else {
+        updateAudioState();
+      }
+    };
+
+    window.addEventListener("click", handleUserInteraction);
+    window.addEventListener("touchstart", handleUserInteraction);
+    window.addEventListener("keydown", handleUserInteraction);
+
+    return () => {
+      window.removeEventListener("click", handleUserInteraction);
+      window.removeEventListener("touchstart", handleUserInteraction);
+      window.removeEventListener("keydown", handleUserInteraction);
+
+      if (oscRef.current) {
+        try { oscRef.current.stop(); oscRef.current.disconnect(); } catch (e) {}
+        oscRef.current = null;
+      }
+      if (gainRef.current) {
+        try { gainRef.current.disconnect(); } catch (e) {}
+        gainRef.current = null;
+      }
+    };
+  }, [channel.id, isPlaying, muted, volume]);
+
   // Handle Play/Pause
   const togglePlay = () => {
+    if (channel.id === "vietnam-wild-live" || channel.id === "vplay_live") {
+      setIsPlaying(!isPlaying);
+      return;
+    }
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -299,6 +406,7 @@ export default function ChannelPlayer({
   // Dynamic status badges
   const isVtv = channel.group?.toUpperCase().includes("VTV") || false;
   const isCab = channel.group?.toUpperCase().includes("VTVCAB") || channel.group?.toUpperCase().includes("SCTV") || false;
+  const isTestSignalChannel = channel.id === "vplay_live" || channel.id === "vietnam-wild-live";
 
   return (
     <div id="channel-player-container font-sans" className="w-full max-w-5xl mx-auto mb-8 animate-fade-in">
@@ -410,155 +518,141 @@ export default function ChannelPlayer({
           </div>
         )}
 
-        {/* Custom Standby Board notice for VTVgo Event Feed */}
-        {channel.id === "vietnam-wild-live" && (
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center z-10 select-none overflow-hidden">
-            {/* Elegant glowing background rings */}
-            <div className="absolute w-72 h-72 rounded-full bg-purple-500/10 blur-3xl pointer-events-none -top-10 -left-10" />
-            <div className="absolute w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none -bottom-10 -right-10" />
-            
-            <div className="relative mb-5">
-              <div className="absolute -inset-4 bg-purple-500/25 rounded-full blur-xl animate-pulse"></div>
-              <div className="relative w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-purple-300 shadow-2xl backdrop-blur-md">
-                <Tv className="w-10 h-10 animate-pulse" />
-              </div>
-              <div className="absolute -top-1.5 -right-1.5 px-2 py-0.5 rounded-full bg-purple-600 text-[9px] font-bold tracking-widest text-white uppercase shadow-lg border border-purple-400/30">
-                Standby
-              </div>
-            </div>
-            
-            <h3 className="text-white text-base sm:text-lg font-bold tracking-tight mb-2 uppercase">{channel.name}</h3>
-            <p className="max-w-md text-white/70 text-[13px] leading-relaxed mb-4 px-4">
-              Luồng kênh đặc biệt sẽ phát sóng nếu có bất kỳ sự kiện đặc biệt nào.
-            </p>
-            
-            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium text-purple-300 tracking-wide flex items-center gap-1.5 shadow-inner">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
-              Tín hiệu sẵn sàng
-            </div>
+        {/* Custom Standby Board notice with EBU Colorbars for VTVgo Event Feed & vplay_live */}
+        {isTestSignalChannel && (
+          <div className="absolute inset-0 z-10 select-none overflow-hidden">
+            {/* EBU Colorbars Background */}
+            <img 
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/EBU_Colorbars_HD.svg/960px-EBU_Colorbars_HD.svg.png?_=20220810032923" 
+              alt="EBU Colorbars" 
+              className="absolute inset-0 w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
         )}
 
         {/* Dynamic Frosted Glass Bottom Overlay Controls */}
-        <div className={`absolute bottom-0 inset-x-0 p-4 transition-all duration-300 flex flex-col gap-3.5 z-15 ${showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"}`}>
-          
-          {/* Progressive blur background for premium translucent control base */}
-          <div className="progressive-blur-player" />
+        {!isTestSignalChannel && (
+          <div className={`absolute bottom-0 inset-x-0 p-4 transition-all duration-300 flex flex-col gap-3.5 z-15 ${showControls || !isPlaying ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"}`}>
+            
+            {/* Progressive blur background for premium translucent control base */}
+            <div className="progressive-blur-player" />
 
-          {/* Interactive controls content wrapper above blur */}
-          <div className="relative z-10 flex flex-col gap-3.5 w-full">
-            {/* 1. Horizontal Progress timeline/slider from mock */}
-            <div className="w-full flex items-center mt-1 px-1 relative group/slider">
-              <div 
-                className="w-full h-1 bg-white/20 rounded-full relative cursor-default"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const clickX = e.clientX - rect.left;
-                  const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
-                  setProgramInfo(prev => ({ ...prev, progress: pct }));
-                }}
-              >
-                {/* Active slider track filled with beautiful vibrant blue */}
+            {/* Interactive controls content wrapper above blur */}
+            <div className="relative z-10 flex flex-col gap-3.5 w-full">
+              {/* 1. Horizontal Progress timeline/slider from mock */}
+              <div className="w-full flex items-center mt-1 px-1 relative group/slider">
                 <div 
-                  className="h-full bg-[#0084ff] rounded-full relative" 
-                  style={{ width: `${programInfo.progress}%` }}
+                  className="w-full h-1 bg-white/20 rounded-full relative cursor-default"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const pct = Math.min(100, Math.max(0, Math.round((clickX / rect.width) * 100)));
+                    setProgramInfo(prev => ({ ...prev, progress: pct }));
+                  }}
                 >
-                  {/* Thumb dot - Horizontal Pill Shape Capsule (interactive glassy spring scaling on hover/drag - transparent glassy bubble) */}
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-[32px] sm:w-[40px] h-[16px] sm:h-[20px] bg-white rounded-full shadow-lg border border-white/60 transition-all duration-300 ease-[cubic-bezier(0.175,1.85,0.35,1.45)] group-hover/slider:scale-135 group-hover/slider:bg-transparent group-hover/slider:border-white/95 group-active/slider:scale-175 group-active/slider:bg-transparent group-active/slider:border-white"></div>
+                  {/* Active slider track filled with beautiful vibrant blue */}
+                  <div 
+                    className="h-full bg-[#0084ff] rounded-full relative" 
+                    style={{ width: `${programInfo.progress}%` }}
+                  >
+                    {/* Thumb dot - Horizontal Pill Shape Capsule (interactive glassy spring scaling on hover/drag - transparent glassy bubble) */}
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-[32px] sm:w-[40px] h-[16px] sm:h-[20px] bg-white rounded-full shadow-lg border border-white/60 transition-all duration-300 ease-[cubic-bezier(0.175,1.85,0.35,1.45)] group-hover/slider:scale-135 group-hover/slider:bg-transparent group-hover/slider:border-white/95 group-active/slider:scale-175 group-active/slider:bg-transparent group-active/slider:border-white"></div>
+                  </div>
                 </div>
               </div>
+
+            {/* 2. Controls and Buttons row */}
+            <div className="flex items-center justify-between gap-2">
+              
+              {/* Left Utility: Volume Controls with 10% opacity & 10% blur */}
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-[1.5px] border border-white/10 pl-2 pr-2.5 py-1.5 rounded-full group/vol bouncy-btn shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)]">
+                <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-135">
+                  {muted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={muted ? 0 : volume}
+                  onChange={handleVolumeChangeLocal}
+                  className="w-12 sm:w-16 h-1 rounded-lg appearance-none cursor-default transition-all range-slider-pill outline-none"
+                  style={{
+                    background: `linear-gradient(to right, #0084ff ${(muted ? 0 : volume) * 100}%, rgba(255, 255, 255, 0.2) ${(muted ? 0 : volume) * 100}%)`
+                  }}
+                />
+              </div>
+
+              {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
+              <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3.5">
+                {/* Button 1: Dynamic Heart Favorite button */}
+                <button 
+                  onClick={onToggleFavorite}
+                  className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default group"
+                  title={isFavorite ? "Bỏ yêu thích" : "Yêu thích kênh"}
+                >
+                  <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-red-500 fill-red-500 scale-110" : "text-white/80 group-hover:text-red-400 group-hover:scale-110"}`} />
+                </button>
+
+                {/* Button 2: Skip back */}
+                <button 
+                  onClick={onPrevChannel}
+                  className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
+                  title="Kênh trước"
+                >
+                  <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                </button>
+
+                {/* Button 3: Main center Play/Pause button (Larger size) */}
+                <button 
+                  onClick={togglePlay}
+                  className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_12px_24px_rgba(0,0,0,0.3)] cursor-default"
+                  title={isPlaying ? "Tạm Dừng" : "Phát"}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white" />
+                  ) : (
+                    <Play className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white translate-x-0.5" />
+                  )}
+                </button>
+
+                {/* Button 4: Skip forward */}
+                <button 
+                  onClick={onNextChannel}
+                  className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
+                  title="Kênh sau"
+                >
+                  <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                </button>
+
+                {/* Button 5: Loop context / reload button */}
+                <button 
+                  onClick={() => {
+                    setHasError(false);
+                    setIsLoading(true);
+                    if (videoRef.current) videoRef.current.load();
+                  }}
+                  className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
+                  title="Tải lại luồng"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
+                </button>
+              </div>
+
+              {/* Right Utility: Fullscreen scale config */}
+              <button 
+                onClick={handleFullscreen}
+                className="p-2 sm:p-2.5 rounded-full bg-white/10 backdrop-blur-[1.5px] bouncy-btn text-white/70 hover:text-white border border-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default flex items-center justify-center shrink-0"
+                title="Toàn màn hình"
+              >
+                <Maximize className="w-4 h-4" />
+              </button>
             </div>
-
-          {/* 2. Controls and Buttons row */}
-          <div className="flex items-center justify-between gap-2">
-            
-            {/* Left Utility: Volume Controls with 10% opacity & 10% blur */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-[1.5px] border border-white/10 pl-2 pr-2.5 py-1.5 rounded-full group/vol bouncy-btn shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)]">
-              <button onClick={toggleMute} className="text-white/80 hover:text-white p-0.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.175,0.885,0.32,1.275)] hover:scale-120 active:scale-135">
-                {muted || volume === 0 ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={muted ? 0 : volume}
-                onChange={handleVolumeChangeLocal}
-                className="w-12 sm:w-16 h-1 rounded-lg appearance-none cursor-default transition-all range-slider-pill outline-none"
-                style={{
-                  background: `linear-gradient(to right, #0084ff ${(muted ? 0 : volume) * 100}%, rgba(255, 255, 255, 0.2) ${(muted ? 0 : volume) * 100}%)`
-                }}
-              />
-            </div>
-
-            {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
-            <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3.5">
-              {/* Button 1: Dynamic Heart Favorite button */}
-              <button 
-                onClick={onToggleFavorite}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default group"
-                title={isFavorite ? "Bỏ yêu thích" : "Yêu thích kênh"}
-              >
-                <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-red-500 fill-red-500 scale-110" : "text-white/80 group-hover:text-red-400 group-hover:scale-110"}`} />
-              </button>
-
-              {/* Button 2: Skip back */}
-              <button 
-                onClick={onPrevChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
-                title="Kênh trước"
-              >
-                <SkipBack className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
-              </button>
-
-              {/* Button 3: Main center Play/Pause button (Larger size) */}
-              <button 
-                onClick={togglePlay}
-                className="w-11 h-11 xs:w-12 xs:h-12 sm:w-15 sm:h-15 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_12px_24px_rgba(0,0,0,0.3)] cursor-default"
-                title={isPlaying ? "Tạm Dừng" : "Phát"}
-              >
-                {isPlaying ? (
-                  <Pause className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white" />
-                ) : (
-                  <Play className="w-4.5 h-4.5 sm:w-6 sm:h-6 fill-white text-white translate-x-0.5" />
-                )}
-              </button>
-
-              {/* Button 4: Skip forward */}
-              <button 
-                onClick={onNextChannel}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
-                title="Kênh sau"
-              >
-                <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
-              </button>
-
-              {/* Button 5: Loop context / reload button */}
-              <button 
-                onClick={() => {
-                  setHasError(false);
-                  setIsLoading(true);
-                  if (videoRef.current) videoRef.current.load();
-                }}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
-                title="Tải lại luồng"
-              >
-                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
-              </button>
-            </div>
-
-            {/* Right Utility: Fullscreen scale config */}
-            <button 
-              onClick={handleFullscreen}
-              className="p-2 sm:p-2.5 rounded-full bg-white/10 backdrop-blur-[1.5px] bouncy-btn text-white/70 hover:text-white border border-white/10 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default flex items-center justify-center shrink-0"
-              title="Toàn màn hình"
-            >
-              <Maximize className="w-4 h-4" />
-            </button>
           </div>
         </div>
+        )}
       </div>
     </div>
-  </div>
   );
 }
