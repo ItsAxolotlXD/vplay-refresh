@@ -1093,7 +1093,7 @@ export default function App() {
       )}
 
       {/* TV360 STYLE CINEMATIC HEADER (Floating on Top - Displays on ALL tabs) */}
-      {(activeTab !== "settings" || activeSettingSection === null) && (
+      {(activeTab !== "settings" || activeSettingSection === null) && activeTab !== "live" && (
         <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-150">
           {/* Progressive background blurs backplate - Only visible when scrolled down or when not on home tab */}
           {activeTab === "live" || activeTab === "search" ? (
@@ -1164,155 +1164,157 @@ export default function App() {
             </div>
 
             {/* Top Menu Dropdown Button */}
-            <div className="relative">
-              <button
-                onClick={() => setShowDropdownMenu(prev => !prev)}
-                className="p-1.5 sm:p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 text-white/85 hover:text-white transition-all cursor-pointer flex items-center justify-center active:scale-95 duration-200"
-                title="Menu"
-              >
-                <Menu className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
-              </button>
-              
-              <AnimatePresence>
-                {showDropdownMenu && (
-                  <>
-                    {/* Invisible Backdrop for click-away */}
-                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
-                    
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.85 }}
-                      style={{ originX: 1, originY: 0 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute right-0 mt-3 w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.1)] z-50 py-3.5 text-black overflow-hidden"
-                    >
-                      {/* Clock & Calendar toggle with checkmark */}
-                      <button
-                        onClick={() => {
-                          toggleShowClock();
-                        }}
-                        className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
+            {activeTab !== "live" && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdownMenu(prev => !prev)}
+                  className="p-1.5 sm:p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 text-white/85 hover:text-white transition-all cursor-pointer flex items-center justify-center active:scale-95 duration-200"
+                  title="Menu"
+                >
+                  <Menu className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                </button>
+                
+                <AnimatePresence>
+                  {showDropdownMenu && (
+                    <>
+                      {/* Invisible Backdrop for click-away */}
+                      <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
+                      
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85 }}
+                        style={{ originX: 1, originY: 0 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute right-0 mt-3 w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.1)] z-50 py-3.5 text-black overflow-hidden"
                       >
-                        <div className="flex items-center">
-                          <Clock className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                          <span>Đồng hồ và Lịch</span>
-                        </div>
-                        {showClock && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
-                      </button>
+                        {/* Clock & Calendar toggle with checkmark */}
+                        <button
+                          onClick={() => {
+                            toggleShowClock();
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
+                        >
+                          <div className="flex items-center">
+                            <Clock className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            <span>Đồng hồ và Lịch</span>
+                          </div>
+                          {showClock && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
+                        </button>
 
-                      {/* Xuất luồng kênh (Only visible on Live tab) */}
-                      {activeTab === "live" && (
+                        {/* Xuất luồng kênh (Only visible on Live tab) */}
+                        {activeTab === "live" && (
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.export_stream !== "installed") {
+                                setRequiredPluginFeatureName("Xuất luồng");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                exportChannelsToM3u8();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                          >
+                            <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Xuất luồng kênh
+                          </button>
+                        )}
+
+                        {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                        {activeTab === "live" && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.multiview !== "installed") {
+                                  setRequiredPluginFeatureName("Multiview");
+                                  setShowPluginRequiredModal(true);
+                                } else {
+                                  handleOpenMultiviewSelector();
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Xem Multiview
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.pip !== "installed") {
+                                  setRequiredPluginFeatureName("Picture in Picture");
+                                  setShowPluginRequiredModal(true);
+                                } else {
+                                  handleTogglePictureInPicture();
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Picture in Picture
+                            </button>
+                          </>
+                        )}
+   
+                        {/* Divider */}
+                        <div className="border-t border-black/10 my-2" />
+   
+                        {/* About this version */}
                         <button
                           onClick={() => {
                             setShowDropdownMenu(false);
-                            if (installedPlugins.export_stream !== "installed") {
-                              setRequiredPluginFeatureName("Xuất luồng");
-                              setShowPluginRequiredModal(true);
-                            } else {
-                              exportChannelsToM3u8();
-                            }
+                            setShowAboutModal(true);
                           }}
-                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
                         >
-                          <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                          Xuất luồng kênh
+                          <Info className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Về phiên bản này
                         </button>
-                      )}
+   
+                        {/* Reload app */}
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            window.location.reload();
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Tải lại ứng dụng
+                        </button>
 
-                      {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
-                      {activeTab === "live" && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setShowDropdownMenu(false);
-                              if (installedPlugins.multiview !== "installed") {
-                                setRequiredPluginFeatureName("Multiview");
-                                setShowPluginRequiredModal(true);
-                              } else {
-                                handleOpenMultiviewSelector();
-                              }
-                            }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
-                          >
-                            <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Xem Multiview
-                          </button>
-                          <button
-                            onClick={() => {
-                              setShowDropdownMenu(false);
-                              if (installedPlugins.pip !== "installed") {
-                                setRequiredPluginFeatureName("Picture in Picture");
-                                setShowPluginRequiredModal(true);
-                              } else {
-                                handleTogglePictureInPicture();
-                              }
-                            }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal border-t border-black/5"
-                          >
-                            <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Picture in Picture
-                          </button>
-                        </>
-                      )}
- 
-                      {/* Divider */}
-                      <div className="border-t border-black/10 my-2" />
- 
-                      {/* About this version */}
-                      <button
-                        onClick={() => {
-                          setShowDropdownMenu(false);
-                          setShowAboutModal(true);
-                        }}
-                        className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                      >
-                        <Info className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                        Về phiên bản này
-                      </button>
- 
-                      {/* Reload app */}
-                      <button
-                        onClick={() => {
-                          setShowDropdownMenu(false);
-                          window.location.reload();
-                        }}
-                        className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                        Tải lại ứng dụng
-                      </button>
-
-                      {/* Thử nghiệm */}
-                      <button
-                        onClick={() => {
-                          setShowDropdownMenu(false);
-                          setActiveTab("settings");
-                          setActiveSettingSection("experimental");
-                        }}
-                        className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                      >
-                        <Pizza className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                        Thử nghiệm
-                      </button>
- 
-                      {/* Open Settings */}
-                      <button
-                        onClick={() => {
-                          setShowDropdownMenu(false);
-                          setActiveTab("settings");
-                          setActiveSettingSection(null);
-                        }}
-                        className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                      >
-                        <Settings className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                        Mở cài đặt
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+                        {/* Thử nghiệm */}
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            setActiveTab("settings");
+                            setActiveSettingSection("experimental");
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                        >
+                          <Pizza className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Thử nghiệm
+                        </button>
+   
+                        {/* Open Settings */}
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            setActiveTab("settings");
+                            setActiveSettingSection(null);
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                        >
+                          <Settings className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Mở cài đặt
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         </header>
       )}
@@ -1345,13 +1347,19 @@ export default function App() {
       )}
 
       {/* Main Container */}
-      <main id="player-anchor" className={activeTab === "home" ? "w-full pt-0 z-10 relative" : "w-full max-w-7xl mx-auto px-4 pt-24 lg:pt-28 pb-8 z-10 relative"}>
+      <main id="player-anchor" className={
+        activeTab === "home"
+          ? "w-full pt-0 z-10 relative"
+          : activeTab === "live"
+            ? "w-full max-w-7xl mx-auto px-4 pt-4 sm:pt-6 lg:pt-8 pb-8 z-10 relative"
+            : "w-full max-w-7xl mx-auto px-4 pt-24 lg:pt-28 pb-8 z-10 relative"
+      }>
 
         {/* VIEW: LIVE TV BROADCASTING (PRIMARY GRAPHICS) */}
         {(activeTab === "live" || activeTab === "search") && (
           <>
             {/* Sticky Player, Action Buttons & Category Filters on Mobile */}
-            <div className={`sticky top-24 lg:relative lg:top-auto z-40 ${
+            <div className={`sticky ${activeTab === "live" ? "top-0" : "top-24"} lg:relative lg:top-auto z-40 ${
               amoledDark ? "bg-[#211f26]" : "bg-[#211f26]"
             } lg:bg-transparent lg:backdrop-blur-none -mx-4 px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 border-b lg:border-none border-white/5 shadow-[0_15px_30px_rgba(0,0,0,0.4)] lg:shadow-none pt-2 pb-2 lg:pb-0 animate-duration-300`}>
               {/* Solid background on mobile, no progressive-blur-header to ensure content does not peak through */}
@@ -1483,6 +1491,152 @@ export default function App() {
 
                 {/* Live tab Actions Button Bar - Placed perfectly under the channel player exactly as requested */}
                 <div className="w-full max-w-5xl mx-auto mt-3 sm:mt-5 flex items-center justify-center gap-2 sm:gap-3 z-10 relative px-2">
+                  {/* Hamburger menu button (3 gạch ngang) */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowDropdownMenu(prev => !prev)}
+                      className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#d0bcff] hover:bg-[#bba3f0] active:bg-[#a88ee6] text-[#381e72] border-none flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-[10.5px] sm:text-xs font-semibold"
+                      title="Menu"
+                    >
+                      <Menu className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#381e72]" />
+                      <span>Menu</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {showDropdownMenu && (
+                        <>
+                          {/* Invisible Backdrop for click-away */}
+                          <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
+                          
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.85, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.85, y: 15 }}
+                            style={{ originX: 0.2, originY: 1 }}
+                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                            className="absolute bottom-full left-0 mb-3 w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
+                          >
+                            {/* Clock & Calendar toggle with checkmark */}
+                            <button
+                              onClick={() => {
+                                toggleShowClock();
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
+                            >
+                              <div className="flex items-center">
+                                <Clock className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                                <span>Đồng hồ và Lịch</span>
+                              </div>
+                              {showClock && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
+                            </button>
+
+                            {/* Xuất luồng kênh (Only visible on Live tab) */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.export_stream !== "installed") {
+                                  setRequiredPluginFeatureName("Xuất luồng");
+                                  setShowPluginRequiredModal(true);
+                                } else {
+                                  exportChannelsToM3u8();
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Xuất luồng kênh
+                            </button>
+
+                            {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.multiview !== "installed") {
+                                  setRequiredPluginFeatureName("Multiview");
+                                  setShowPluginRequiredModal(true);
+                                } else {
+                                  handleOpenMultiviewSelector();
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Xem Multiview
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.pip !== "installed") {
+                                  setRequiredPluginFeatureName("Picture in Picture");
+                                  setShowPluginRequiredModal(true);
+                                } else {
+                                  handleTogglePictureInPicture();
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Picture in Picture
+                            </button>
+
+                            {/* Divider */}
+                            <div className="border-t border-black/10 my-2" />
+
+                            {/* About this version */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                setShowAboutModal(true);
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Info className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Về phiên bản này
+                            </button>
+
+                            {/* Reload app */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                window.location.reload();
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Tải lại ứng dụng
+                            </button>
+
+                            {/* Thử nghiệm */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                setActiveTab("settings");
+                                setActiveSettingSection("experimental");
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Pizza className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Thử nghiệm
+                            </button>
+
+                            {/* Open Settings */}
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                setActiveTab("settings");
+                                setActiveSettingSection(null);
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Settings className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Mở cài đặt
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
                   {/* Share button */}
                   <button
                     onClick={handleShareChannel}
@@ -1539,7 +1693,7 @@ export default function App() {
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 mt-3 mb-1 lg:mb-6 lg:pb-4 lg:mt-4 border-b lg:border-none border-white/5 scrollbar-none">
                   <button
                     onClick={() => setSelectedCategory("all")}
-                    className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
+                    className={`px-5 py-2 sm:px-6 sm:py-2.5 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
                       selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                     }`}
                   >
@@ -1550,7 +1704,7 @@ export default function App() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
+                      className={`px-5 py-2 sm:px-6 sm:py-2.5 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
                         selectedCategory === cat.id ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                       }`}
                     >
@@ -4598,182 +4752,186 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
-        <div className="progressive-blur-dock" />
-      </div>
+      {activeTab !== "live" && (
+        <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
+          <div className="progressive-blur-dock" />
+        </div>
+      )}
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
-        <AnimatePresence mode="wait">
-          {activeTab === "search" ? (
-            <motion.div
-              key={`search-bar-dock-${mergeSearchToDock}`}
-              initial={{ y: 50, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 50, opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 280, damping: 20 }}
-              className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
-            >
-              <img 
-                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
-                className="w-5.5 h-5.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
-                referrerPolicy="no-referrer"
-                alt="Search"
-              />
-              <input
-                type="text"
-                placeholder="Search channels"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
-                autoFocus
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="p-1 text-white/40 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveTab(prevTab);
-                }}
-                className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] flex items-center justify-center text-white cursor-default shrink-0 bouncy-btn"
-                title="Hủy"
+      {activeTab !== "live" && (
+        <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
+          <AnimatePresence mode="wait">
+            {activeTab === "search" ? (
+              <motion.div
+                key={`search-bar-dock-${mergeSearchToDock}`}
+                initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+                className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu"
               >
-                <X className="w-4 h-4" />
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key={`main-bar-dock-${mergeSearchToDock}`}
-              initial={{ y: 50, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 50, opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 280, damping: 20 }}
-              className="flex items-center gap-2.5 w-full h-16 transform-gpu"
-            >
-              {/* Main Tab Dock (Pill) */}
-              <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1 relative transform-gpu">
-                {showCopiedNotify ? (
-                  <div
-                    className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
-                  >
-                    <Check className="w-5 h-5 text-emerald-400" />
-                    <span>Copied to clipboard</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-around w-full h-full gap-0.5">
-                    {dockItems
-                      .filter((item) => item.enabled && (mergeSearchToDock || item.id !== "search"))
-                      .map((tab) => {
-                        const isActive = isDockItemActive(tab.id);
-                        const config = getDockItemConfig(tab.id);
-                        const filterStyle = config.isImg 
-                          ? { filter: isActive ? "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" : "brightness(0) invert(1) opacity(0.8)" } 
-                          : {};
-
-                        return (
-                          <button 
-                            key={tab.id}
-                            onClick={() => handleDockItemClick(tab.id)}
-                            className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu ${
-                              isActive 
-                                ? "text-indigo-950 font-bold" 
-                                : "text-white/65 hover:text-white"
-                            }`}
-                            title={config.label}
-                          >
-                            {isActive && (
-                              <motion.div
-                                layoutId="activeTabPill"
-                                transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
-                              />
-                            )}
-                            {config.isImg ? (
-                              <img 
-                                src={config.icon} 
-                                className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
-                                style={filterStyle}
-                                alt={config.label}
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              (() => {
-                                const IconComponent = config.icon;
-                                return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2]" : "hover:scale-105 stroke-[1.8]"}`} />;
-                              })()
-                            )}
-                          </button>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
-
-              {/* Separate Search Button */}
-              {!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled && (() => {
-                const searchTab = dockItems.find(it => it.id === "search")!;
-                const isActive = isDockItemActive("search");
-                const config = getDockItemConfig("search");
-                return (
+                <img 
+                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                  className="w-5.5 h-5.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
+                  referrerPolicy="no-referrer"
+                  alt="Search"
+                />
+                <input
+                  type="text"
+                  placeholder="Search channels"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
+                  autoFocus
+                />
+                {searchQuery && (
                   <button
-                    key="search-separate-btn"
-                    onClick={() => handleDockItemClick("search")}
-                    className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative ${
-                      isActive ? "text-indigo-950 bg-white/50" : "hover:scale-105"
-                    }`}
-                    title={config.label}
+                    onClick={() => setSearchQuery("")}
+                    className="p-1 text-white/40 hover:text-white"
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeTabPill"
-                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                        className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
-                      />
-                    )}
-                    {config.isImg ? (
-                      <img 
-                        src={config.icon} 
-                        className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
-                        style={config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" }}
-                        alt={config.label}
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      (() => {
-                        const IconComponent = config.icon;
-                        return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-indigo-950" : "hover:scale-105 stroke-[1.8]"}`} />;
-                      })()
-                    )}
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                );
-              })()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Playback Error Toast Alert */}
-        <AnimatePresence>
-          {playbackError && (
-            <motion.div
-              initial={{ opacity: 0, y: 15, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 15, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="mt-3 mx-auto w-fit px-5 py-2.5 rounded-full bg-red-600/25 backdrop-blur-[12px] border border-red-500/35 text-red-200 text-xs font-normal flex items-center gap-2 shadow-[0_12px_32px_rgba(239,68,68,0.25)] select-none"
-            >
-              <AlertCircle className="w-4.5 h-4.5 text-red-400 animate-pulse" />
-              <span className="flex items-center gap-1">
-                Playback Error. Try to watch directly using <Tv className="w-3.5 h-3.5 text-red-300 inline" />
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+                )}
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveTab(prevTab);
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] flex items-center justify-center text-white cursor-default shrink-0 bouncy-btn"
+                  title="Hủy"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`main-bar-dock-${mergeSearchToDock}`}
+                initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+                className="flex items-center gap-2.5 w-full h-16 transform-gpu"
+              >
+                {/* Main Tab Dock (Pill) */}
+                <div className="flex-1 h-full rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-around px-2 py-1 relative transform-gpu">
+                  {showCopiedNotify ? (
+                    <div
+                      className="flex items-center justify-center gap-2.5 text-white font-normal text-sm tracking-wide select-none animate-fade-in"
+                    >
+                      <Check className="w-5 h-5 text-emerald-400" />
+                      <span>Copied to clipboard</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-around w-full h-full gap-0.5">
+                      {dockItems
+                        .filter((item) => item.enabled && (mergeSearchToDock || item.id !== "search"))
+                        .map((tab) => {
+                          const isActive = isDockItemActive(tab.id);
+                          const config = getDockItemConfig(tab.id);
+                          const filterStyle = config.isImg 
+                            ? { filter: isActive ? "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" : "brightness(0) invert(1) opacity(0.8)" } 
+                            : {};
+  
+                          return (
+                            <button 
+                              key={tab.id}
+                              onClick={() => handleDockItemClick(tab.id)}
+                              className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu ${
+                                isActive 
+                                  ? "text-indigo-950 font-bold" 
+                                  : "text-white/65 hover:text-white"
+                              }`}
+                              title={config.label}
+                            >
+                              {isActive && (
+                                <motion.div
+                                  layoutId="activeTabPill"
+                                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                                  className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                                />
+                              )}
+                              {config.isImg ? (
+                                <img 
+                                  src={config.icon} 
+                                  className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
+                                  style={filterStyle}
+                                  alt={config.label}
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                (() => {
+                                  const IconComponent = config.icon;
+                                  return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2]" : "hover:scale-105 stroke-[1.8]"}`} />;
+                                })()
+                              )}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+  
+                {/* Separate Search Button */}
+                {!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled && (() => {
+                  const searchTab = dockItems.find(it => it.id === "search")!;
+                  const isActive = isDockItemActive("search");
+                  const config = getDockItemConfig("search");
+                  return (
+                    <button
+                      key="search-separate-btn"
+                      onClick={() => handleDockItemClick("search")}
+                      className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative ${
+                        isActive ? "text-indigo-950 bg-white/50" : "hover:scale-105"
+                      }`}
+                      title={config.label}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeTabPill"
+                          transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                          className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                        />
+                      )}
+                      {config.isImg ? (
+                        <img 
+                          src={config.icon} 
+                          className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
+                          style={config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" }}
+                          alt={config.label}
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        (() => {
+                          const IconComponent = config.icon;
+                          return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-indigo-950" : "hover:scale-105 stroke-[1.8]"}`} />;
+                        })()
+                      )}
+                    </button>
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+  
+          {/* Playback Error Toast Alert */}
+          <AnimatePresence>
+            {playbackError && (
+              <motion.div
+                initial={{ opacity: 0, y: 15, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 15, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="mt-3 mx-auto w-fit px-5 py-2.5 rounded-full bg-red-600/25 backdrop-blur-[12px] border border-red-500/35 text-red-200 text-xs font-normal flex items-center gap-2 shadow-[0_12px_32px_rgba(239,68,68,0.25)] select-none"
+              >
+                <AlertCircle className="w-4.5 h-4.5 text-red-400 animate-pulse" />
+                <span className="flex items-center gap-1">
+                  Playback Error. Try to watch directly using <Tv className="w-3.5 h-3.5 text-red-300 inline" />
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </nav>
+      )}
 
       {/* Channel Change Toast Notification */}
       <AnimatePresence>

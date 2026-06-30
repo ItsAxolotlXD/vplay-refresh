@@ -144,13 +144,14 @@
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
 }
 
 .glass-pill-active {
-  background: rgb(255, 255, 255);
-  color: rgb(15, 10, 25);
-  box-shadow: 0 4px 14px 0 rgba(255, 255, 255, 0.25);
+  background: #d0bcff;
+  color: #381e72;
+  box-shadow: none;
+  border: none;
 }
 
 .glass-input {
