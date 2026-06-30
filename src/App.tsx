@@ -55,12 +55,12 @@ import ChannelPlayer from "./components/ChannelPlayer";
 const homeSlides = [
   {
     id: 0,
-    titleTop: "VTVgo Event Feed",
-    titleMain: "Luồng phát sự kiện đặc biệt",
+    titleTop: "Cùng VTV",
+    titleMain: "Sống trọn FIFA World Cup 2026",
     titleSub: "",
     genreText: "SỰ KIỆN TRỰC TIẾP ĐẶC BIỆT",
-    subSlogan: "PHÁT SÓNG TRỰC TIẾP KHI CÓ SỰ KIỆN",
-    thumbnail: "https://cdn-images.vtv.vn/66349b6076cb4dee98746cf1/2026/06/20/cover-91667111629561629180275.png",
+    subSlogan: "SỐNG TRỌN KHOẢNH KHẮC BÓNG ĐÁ",
+    thumbnail: "https://wallpapercave.com/wp/wp16426259.webp",
     channelId: "vietnam-wild-live",
     channelPlayName: "VTVgo Event Feed",
     ageRating: "Tất cả",
@@ -68,15 +68,19 @@ const homeSlides = [
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#211f26] via-[#211f26]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    description: "Luồng kênh sự kiện đặc biệt sẽ tự động phát sóng trực tiếp nếu có bất kỳ sự kiện thời sự, văn hóa, thể thao hay tin tức đặc sắc nào từ VTVgo.",
+    description: "Theo dõi trọn vẹn 104 trận đấu kịch tính của giải vô địch bóng đá thế giới FIFA World Cup 2026 trực tiếp trên các kênh sóng của Đài Truyền hình Việt Nam.",
     showCountdown: false,
-    logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/d/d5/VTV2_logo_2013_final.svg",
     logos: [
-      "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
-      "https://static.wikia.nocookie.net/logos/images/a/ad/VTV2_2017%2C_2018_%28HD%29.png/revision/latest/scale-to-width-down/1000?cb=20260503062332&path-prefix=vi"
+      "https://upload.wikimedia.org/wikipedia/commons/d/d5/VTV2_logo_2013_final.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/48/VTV3_logo_2013_final.svg",
+      "https://static.wikia.nocookie.net/logos/images/5/58/VTV6_logo_%282026-nay%29_%282%29.png/revision/latest/scale-to-width-down/1000?cb=20260608140603&path-prefix=vi",
+      "https://static.wikia.nocookie.net/logos/images/a/a9/VTV7_logo_06.02.2016.png/revision/latest/scale-to-width-down/1000?cb=20221213075109&path-prefix=vi",
+      "https://static.wikia.nocookie.net/logos/images/3/35/VTV9_logo_%282013-nay%29.png/revision/latest/scale-to-width-down/1000?cb=20201228131939&path-prefix=vi",
+      "https://static.wikia.nocookie.net/logos/images/4/47/VTV10_%282026-nay%29.png/revision/latest/scale-to-width-down/1000?cb=20260422054705&path-prefix=vi"
     ],
-    btnText: "Xem ngay",
-    btnIcon: "play"
+    btnText: "Chọn kênh",
+    btnIcon: "remote"
   },
   {
     id: 1,
@@ -1623,14 +1627,14 @@ export default function App() {
                               {/* Vertical Divider */}
                               <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
                               {/* Right Part: Logo Container */}
-                              <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                              <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-0.5 sm:p-1">
                                 {ch.logoImg ? (
                                   <img
                                     src={ch.logoImg}
                                     alt={ch.name}
                                     referrerPolicy="no-referrer"
                                     className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                      ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                      ch.id === "vietnam-wild-live" ? "w-[115%] h-[115%]" : ch.id.startsWith("vinh_long") ? "w-[88%] h-[88%]" : ch.group === "SCTV" ? "w-[82%] h-[82%]" : ch.group === "VTVcab" ? "w-[94%] h-[94%]" : "w-[125%] h-[125%] sm:w-[135%] sm:h-[135%]"
                                     }`}
                                   />
                                 ) : (
@@ -1656,7 +1660,7 @@ export default function App() {
           <div className="w-full animate-fade-in space-y-0 bg-[#211f26]/60 min-h-screen relative pt-0">
             
             {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
-            <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
+            <div className="relative w-full overflow-hidden bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
               
               {/* Background cover image representing selected slide */}
               <div className="absolute inset-0 z-0 overflow-hidden">
@@ -1678,7 +1682,7 @@ export default function App() {
                     
                     {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10`} />
-                    <div className={`absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t ${homeSlides[currentSlide].vignetteBottom} z-10`} />
+                    {/* Removed vignetteBottom shadow to create seamless blending with the content below */}
                     <div className={`absolute inset-x-0 top-0 h-44 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10`} />
                   </motion.div>
                 </AnimatePresence>
@@ -1695,16 +1699,16 @@ export default function App() {
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     className="flex flex-col items-start gap-1 w-full"
                   >
-                    {/* Calligraphy logo and title text stylistics with Google Sans font */}
-                    <div className="flex flex-col select-none mb-3 font-google gap-0.5">
-                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-none text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-zinc-300 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-google">
+                    {/* Calligraphy logo and title text stylistics with Montserrat font */}
+                    <div className="flex flex-col select-none mb-3 font-montserrat gap-0">
+                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-normal text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-zinc-300 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-montserrat block pb-3 px-1">
                         {homeSlides[currentSlide].titleTop}
                       </div>
-                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-wide leading-none text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-400 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] -mt-1 font-google">
+                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-400 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] block font-montserrat pb-4 px-1 -mt-4 xs:-mt-5 sm:-mt-6 md:-mt-8">
                         {homeSlides[currentSlide].titleMain}
                       </div>
                       {homeSlides[currentSlide].titleSub && (
-                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-semibold text-white drop-shadow tracking-wide mt-0.5 text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 font-google">
+                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-semibold text-white drop-shadow tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 font-montserrat pb-2 px-1 -mt-2 sm:-mt-3">
                           {homeSlides[currentSlide].titleSub}
                         </div>
                       )}
@@ -1712,16 +1716,33 @@ export default function App() {
 
                     {/* Special Channel Logo instead of slogans */}
                     {homeSlides[currentSlide].logos ? (
-                      <div className="mt-1 mb-2 select-none pointer-events-none flex items-center gap-3">
-                        {homeSlides[currentSlide].logos.map((logoUrl, lIdx) => (
-                          <img 
-                            key={lIdx}
-                            src={logoUrl} 
-                            alt="Channel Logo" 
-                            referrerPolicy="no-referrer"
-                            className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
-                          />
-                        ))}
+                      <div className="mt-1 mb-2 select-none pointer-events-none flex flex-col gap-2">
+                        {/* Row 1 */}
+                        <div className="flex items-center gap-3">
+                          {homeSlides[currentSlide].logos.slice(0, 3).map((logoUrl, lIdx) => (
+                            <img 
+                              key={lIdx}
+                              src={logoUrl} 
+                              alt="Channel Logo" 
+                              referrerPolicy="no-referrer"
+                              className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
+                            />
+                          ))}
+                        </div>
+                        {/* Row 2 */}
+                        {homeSlides[currentSlide].logos.length > 3 && (
+                          <div className="flex items-center gap-3">
+                            {homeSlides[currentSlide].logos.slice(3).map((logoUrl, lIdx) => (
+                              <img 
+                                key={lIdx + 3}
+                                src={logoUrl} 
+                                alt="Channel Logo" 
+                                referrerPolicy="no-referrer"
+                                className="h-10 sm:h-14 md:h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)]"
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ) : homeSlides[currentSlide].logo ? (
                       <div className="mt-1 mb-2 select-none pointer-events-none">
@@ -1771,6 +1792,10 @@ export default function App() {
                   <button 
                     onClick={() => {
                       const slideObj = homeSlides[currentSlide];
+                      if (slideObj.channelId === "vietnam-wild-live") {
+                        setShowEventFeedPopup(true);
+                        return;
+                      }
                       const targetCh = CATEGORIES.flatMap(cat => cat.channels).find(ch => ch.id === slideObj.channelId) || CATEGORIES[0].channels[0];
                       if (targetCh) {
                         handleSelectChannel({
@@ -1783,9 +1808,17 @@ export default function App() {
                     className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:bg-[#b093f4] text-[#381e72] font-bold shadow-xl flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer border border-white/10 bouncy-btn"
                   >
                     {homeSlides[currentSlide].btnIcon === "compass" ? (
-                      <Compass className="w-4.5 h-4.5 text-[#381e72]" />
+                      <Compass className="w-7 h-7 sm:w-8 sm:h-8 text-[#381e72]" />
+                    ) : homeSlides[currentSlide].btnIcon === "remote" ? (
+                      <img 
+                        src="https://static.wikia.nocookie.net/ep-deo/images/a/a3/Remote.png/revision/latest?cb=20260629015905"
+                        alt="Remote"
+                        referrerPolicy="no-referrer"
+                        className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+                        style={{ filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" }}
+                      />
                     ) : (
-                      <Play className="w-4.5 h-4.5 fill-[#381e72] text-[#381e72]" />
+                      <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-[#381e72] text-[#381e72]" />
                     )}
                     {homeSlides[currentSlide].btnText || "Thử ngay"}
                   </button>
@@ -1897,14 +1930,14 @@ export default function App() {
                             {/* Vertical Divider */}
                             <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
                             {/* Right Part: Logo Container */}
-                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-0.5 sm:p-1">
                               {ch.logoImg ? (
                                 <img
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                    ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    ch.id.startsWith("vinh_long") ? "w-[88%] h-[88%]" : ch.group === "SCTV" ? "w-[90%] h-[90%]" : ch.group === "VTVcab" ? "w-[94%] h-[94%]" : "w-[125%] h-[125%] sm:w-[135%] sm:h-[135%]"
                                   }`}
                                 />
                               ) : (
@@ -1997,14 +2030,14 @@ export default function App() {
                             {/* Vertical Divider */}
                             <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
                             {/* Right Part: Logo Container */}
-                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                            <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-0.5 sm:p-1">
                               {ch.logoImg ? (
                                 <img
                                   src={ch.logoImg}
                                   alt={ch.name}
                                   referrerPolicy="no-referrer"
                                   className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                    ch.id.startsWith("vinh_long") ? "w-[58%] h-[58%] p-1" : ch.group === "SCTV" ? "w-4/5 h-4/5 p-1.5" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                    ch.id.startsWith("vinh_long") ? "w-[88%] h-[88%]" : ch.group === "SCTV" ? "w-[90%] h-[90%]" : ch.group === "VTVcab" ? "w-[94%] h-[94%]" : "w-[125%] h-[125%] sm:w-[135%] sm:h-[135%]"
                                   }`}
                                 />
                               ) : (
@@ -2718,7 +2751,11 @@ export default function App() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="mt-16 sm:mt-20 bg-white/10 backdrop-blur-[10px] rounded-[15px] p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white"
+                  className={`mt-16 sm:mt-20 rounded-[15px] p-6 sm:p-8 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/10 text-white ${
+                    activeSettingSection === "design_system" 
+                      ? "bg-[#211f26] backdrop-blur-[10px]" 
+                      : "bg-white/10 backdrop-blur-[10px]"
+                  }`}
                 >
                   {activeSettingSection === "appearance" && (() => {
                     const isMatched = (text: string) => {
@@ -4761,7 +4798,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -4874,7 +4911,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5002,7 +5039,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5037,7 +5074,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5088,7 +5125,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5171,16 +5208,21 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[380px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-center transform-gpu border border-white/5"
+              className="w-full max-w-[420px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu border border-white/5"
             >
-              <div className="flex justify-end absolute top-4 right-4">
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug">
+                    Chọn kênh
+                  </h3>
+                </div>
                 <button
                   onClick={() => setShowEventFeedPopup(false)}
                   className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors bouncy-btn border border-white/5"
@@ -5189,19 +5231,58 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex flex-col items-center mt-4">
-                <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-300 mb-4 animate-pulse">
-                  <Tv className="w-8 h-8" />
-                </div>
-                <h3 className="text-[20px] font-bold text-white tracking-tight leading-snug mb-2">
-                  Chưa có sự kiện nào mới
-                </h3>
-                <p className="text-[13.5px] text-white/70 leading-relaxed mb-6 px-1">
-                  Luồng kênh đặc biệt sẽ phát sóng nếu có bất kỳ sự kiện đặc biệt nào.
-                </p>
+              <p className="text-[12.5px] text-white/70 leading-relaxed mb-4 px-1">
+                Theo dõi trọn vẹn 104 trận đấu đỉnh cao của giải vô địch bóng đá thế giới <strong>FIFA World Cup 2026</strong> trên sóng của Đài Truyền Hình Việt Nam. Vui lòng chọn một kênh sóng để theo dõi trận cầu trực tiếp.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {["vtv2", "vtv3", "vtv6", "vtv7", "vtv9", "vtv10"].map((id) => {
+                  const ch = processedChannels.find(c => c.id === id);
+                  if (!ch) return null;
+                  
+                  // Custom logos based on user-provided ones
+                  const customLogos: Record<string, string> = {
+                    vtv2: "https://upload.wikimedia.org/wikipedia/commons/d/d5/VTV2_logo_2013_final.svg",
+                    vtv3: "https://upload.wikimedia.org/wikipedia/commons/4/48/VTV3_logo_2013_final.svg",
+                    vtv6: "https://static.wikia.nocookie.net/logos/images/5/58/VTV6_logo_%282026-nay%29_%282%29.png/revision/latest/scale-to-width-down/1000?cb=20260608140603&path-prefix=vi",
+                    vtv7: "https://static.wikia.nocookie.net/logos/images/a/a9/VTV7_logo_06.02.2016.png/revision/latest/scale-to-width-down/1000?cb=20221213075109&path-prefix=vi",
+                    vtv9: "https://static.wikia.nocookie.net/logos/images/3/35/VTV9_logo_%282013-nay%29.png/revision/latest/scale-to-width-down/1000?cb=20201228131939&path-prefix=vi",
+                    vtv10: "https://static.wikia.nocookie.net/logos/images/4/47/VTV10_%282026-nay%29.png/revision/latest/scale-to-width-down/1000?cb=20260422054705&path-prefix=vi"
+                  };
+                  const logoUrl = customLogos[id] || ch.logoImg;
+                  const isCurrentPlaying = selectedChannel.id === id;
+
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        handleSelectChannel(ch, true);
+                        setActiveTab("live");
+                        setShowEventFeedPopup(false);
+                      }}
+                      className={`flex flex-col items-center justify-center p-4 rounded-2xl border cursor-pointer text-center transition-all duration-200 bouncy-btn group relative overflow-hidden h-[72px] ${
+                        isCurrentPlaying
+                          ? "bg-white/10 border-[#d0bcff]/40 text-white shadow-sm ring-1 ring-[#d0bcff]/30"
+                          : "bg-white/5 hover:bg-white/10 border-white/5 hover:border-white/10"
+                      }`}
+                    >
+                      <div className="h-full w-full flex items-center justify-center">
+                        <img 
+                          src={logoUrl} 
+                          alt={ch.name} 
+                          referrerPolicy="no-referrer"
+                          className="max-h-8 max-w-[85%] object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </div>
+                      {isCurrentPlaying && (
+                        <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#d0bcff] animate-pulse" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="w-full">
+              <div className="mt-5">
                 <button
                   type="button"
                   onClick={() => setShowEventFeedPopup(false)}
@@ -5223,7 +5304,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[110] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[110] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5288,7 +5369,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/55 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.12 }}
@@ -5368,14 +5449,14 @@ export default function App() {
                                 {/* Vertical Divider */}
                                 <div className="w-[1px] h-[45%] sm:h-[55%] bg-white/15 flex-shrink-0" />
                                 {/* Right Part: Logo Container */}
-                                <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-1 sm:p-2">
+                                <div className="flex-1 h-full flex justify-center items-center overflow-hidden p-0.5 sm:p-1">
                                   {ch.logoImg ? (
                                     <img
                                       src={ch.logoImg}
                                       alt={ch.name}
                                       referrerPolicy="no-referrer"
                                       className={`object-contain filter drop-shadow-md select-none pointer-events-none ${
-                                        ch.id === "vietnam-wild-live" ? "w-[84%] h-[84%] p-0.5" : ch.id.startsWith("vinh_long") ? "w-[55%] h-[55%] p-1" : ch.group === "SCTV" ? "w-[60%] h-[60%] p-1" : ch.group === "VTVcab" ? "w-[82%] h-[82%] p-0.5" : "w-full h-full"
+                                        ch.id === "vietnam-wild-live" ? "w-[115%] h-[115%]" : ch.id.startsWith("vinh_long") ? "w-[88%] h-[88%]" : ch.group === "SCTV" ? "w-[82%] h-[82%]" : ch.group === "VTVcab" ? "w-[94%] h-[94%]" : "w-[125%] h-[125%] sm:w-[135%] sm:h-[135%]"
                                       }`}
                                     />
                                   ) : (
@@ -5464,7 +5545,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5511,7 +5592,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -5583,7 +5664,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
+              className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
             >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
