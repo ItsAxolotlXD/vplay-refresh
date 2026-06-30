@@ -66,7 +66,7 @@ const homeSlides = [
     ageRating: "Tất cả",
     ratingText: "Chất lượng HD | Trực tiếp VTVgo",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
-    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteBottom: "from-[#211f26] via-[#211f26]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
     description: "Luồng kênh sự kiện đặc biệt sẽ tự động phát sóng trực tiếp nếu có bất kỳ sự kiện thời sự, văn hóa, thể thao hay tin tức đặc sắc nào từ VTVgo.",
     showCountdown: false,
@@ -91,7 +91,7 @@ const homeSlides = [
     ageRating: "Tất cả",
     ratingText: "Trực tiếp Thể thao | Bản quyền",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
-    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteBottom: "from-[#211f26] via-[#211f26]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
     logo: "https://static.wikia.nocookie.net/logos/images/5/56/VTV6_logo_07.06.2026.png/revision/latest?cb=20260608073805&path-prefix=uk",
     description: "Các bản tin, chuyên mục, tường thuật về thể thao trong nước và quốc tế do Trung tâm Truyền hình Thể thao sản xuất, với mục tiêu thúc đẩy phong trào thể thao quần chúng, thể thao học đường, thể thao chuyên nghiệp phát triển tại Việt Nam cũng như hướng đến rèn luyện, nâng cao sức khỏe cộng đồng và phát triển toàn diện.",
@@ -111,7 +111,7 @@ const homeSlides = [
     ageRating: "Tất cả",
     ratingText: "Chất lượng HD | Đối ngoại quốc gia",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
-    vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
+    vignetteBottom: "from-[#211f26] via-[#211f26]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
     logo: "https://static.wikia.nocookie.net/logos/images/c/c7/Vietnam_Today_vertical_v2.png/revision/latest?cb=20250813041048&path-prefix=vi",
     description: "Cửa sổ thông tin của Việt Nam ra thế giới, phản ánh khách quan và sinh động các vấn đề thời sự, chính trị, kinh tế, văn hóa, du lịch, môi trường, đổi mới sáng tạo, chuyển đổi số và những giá trị đặc trưng, bản sắc, truyền thống và hiện đại của Việt Nam trong công cuộc phát triển đất nước hội nhập quốc tế.",
@@ -1042,17 +1042,17 @@ export default function App() {
   // Ambient backgrounds options config
   const getBgGradient = () => {
     if (amoledDark) {
-      return "bg-black";
+      return "bg-[#211f26]";
     }
     switch (bgColor) {
       case "cosmic":
-        return "bg-gradient-to-tr from-[#12071a] via-[#1a0e36] to-[#011424]";
+        return "bg-gradient-to-tr from-[#211f26] via-[#2c2933] to-[#1a181f]";
       case "deep":
-        return "bg-gradient-to-br from-[#0c0517] via-[#090b17] to-[#04010a]";
+        return "bg-gradient-to-br from-[#211f26] via-[#1c1b21] to-[#121114]";
       case "aurora":
-        return "bg-gradient-to-tr from-[#150a24] via-[#0d2a23] to-[#240a24]";
+        return "bg-gradient-to-tr from-[#211f26] via-[#1e2421] to-[#2b2126]";
       case "sunset":
-        return "bg-gradient-to-tr from-[#1a0914] via-[#330c1e] to-[#2e1d0d]";
+        return "bg-gradient-to-tr from-[#211f26] via-[#33212c] to-[#2e261f]";
     }
   };
 
@@ -1093,7 +1093,7 @@ export default function App() {
         <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-150">
           {/* Progressive background blurs backplate - Only visible when scrolled down or when not on home tab */}
           {activeTab === "live" || activeTab === "search" ? (
-            <div className={`absolute inset-0 ${amoledDark ? "bg-black" : "bg-[#07050f]"} z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] opacity-100 visible`} />
+            <div className={`absolute inset-0 ${amoledDark ? "bg-[#211f26]" : "bg-[#211f26]"} z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] opacity-100 visible`} />
           ) : (
             <div className={`progressive-blur-header z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] ${
               isScrolled || activeTab !== "home" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
@@ -1348,7 +1348,7 @@ export default function App() {
           <>
             {/* Sticky Player, Action Buttons & Category Filters on Mobile */}
             <div className={`sticky top-24 lg:relative lg:top-auto z-40 ${
-              amoledDark ? "bg-black" : "bg-[#07050f]"
+              amoledDark ? "bg-[#211f26]" : "bg-[#211f26]"
             } lg:bg-transparent lg:backdrop-blur-none -mx-4 px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 border-b lg:border-none border-white/5 shadow-[0_15px_30px_rgba(0,0,0,0.4)] lg:shadow-none pt-2 pb-2 lg:pb-0 animate-duration-300`}>
               {/* Solid background on mobile, no progressive-blur-header to ensure content does not peak through */}
 
@@ -1368,7 +1368,7 @@ export default function App() {
                     </button>
                   </div>
                 ) : isMultiviewMode ? (
-                  <div className="w-full max-w-5xl mx-auto aspect-video rounded-3xl bg-[#07050f]/40 border border-white/10 p-2 sm:p-4 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+                  <div className="w-full max-w-5xl mx-auto aspect-video rounded-3xl bg-[#211f26]/40 border border-white/10 p-2 sm:p-4 shadow-2xl relative overflow-hidden flex flex-col justify-between">
                     {/* Multiview top info and action bar */}
                     <div className="flex items-center justify-between mb-3 text-white">
                       <div className="flex items-center gap-2">
@@ -1653,7 +1653,7 @@ export default function App() {
 
         {/* VIEW: HOME TRANSITION (TỔNG QUAN) */}
         {activeTab === "home" && (
-          <div className="w-full animate-fade-in space-y-0 bg-[#07050f]/60 min-h-screen relative pt-0">
+          <div className="w-full animate-fade-in space-y-0 bg-[#211f26]/60 min-h-screen relative pt-0">
             
             {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
             <div className="relative w-full overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9)] bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">

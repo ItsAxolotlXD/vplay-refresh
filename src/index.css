@@ -48,7 +48,7 @@
 .progressive-blur-header {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.8) 35%, rgba(7, 5, 15, 0.4) 75%, rgba(7, 5, 15, 0) 100%);
+  background: linear-gradient(to bottom, rgba(33, 31, 38, 0.95) 0%, rgba(33, 31, 38, 0.8) 35%, rgba(33, 31, 38, 0.4) 75%, rgba(33, 31, 38, 0) 100%);
   backdrop-filter: blur(25px) saturate(180%);
   -webkit-backdrop-filter: blur(25px) saturate(180%);
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
@@ -59,7 +59,7 @@
 .progressive-blur-dock {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.8) 35%, rgba(7, 5, 15, 0.4) 75%, rgba(7, 5, 15, 0) 100%);
+  background: linear-gradient(to top, rgba(33, 31, 38, 0.95) 0%, rgba(33, 31, 38, 0.8) 35%, rgba(33, 31, 38, 0.4) 75%, rgba(33, 31, 38, 0) 100%);
   backdrop-filter: blur(25px) saturate(180%);
   -webkit-backdrop-filter: blur(25px) saturate(180%);
   mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 35%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0) 100%);
@@ -71,7 +71,7 @@
 .progressive-blur-player {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7, 5, 15, 0.95) 0%, rgba(7, 5, 15, 0.75) 40%, rgba(7, 5, 15, 0) 100%);
+  background: linear-gradient(to top, rgba(33, 31, 38, 0.95) 0%, rgba(33, 31, 38, 0.75) 40%, rgba(33, 31, 38, 0) 100%);
   backdrop-filter: blur(25px) saturate(180%);
   -webkit-backdrop-filter: blur(25px) saturate(180%);
   mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.95) 40%, rgba(0, 0, 0, 0) 100%);
