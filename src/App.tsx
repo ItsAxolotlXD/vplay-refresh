@@ -55,20 +55,20 @@ import ChannelPlayer from "./components/ChannelPlayer";
 const homeSlides = [
   {
     id: 0,
-    titleTop: "Vietnam Wild LIVE",
-    titleMain: "Kết nối thiên nhiên - Lan tỏa nhận thức",
+    titleTop: "VTVgo Event Feed",
+    titleMain: "Luồng phát sự kiện đặc biệt",
     titleSub: "",
     genreText: "SỰ KIỆN TRỰC TIẾP ĐẶC BIỆT",
-    subSlogan: "BẢO TỒN ĐA DẠNG SINH HỌC QUỐC GIA",
+    subSlogan: "PHÁT SÓNG TRỰC TIẾP KHI CÓ SỰ KIỆN",
     thumbnail: "https://cdn-images.vtv.vn/66349b6076cb4dee98746cf1/2026/06/20/cover-91667111629561629180275.png",
     channelId: "vietnam-wild-live",
-    channelPlayName: "Vietnam Wild LIVE",
+    channelPlayName: "VTVgo Event Feed",
     ageRating: "Tất cả",
     ratingText: "Chất lượng HD | Trực tiếp VTVgo",
     vignetteLeft: "from-black/90 via-black/55 to-transparent",
     vignetteBottom: "from-[#07050f] via-[#07050f]/85 to-transparent",
     vignetteTop: "from-black/45 via-transparent to-transparent",
-    description: "Thiên nhiên hoang dã không chỉ được kể qua những thước phim dựng sẵn, mà hiện diện trực tiếp trước mắt khán giả. Vietnam Wild Live mang đến nhịp cầu kết nối con người với thiên nhiên, để từ sự thấu hiểu hình thành ý thức bảo tồn, gìn giữ những giá trị đa dạng sinh học quý của đất nước, của thế giới.",
+    description: "Luồng kênh sự kiện đặc biệt sẽ tự động phát sóng trực tiếp nếu có bất kỳ sự kiện thời sự, văn hóa, thể thao hay tin tức đặc sắc nào từ VTVgo.",
     showCountdown: false,
     logo: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702",
     logos: [
@@ -312,6 +312,7 @@ export default function App() {
   const [muted, setMuted] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showVtv5Popup, setShowVtv5Popup] = useState<boolean>(false);
+  const [showEventFeedPopup, setShowEventFeedPopup] = useState<boolean>(false);
   const vtv5Options = useMemo(() => {
     const v5 = processedChannels.find(ch => ch.id === "vtv5");
     const v5Tnb = processedChannels.find(ch => ch.id === "vtv5_tnb");
@@ -920,6 +921,9 @@ export default function App() {
       setShowVtv5Popup(true);
       return;
     }
+    if (channel.id === "vietnam-wild-live") {
+      setShowEventFeedPopup(true);
+    }
     setSelectedChannel(channel);
     setPlaybackError(false);
     setPlaybackErrorType(null);
@@ -1088,9 +1092,13 @@ export default function App() {
       {(activeTab !== "settings" || activeSettingSection === null) && (
         <header className="fixed top-0 inset-x-0 h-24 z-50 px-4 sm:px-8 md:px-12 flex items-center justify-between pointer-events-auto select-none transition-all duration-150">
           {/* Progressive background blurs backplate - Only visible when scrolled down or when not on home tab */}
-          <div className={`progressive-blur-header z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] ${
-            isScrolled || activeTab !== "home" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
-          }`} />
+          {activeTab === "live" || activeTab === "search" ? (
+            <div className={`absolute inset-0 ${amoledDark ? "bg-black" : "bg-[#07050f]"} z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] opacity-100 visible`} />
+          ) : (
+            <div className={`progressive-blur-header z-0 pointer-events-none border-b border-white/[0.04] shadow-[0_4px_30px_rgba(0,0,0,0.3)] ${
+              isScrolled || activeTab !== "home" ? "opacity-100 visible" : "opacity-0 invisible pointer-events-none"
+            }`} />
+          )}
 
           <div className="relative z-10 flex items-center gap-6 sm:gap-8 lg:gap-12">
             {/* Brand Logo on the Left */}
@@ -1339,9 +1347,10 @@ export default function App() {
         {(activeTab === "live" || activeTab === "search") && (
           <>
             {/* Sticky Player, Action Buttons & Category Filters on Mobile */}
-            <div className="sticky top-24 lg:relative lg:top-auto z-40 bg-[#07050f]/80 backdrop-blur-md lg:bg-transparent lg:backdrop-blur-none -mx-4 px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 border-b lg:border-none border-white/5 shadow-[0_15px_30px_rgba(0,0,0,0.4)] lg:shadow-none pt-2 pb-2 lg:pb-0 animate-duration-300">
-              {/* Progressive vintage blur backplate for high-fidelity glass appearance on mobile sticky */}
-              <div className="absolute inset-0 progressive-blur-header opacity-100 lg:hidden pointer-events-none" />
+            <div className={`sticky top-24 lg:relative lg:top-auto z-40 ${
+              amoledDark ? "bg-black" : "bg-[#07050f]"
+            } lg:bg-transparent lg:backdrop-blur-none -mx-4 px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0 border-b lg:border-none border-white/5 shadow-[0_15px_30px_rgba(0,0,0,0.4)] lg:shadow-none pt-2 pb-2 lg:pb-0 animate-duration-300`}>
+              {/* Solid background on mobile, no progressive-blur-header to ensure content does not peak through */}
 
               <div className="relative z-10">
                 {/* Integrated Main Channel Video Player */}
@@ -5147,6 +5156,58 @@ export default function App() {
                   className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all text-[#381e72] font-bold text-[15px] text-center cursor-default"
                 >
                   Đóng
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* VTVGO EVENT FEED STANDBY POPUP */}
+      <AnimatePresence>
+        {showEventFeedPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[380px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-center transform-gpu border border-white/5"
+            >
+              <div className="flex justify-end absolute top-4 right-4">
+                <button
+                  onClick={() => setShowEventFeedPopup(false)}
+                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors bouncy-btn border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center mt-4">
+                <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-300 mb-4 animate-pulse">
+                  <Tv className="w-8 h-8" />
+                </div>
+                <h3 className="text-[20px] font-bold text-white tracking-tight leading-snug mb-2">
+                  Chưa có sự kiện nào mới
+                </h3>
+                <p className="text-[13.5px] text-white/70 leading-relaxed mb-6 px-1">
+                  Luồng kênh đặc biệt sẽ phát sóng nếu có bất kỳ sự kiện đặc biệt nào.
+                </p>
+              </div>
+
+              <div className="w-full">
+                <button
+                  type="button"
+                  onClick={() => setShowEventFeedPopup(false)}
+                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all text-[#381e72] font-bold text-[15px] text-center cursor-default shadow-md"
+                >
+                  Close
                 </button>
               </div>
             </motion.div>

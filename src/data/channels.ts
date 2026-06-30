@@ -75,11 +75,11 @@ export const processedChannels: Channel[] = rawChannels.map((ch: any) => {
 
 const vietnamWildLiveChannel: Channel = {
   id: "vietnam-wild-live",
-  name: "Vietnam Wild LIVE",
+  name: "VTVgo Event Feed",
   url: "https://events.vtvdigital.vn/livestream/wildlife-720p50fps.m3u8",
   group: "Đặc biệt",
-  logoText: "Wild LIVE",
-  logoBg: "bg-gradient-to-br from-emerald-600 to-green-800",
+  logoText: "VTVgo Event",
+  logoBg: "bg-gradient-to-br from-indigo-600 to-purple-800",
   isRadio: false,
   logoImg: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702"
 };

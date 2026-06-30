@@ -125,6 +125,17 @@ export default function ChannelPlayer({
     const video = videoRef.current;
     if (!video) return;
 
+    if (channel.id === "vietnam-wild-live") {
+      setIsLoading(false);
+      setHasError(false);
+      setIsPlaying(false);
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      return;
+    }
+
     setIsLoading(true);
     setHasError(false);
     setErrorMessage("");
@@ -395,6 +406,35 @@ export default function ChannelPlayer({
                   }}
                 ></div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Standby Board notice for VTVgo Event Feed */}
+        {channel.id === "vietnam-wild-live" && (
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center z-10 select-none overflow-hidden">
+            {/* Elegant glowing background rings */}
+            <div className="absolute w-72 h-72 rounded-full bg-purple-500/10 blur-3xl pointer-events-none -top-10 -left-10" />
+            <div className="absolute w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none -bottom-10 -right-10" />
+            
+            <div className="relative mb-5">
+              <div className="absolute -inset-4 bg-purple-500/25 rounded-full blur-xl animate-pulse"></div>
+              <div className="relative w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-purple-300 shadow-2xl backdrop-blur-md">
+                <Tv className="w-10 h-10 animate-pulse" />
+              </div>
+              <div className="absolute -top-1.5 -right-1.5 px-2 py-0.5 rounded-full bg-purple-600 text-[9px] font-bold tracking-widest text-white uppercase shadow-lg border border-purple-400/30">
+                Standby
+              </div>
+            </div>
+            
+            <h3 className="text-white text-base sm:text-lg font-bold tracking-tight mb-2 uppercase">{channel.name}</h3>
+            <p className="max-w-md text-white/70 text-[13px] leading-relaxed mb-4 px-4">
+              Luồng kênh đặc biệt sẽ phát sóng nếu có bất kỳ sự kiện đặc biệt nào.
+            </p>
+            
+            <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-medium text-purple-300 tracking-wide flex items-center gap-1.5 shadow-inner">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+              Tín hiệu sẵn sàng
             </div>
           </div>
         )}
