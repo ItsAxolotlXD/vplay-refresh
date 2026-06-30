@@ -1118,12 +1118,12 @@ export default function App() {
 
             {/* Real-time Ticking Digital Clock */}
             {showClock && (
-              <div className="flex items-center gap-2 sm:gap-3 bg-white/5 border border-white/10 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-md shadow-inner select-none transition-all duration-300 hover:scale-105 font-google">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse animate-duration-1000" />
-                <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-white font-google drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)]">
+              <div className="flex items-center gap-2 sm:gap-3 bg-[#d0bcff] px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full select-none transition-all duration-300 hover:scale-105 font-google">
+                <span className="w-2 h-2 rounded-full bg-[#381e72] animate-pulse animate-duration-1000" />
+                <span className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-[#381e72] font-google">
                   {formatTime(time)}
                 </span>
-                <span className="hidden md:inline-block text-white text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-white/10 font-google">
+                <span className="hidden md:inline-block text-[#381e72] text-xs sm:text-sm md:text-base font-bold pl-2.5 border-l border-[#381e72]/20 font-google">
                   {formatDateVietnamese(time)}
                 </span>
               </div>
@@ -4005,9 +4005,9 @@ export default function App() {
                                   <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
                                     <span className="text-[11px] font-semibold text-indigo-400 text-left">Pressed</span>
                                     <div className="flex items-center justify-center py-2 h-full">
-                                      <div className="relative flex flex-col items-center justify-center h-12 w-20 text-indigo-950 font-medium z-10 scale-[1.05] transition-all">
-                                        <div className="absolute inset-0 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10" />
-                                        <Home className="w-6 h-6 stroke-[2.2] text-indigo-950" />
+                                      <div className="relative flex flex-col items-center justify-center h-12 w-20 text-[#381e72] font-medium z-10 scale-[1.05] transition-all">
+                                        <div className="absolute inset-0 bg-[#d0bcff] rounded-full shadow-none -z-10" />
+                                        <Home className="w-6 h-6 stroke-[2.2] text-[#381e72]" />
                                       </div>
                                     </div>
                                   </div>
@@ -4028,17 +4028,17 @@ export default function App() {
                                               key={tab.id}
                                               onClick={() => setActiveDockDemoTab(tab.id)}
                                               className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-pointer z-10 bouncy-btn px-2 transition-all duration-300 ${
-                                                isActive ? "text-indigo-950 font-normal" : "text-white/65 hover:text-white"
+                                                isActive ? "text-[#381e72] font-semibold" : "text-white/65 hover:text-white"
                                               }`}
                                             >
                                               {isActive && (
                                                 <motion.div
                                                   layoutId="demoActiveTabPill"
                                                   transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                                  className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                                                  className="absolute inset-y-1 inset-x-1 bg-[#d0bcff] rounded-full shadow-none -z-10"
                                                 />
                                               )}
-                                              <Icon className="w-5.5 h-5.5" />
+                                              <Icon className={`w-5.5 h-5.5 ${isActive ? "text-[#381e72]" : ""}`} />
                                             </button>
                                           );
                                         })}
@@ -4752,14 +4752,11 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      {activeTab !== "live" && (
-        <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
-          <div className="progressive-blur-dock" />
-        </div>
-      )}
+      <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
+        <div className="progressive-blur-dock" />
+      </div>
 
-      {activeTab !== "live" && (
-        <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
           <AnimatePresence mode="wait">
             {activeTab === "search" ? (
               <motion.div
@@ -4838,7 +4835,7 @@ export default function App() {
                               onClick={() => handleDockItemClick(tab.id)}
                               className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu ${
                                 isActive 
-                                  ? "text-indigo-950 font-bold" 
+                                  ? "text-[#381e72] font-bold" 
                                   : "text-white/65 hover:text-white"
                               }`}
                               title={config.label}
@@ -4847,7 +4844,7 @@ export default function App() {
                                 <motion.div
                                   layoutId="activeTabPill"
                                   transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                  className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                                  className="absolute inset-y-1 inset-x-1 bg-[#d0bcff] rounded-full shadow-none -z-10"
                                 />
                               )}
                               {config.isImg ? (
@@ -4861,7 +4858,7 @@ export default function App() {
                               ) : (
                                 (() => {
                                   const IconComponent = config.icon;
-                                  return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2]" : "hover:scale-105 stroke-[1.8]"}`} />;
+                                  return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-[#381e72]" : "hover:scale-105 stroke-[1.8]"}`} />;
                                 })()
                               )}
                             </button>
@@ -4881,7 +4878,7 @@ export default function App() {
                       key="search-separate-btn"
                       onClick={() => handleDockItemClick("search")}
                       className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative ${
-                        isActive ? "text-indigo-950 bg-white/50" : "hover:scale-105"
+                        isActive ? "text-[#381e72] bg-[#d0bcff]" : "hover:scale-105"
                       }`}
                       title={config.label}
                     >
@@ -4889,7 +4886,7 @@ export default function App() {
                         <motion.div
                           layoutId="activeTabPill"
                           transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                          className="absolute inset-y-1 inset-x-1 bg-white/50 rounded-full shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.8),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_4px_12px_rgba(0,0,0,0.15)] -z-10"
+                          className="absolute inset-y-1 inset-x-1 bg-[#d0bcff] rounded-full shadow-none -z-10"
                         />
                       )}
                       {config.isImg ? (
@@ -4903,7 +4900,7 @@ export default function App() {
                       ) : (
                         (() => {
                           const IconComponent = config.icon;
-                          return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-indigo-950" : "hover:scale-105 stroke-[1.8]"}`} />;
+                          return <IconComponent className={`w-6.5 h-6.5 sm:w-7 sm:h-7 transition-all duration-300 ${isActive ? "scale-105 stroke-[2.2] text-[#381e72]" : "hover:scale-105 stroke-[1.8]"}`} />;
                         })()
                       )}
                     </button>
@@ -4931,7 +4928,6 @@ export default function App() {
             )}
           </AnimatePresence>
         </nav>
-      )}
 
       {/* Channel Change Toast Notification */}
       <AnimatePresence>
