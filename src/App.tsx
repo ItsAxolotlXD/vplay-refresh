@@ -1749,7 +1749,6 @@ export default function App() {
                       <div className="flex items-center gap-3">
                         {/* Custom visual thick turquoise or fuchsia vertical colored sidebars */}
                         <div className={`w-1.5 h-7 rounded-full ${
-                          category.id === 'dac-biet' ? 'bg-emerald-500 animate-pulse' :
                           category.id === 'vtv' ? 'bg-cyan-400' :
                           category.id === 'vtvcab' ? 'bg-fuchsia-500' :
                           category.id === 'sctv' ? 'bg-red-500' :

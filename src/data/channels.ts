@@ -78,20 +78,8 @@ export const processedChannels: Channel[] = rawChannels.map((ch: any) => {
   };
 });
 
-const vietnamWildLiveChannel: Channel = {
-  id: "vietnam-wild-live",
-  name: "VTVgo Event Feed",
-  url: "https://events.vtvdigital.vn/livestream/wildlife-720p50fps.m3u8",
-  group: "Đặc biệt",
-  logoText: "VTVgo Event",
-  logoBg: "bg-gradient-to-br from-indigo-600 to-purple-800",
-  isRadio: false,
-  logoImg: "https://static.wikia.nocookie.net/ep-deo/images/6/64/Vtv_s%E1%BB%A7a.png/revision/latest?cb=20260625120702"
-};
-
 // Category template definitions
 const categoryTemplates = [
-  { id: "dac-biet", name: "Đặc biệt", description: "Các sự kiện và luồng phát đặc biệt" },
   { id: "vtv", name: "Kênh VTV", description: "Các kênh sóng truyền hình quốc gia VTV" },
   { id: "vtvcab", name: "Kênh VTVcab", description: "Kênh giải trí thể thao, phim ảnh tổng hợp đặc sắc" },
   { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh" },
@@ -178,9 +166,7 @@ function getSortName(name: string, id: string): string {
 export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   let matchedChannels: Channel[] = [];
   
-  if (tpl.id === "dac-biet") {
-    matchedChannels = [vietnamWildLiveChannel];
-  } else if (tpl.id === "vtv") {
+  if (tpl.id === "vtv") {
     matchedChannels = processedChannels.filter(c => c.group === "VTV" && c.id !== "vtv5_tn" && c.id !== "vtv5_tnb");
   } else if (tpl.id === "vtvcab") {
     matchedChannels = processedChannels.filter(c => c.group === "VTVcab");
@@ -204,7 +190,7 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   const formattedChannels = matchedChannels.map(ch => {
     let cleanName = ch.name;
     const nameUpper = cleanName.toUpperCase();
-    if (!nameUpper.endsWith("HD") && !nameUpper.includes(" HD") && !ch.isRadio && tpl.id !== "thu-nghiem" && tpl.id !== "dac-biet") {
+    if (!nameUpper.endsWith("HD") && !nameUpper.includes(" HD") && !ch.isRadio && tpl.id !== "thu-nghiem") {
       cleanName = `${cleanName.trim()} HD`;
     }
     return { ...ch, name: cleanName };
@@ -239,9 +225,8 @@ const SPECIAL_VTV_NUMBERS: Record<string, string> = {
 
 let nextNum = 13;
 
-// First pass: assign numbers to all channels inside categories (except dac-biet)
+// First pass: assign numbers to all channels inside categories
 CATEGORIES.forEach(category => {
-  if (category.id === "dac-biet") return;
   category.channels.forEach(ch => {
     if (SPECIAL_VTV_NUMBERS[ch.id]) {
       ch.channelNumber = SPECIAL_VTV_NUMBERS[ch.id];
@@ -256,8 +241,6 @@ CATEGORIES.forEach(category => {
 processedChannels.forEach(ch => {
   if (SPECIAL_VTV_NUMBERS[ch.id]) {
     ch.channelNumber = SPECIAL_VTV_NUMBERS[ch.id];
-  } else if (ch.id === "vietnam-wild-live") {
-    // Handled separately below
   } else {
     // Match the number already assigned in CATEGORIES
     const matched = CATEGORIES.flatMap(cat => cat.channels).find(c => c.id === ch.id);
@@ -275,11 +258,3 @@ const tnbChan = processedChannels.find(c => c.id === "vtv5_tnb");
 if (tnbChan) tnbChan.channelNumber = "011";
 const tnChan = processedChannels.find(c => c.id === "vtv5_tn");
 if (tnChan) tnChan.channelNumber = "012";
-
-// Assign the last number to dac-biet channel
-const lastNumberStr = String(nextNum).padStart(3, '0');
-vietnamWildLiveChannel.channelNumber = lastNumberStr;
-const dacBietCategory = CATEGORIES.find(cat => cat.id === "dac-biet");
-if (dacBietCategory && dacBietCategory.channels[0]) {
-  dacBietCategory.channels[0].channelNumber = lastNumberStr;
-}
