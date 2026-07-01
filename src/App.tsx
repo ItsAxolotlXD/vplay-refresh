@@ -1138,16 +1138,27 @@ export default function App() {
                 setActiveTab("settings");
                 setActiveSettingSection("plugin_store");
               }}
-              title="Cửa hàng tiện ích"
-              className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer bouncy-btn"
+              className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer bouncy-btn group/menu"
             >
               <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+              
+              {/* Tooltip */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
+                Cửa hàng tiện ích
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1 border-4 border-transparent border-b-[#1a162b]/95" />
+              </div>
             </button>
 
             {/* Notification bell icon */}
-            <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer">
+            <button className="relative p-1.5 rounded-full hover:bg-white/10 text-white/85 hover:text-white transition-all cursor-pointer group/menu">
               <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 ring-2 ring-transparent animate-pulse" />
+              
+              {/* Tooltip */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
+                Thông báo
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1 border-4 border-transparent border-b-[#1a162b]/95" />
+              </div>
             </button>
 
             {/* User avatar displaying email info */}
@@ -1158,8 +1169,9 @@ export default function App() {
                 </div>
               </div>
               {/* Floating tooltip */}
-              <div className="absolute right-0 top-10 pointer-events-none opacity-0 group-hover/avatar:opacity-100 group-hover/avatar:pointer-events-auto transition-all duration-300 bg-black/95 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 shadow-xl text-[10px] sm:text-xs text-white/90 whitespace-nowrap z-50">
+              <div className="absolute right-0 top-10 pointer-events-none opacity-0 scale-[0.4] group-hover/avatar:opacity-100 group-hover/avatar:scale-100 group-hover/avatar:pointer-events-auto tooltip-bounce bg-[#1a162b]/95 backdrop-blur-md border border-white/15 rounded-full px-4 py-1.5 shadow-2xl text-[10px] sm:text-xs text-white/90 whitespace-nowrap z-50">
                 Tài khoản: <span className="font-extrabold text-pink-300">Thành viên Premium</span>
+                <div className="absolute bottom-full right-3 -mb-1 border-4 border-transparent border-b-[#1a162b]/95" />
               </div>
             </div>
 
@@ -1168,10 +1180,15 @@ export default function App() {
               <div className="relative">
                 <button
                   onClick={() => setShowDropdownMenu(prev => !prev)}
-                  className="p-1.5 sm:p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 text-white/85 hover:text-white transition-all cursor-pointer flex items-center justify-center active:scale-95 duration-200"
-                  title="Menu"
+                  className="p-1.5 sm:p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/15 text-white/85 hover:text-white transition-all cursor-pointer flex items-center justify-center active:scale-95 duration-200 relative group/menu"
                 >
                   <Menu className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                  
+                  {/* Tooltip */}
+                  <div className="absolute top-full right-0 mt-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
+                    Trình đơn hệ thống
+                    <div className="absolute bottom-full right-3 -mb-1 border-4 border-transparent border-b-[#1a162b]/95" />
+                  </div>
                 </button>
                 
                 <AnimatePresence>
@@ -1770,8 +1787,13 @@ export default function App() {
                                   ? "bg-amber-500/5 backdrop-blur-md border-2 border-white/10 hover:border-[3.5px] hover:border-amber-400"
                                   : "bg-white/5 backdrop-blur-md border-2 border-white/10 hover:border-[3.5px] hover:border-white"
                             }`}
-                            title={ch.name}
                           >
+                            {/* Custom Tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover:opacity-100 group-hover:scale-100 tooltip-bounce shadow-xl whitespace-nowrap z-50 text-center select-none">
+                              {ch.name}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95 pointer-events-none" />
+                            </div>
+
                             {/* Logo Graphic Container - with vertical split for channel position number */}
                             <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
                               {/* Left Part: Channel Number */}
@@ -2073,8 +2095,12 @@ export default function App() {
                               ? "bg-white/20 backdrop-blur-lg border-[3.5px] border-white shadow-md shadow-pink-500/10" 
                               : "bg-white/5 backdrop-blur-md border-2 border-white/10 hover:border-[3.5px] hover:border-white"
                           }`}
-                          title={ch.name}
                         >
+                          {/* Custom Tooltip */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover:opacity-100 group-hover:scale-100 tooltip-bounce shadow-xl whitespace-nowrap z-50 text-center select-none">
+                            {ch.name}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95 pointer-events-none" />
+                          </div>
                           {/* Logo Graphic Container - with vertical split for channel position number */}
                           <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
                             {/* Left Part: Channel Number */}
@@ -2173,8 +2199,12 @@ export default function App() {
                               ? "bg-white/20 backdrop-blur-lg border-[3.5px] border-white shadow-md shadow-pink-500/10" 
                               : "bg-white/5 backdrop-blur-md border-2 border-white/10 hover:border-[3.5px] hover:border-white"
                           }`}
-                          title={ch.name}
                         >
+                          {/* Custom Tooltip */}
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover:opacity-100 group-hover:scale-100 tooltip-bounce shadow-xl whitespace-nowrap z-50 text-center select-none">
+                            {ch.name}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95 pointer-events-none" />
+                          </div>
                           {/* Logo Graphic Container - with vertical split for channel position number */}
                           <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
                             {/* Left Part: Channel Number */}
@@ -4833,13 +4863,17 @@ export default function App() {
                             <button 
                               key={tab.id}
                               onClick={() => handleDockItemClick(tab.id)}
-                              className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu ${
+                              className={`relative flex flex-col items-center justify-center flex-1 h-full cursor-default z-10 bouncy-btn px-1 sm:px-2 transition-all transform-gpu group/dock ${
                                 isActive 
                                   ? "text-[#381e72] font-bold" 
                                   : "text-white/65 hover:text-white"
                               }`}
-                              title={config.label}
                             >
+                              {/* Beautiful Custom Tooltip */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-95 pointer-events-none group-hover/dock:opacity-100 group-hover/dock:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
+                                {config.label}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95" />
+                              </div>
                               {isActive && (
                                 <motion.div
                                   layoutId="activeTabPill"
@@ -4877,11 +4911,15 @@ export default function App() {
                     <button
                       key="search-separate-btn"
                       onClick={() => handleDockItemClick("search")}
-                      className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative ${
+                      className={`w-16 h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center justify-center text-white/65 hover:text-white transition-all duration-300 bouncy-btn shrink-0 relative group/dock ${
                         isActive ? "text-[#381e72] bg-[#d0bcff]" : "hover:scale-105"
                       }`}
-                      title={config.label}
                     >
+                      {/* Beautiful Custom Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover/dock:opacity-100 group-hover/dock:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
+                        {config.label}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95" />
+                      </div>
                       {isActive && (
                         <motion.div
                           layoutId="activeTabPill"
@@ -5592,8 +5630,12 @@ export default function App() {
                                   ? "bg-amber-500/5 border border-amber-400/30 hover:border-amber-400 hover:bg-amber-500/10"
                                   : "bg-white/5 border border-white/10 hover:border-white hover:bg-white/10"
                               }`}
-                              title={ch.name}
                             >
+                              {/* Custom Tooltip */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-[11px] sm:text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover:opacity-100 group-hover:scale-100 tooltip-bounce shadow-xl whitespace-nowrap z-50 text-center select-none">
+                                {ch.name}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-[#1a162b]/95 pointer-events-none" />
+                              </div>
                               {/* Logo Graphic Container - with vertical split for channel position number */}
                               <div className="w-full h-full flex items-center select-none overflow-hidden rounded-lg">
                                 {/* Left Part: Channel Number */}
@@ -5844,12 +5886,13 @@ export default function App() {
                 <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden border border-white/5">
                   <motion.div 
                     className={`h-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} rounded-full`}
-                    style={{ width: `${percent}%` }}
-                    transition={{ duration: 0.3 }}
+                    animate={{ width: `${percent}%` }}
+                    transition={{ duration: 1.0, ease: "linear" }}
                   />
                 </div>
                 <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-[#d0bcff]' : 'text-red-400'} font-mono font-bold`}>
                   <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
+                  <span>{percent}%</span>
                 </div>
               </div>
 

@@ -21,12 +21,17 @@ export interface Category {
 }
 
 const getLogoText = (name: string): string => {
-  let clean = name.replace(/TRUYỀN HÌNH\s+/i, "");
-  clean = clean.replace(/Truyền hình\s+/i, "");
+  let clean = name;
+  if (clean.includes(" - ")) {
+    clean = clean.split(" - ")[1];
+  } else {
+    clean = clean.replace(/TRUYỀN HÌNH\s+/i, "");
+    clean = clean.replace(/Truyền hình\s+/i, "");
+  }
   if (clean.includes(" (")) {
     clean = clean.split(" (")[0];
   }
-  return clean.substring(0, 10).trim();
+  return clean.trim();
 };
 
 const getGradient = (group: string, name: string): string => {
@@ -91,10 +96,30 @@ const categoryTemplates = [
   { id: "vtvcab", name: "Kênh VTVcab", description: "Kênh giải trí thể thao, phim ảnh tổng hợp đặc sắc" },
   { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh" },
   { id: "sctv", name: "Kênh SCTV", description: "Các kênh giải trí, khoa học và phim truyện SCTV cáp" },
-  { id: "dia-phuong", name: "Kênh địa phương & Thiết yếu", description: "Truyền hình địa phương, kênh liên tỉnh bản quyền" },
+  { id: "thiet-yeu", name: "Kênh Thiết yếu", description: "Truyền hình thiết yếu quốc gia" },
+  { id: "dia-phuong-bac", name: "Kênh địa phương miền Bắc", description: "Truyền hình địa phương khu vực phía Bắc" },
+  { id: "dia-phuong-trung", name: "Kênh địa phương miền Trung", description: "Truyền hình địa phương khu vực miền Trung & Tây Nguyên" },
+  { id: "dia-phuong-nam", name: "Kênh địa phương miền Nam", description: "Truyền hình địa phương khu vực phía Nam & Tây Nam Bộ" },
   { id: "quoc-te", name: "Kênh Quốc Tế & Đặc Sắc", description: "Kênh tin tức thời sự thế giới, phim hoạt hình nổi tiếng nước ngoài" },
   { id: "phat-thanh-radio", name: "Kênh Phát Thanh (Radio)", description: "Các đài phát thanh VOV, VOH, FM Giao thông đặc sắc" },
   { id: "thu-nghiem", name: "Kênh Thử Nghiệm", description: "Kênh truyền hình thử nghiệm luồng phát kỹ thuật" }
+];
+
+const REGION_BAC_IDS = [
+  "bac_ninh", "cao_bang", "dien_bien", "ha_noi_1", "ha_noi_2", "hai_phong", "hai_phong_3", 
+  "hung_yen", "lai_chau", "lang_son", "lao_cai", "ninh_binh", "phu_tho", "quang_ninh_1", 
+  "quang_ninh_3", "son_la", "tuyen_quang", "thanh_hoa", "thai_nguyen"
+];
+
+const REGION_TRUNG_IDS = [
+  "da_nang_1", "da_nang_2", "dak_lak", "gia_lai", "ha_tinh", "hue", "khanh_hoa", 
+  "khanh_hoa_1", "lam_dong_1", "lam_dong_2", "nghe_an", "quang_tri", "quang_ngai_1", "quang_ngai_2"
+];
+
+const REGION_NAM_IDS = [
+  "atv1", "atv2", "atv3", "can_tho_1", "can_tho_2", "can_tho_3", "ca_mau", "dong_nai_1", 
+  "dong_nai_2", "dong_thap_1", "dong_thap_2", "tay_ninh", "vinh_long_1", "vinh_long_2", 
+  "vinh_long_3", "vinh_long_4", "vinh_long_5"
 ];
 
 // Dynamically construct and populate categories based on channel groups
@@ -111,8 +136,14 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
     matchedChannels = processedChannels.filter(c => c.group === "HTV" || c.group === "HTVC");
   } else if (tpl.id === "sctv") {
     matchedChannels = processedChannels.filter(c => c.group === "SCTV");
-  } else if (tpl.id === "dia-phuong") {
-    matchedChannels = processedChannels.filter(c => c.group === "Địa phương" || c.group === "Thiết yếu");
+  } else if (tpl.id === "thiet-yeu") {
+    matchedChannels = processedChannels.filter(c => c.id === "antv_thiet_yeu" || c.id === "qpvn_thiet_yeu" || c.group === "Thiết yếu");
+  } else if (tpl.id === "dia-phuong-bac") {
+    matchedChannels = processedChannels.filter(c => REGION_BAC_IDS.includes(c.id));
+  } else if (tpl.id === "dia-phuong-trung") {
+    matchedChannels = processedChannels.filter(c => REGION_TRUNG_IDS.includes(c.id));
+  } else if (tpl.id === "dia-phuong-nam") {
+    matchedChannels = processedChannels.filter(c => REGION_NAM_IDS.includes(c.id));
   } else if (tpl.id === "quoc-te") {
     matchedChannels = processedChannels.filter(c => c.group === "Quốc tế" || c.group === "World");
   } else if (tpl.id === "phat-thanh-radio") {
@@ -130,6 +161,11 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
     }
     return { ...ch, name: cleanName };
   });
+
+  // Sort alphabetically from A-Z for local and essential categories
+  if (tpl.id.startsWith("dia-phuong-") || tpl.id === "thiet-yeu") {
+    formattedChannels.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }
 
   return {
     ...tpl,
