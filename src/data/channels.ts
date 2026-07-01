@@ -97,30 +97,82 @@ const categoryTemplates = [
   { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh" },
   { id: "sctv", name: "Kênh SCTV", description: "Các kênh giải trí, khoa học và phim truyện SCTV cáp" },
   { id: "thiet-yeu", name: "Kênh Thiết yếu", description: "Truyền hình thiết yếu quốc gia" },
-  { id: "dia-phuong-bac", name: "Kênh địa phương miền Bắc", description: "Truyền hình địa phương khu vực phía Bắc" },
-  { id: "dia-phuong-trung", name: "Kênh địa phương miền Trung", description: "Truyền hình địa phương khu vực miền Trung & Tây Nguyên" },
-  { id: "dia-phuong-nam", name: "Kênh địa phương miền Nam", description: "Truyền hình địa phương khu vực phía Nam & Tây Nam Bộ" },
+  { id: "dia-phuong", name: "Kênh Địa phương", description: "Truyền hình địa phương, liên tỉnh bản quyền" },
   { id: "quoc-te", name: "Kênh Quốc Tế & Đặc Sắc", description: "Kênh tin tức thời sự thế giới, phim hoạt hình nổi tiếng nước ngoài" },
   { id: "phat-thanh-radio", name: "Kênh Phát Thanh (Radio)", description: "Các đài phát thanh VOV, VOH, FM Giao thông đặc sắc" },
   { id: "thu-nghiem", name: "Kênh Thử Nghiệm", description: "Kênh truyền hình thử nghiệm luồng phát kỹ thuật" }
 ];
 
-const REGION_BAC_IDS = [
-  "bac_ninh", "cao_bang", "dien_bien", "ha_noi_1", "ha_noi_2", "hai_phong", "hai_phong_3", 
-  "hung_yen", "lai_chau", "lang_son", "lao_cai", "ninh_binh", "phu_tho", "quang_ninh_1", 
-  "quang_ninh_3", "son_la", "tuyen_quang", "thanh_hoa", "thai_nguyen"
-];
+// Custom helper to provide specific custom sort order for local channels as requested by the user
+function getSortName(name: string, id: string): string {
+  // Group 1: Gia Lai & Dong Thap (GTV đặt trước THĐT1)
+  if (id === "gia_lai") {
+    return "Truyền hình Đồng Tháp - THĐT A_gia_lai";
+  }
+  if (id === "dong_thap_1") {
+    return "Truyền hình Đồng Tháp - THĐT B_dong_thap_1";
+  }
+  if (id === "dong_thap_2") {
+    return "Truyền hình Đồng Tháp - THĐT C_dong_thap_2";
+  }
 
-const REGION_TRUNG_IDS = [
-  "da_nang_1", "da_nang_2", "dak_lak", "gia_lai", "ha_tinh", "hue", "khanh_hoa", 
-  "khanh_hoa_1", "lam_dong_1", "lam_dong_2", "nghe_an", "quang_tri", "quang_ngai_1", "quang_ngai_2"
-];
+  // Group 2: Lao Cai & Lang Son (LSTV đặt sau Lào cai)
+  if (id === "lao_cai") {
+    return "Truyền hình Lào Cai - THLC A_lao_cai";
+  }
+  if (id === "lang_son") {
+    return "Truyền hình Lào Cai - THLC B_lang_son";
+  }
 
-const REGION_NAM_IDS = [
-  "atv1", "atv2", "atv3", "can_tho_1", "can_tho_2", "can_tho_3", "ca_mau", "dong_nai_1", 
-  "dong_nai_2", "dong_thap_1", "dong_thap_2", "tay_ninh", "vinh_long_1", "vinh_long_2", 
-  "vinh_long_3", "vinh_long_4", "vinh_long_5"
-];
+  // Group 3: Quang Ninh & Quang Ngai (QTV1 và 3 đặt trc qngtv1 và 2)
+  if (id === "quang_ninh_1") {
+    return "Truyền hình Quảng Ngãi - QNgTV A1_quang_ninh_1";
+  }
+  if (id === "quang_ninh_3") {
+    return "Truyền hình Quảng Ngãi - QNgTV A2_quang_ninh_3";
+  }
+  if (id === "quang_ngai_1") {
+    return "Truyền hình Quảng Ngãi - QNgTV B1_quang_ngai_1";
+  }
+  if (id === "quang_ngai_2") {
+    return "Truyền hình Quảng Ngãi - QNgTV B2_quang_ngai_2";
+  }
+
+  // Group 4: Tay Ninh, Son La, Quang Tri (Tây ninh đặt trc QTTV, Snews đặt giữa tây ninh và QTTV)
+  if (id === "tay_ninh") {
+    return "Truyền hình Quảng Trị - QTTV A_tay_ninh";
+  }
+  if (id === "son_la") {
+    return "Truyền hình Quảng Trị - QTTV B_son_la";
+  }
+  if (id === "quang_tri") {
+    return "Truyền hình Quảng Trị - QTTV C_quang_tri";
+  }
+
+  // Group 5: Tuyen Quang, Thanh Hoa, Thai Nguyen (TTV Tuyên quang đặt trước thanh hóa, thái nguyên đặt sau 2 kênh TTV)
+  if (id === "tuyen_quang") {
+    return "Truyền hình Thái Nguyên - TN A_tuyen_quang";
+  }
+  if (id === "thanh_hoa") {
+    return "Truyền hình Thái Nguyên - TN B_thanh_hoa";
+  }
+  if (id === "thai_nguyen") {
+    return "Truyền hình Thái Nguyên - TN C_thai_nguyen";
+  }
+
+  // Group 6: Ha Noi & HueTV (HueTV đặt cạnh H2)
+  if (id === "ha_noi_1") {
+    return "Truyền hình Hà Nội - H1";
+  }
+  if (id === "ha_noi_2") {
+    return "Truyền hình Hà Nội - H2";
+  }
+  if (id === "hue") {
+    return "Truyền hình Hà Nội - H3_hue";
+  }
+
+  return name;
+}
 
 // Dynamically construct and populate categories based on channel groups
 export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
@@ -138,12 +190,8 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
     matchedChannels = processedChannels.filter(c => c.group === "SCTV");
   } else if (tpl.id === "thiet-yeu") {
     matchedChannels = processedChannels.filter(c => c.id === "antv_thiet_yeu" || c.id === "qpvn_thiet_yeu" || c.group === "Thiết yếu");
-  } else if (tpl.id === "dia-phuong-bac") {
-    matchedChannels = processedChannels.filter(c => REGION_BAC_IDS.includes(c.id));
-  } else if (tpl.id === "dia-phuong-trung") {
-    matchedChannels = processedChannels.filter(c => REGION_TRUNG_IDS.includes(c.id));
-  } else if (tpl.id === "dia-phuong-nam") {
-    matchedChannels = processedChannels.filter(c => REGION_NAM_IDS.includes(c.id));
+  } else if (tpl.id === "dia-phuong") {
+    matchedChannels = processedChannels.filter(c => c.group === "Địa phương");
   } else if (tpl.id === "quoc-te") {
     matchedChannels = processedChannels.filter(c => c.group === "Quốc tế" || c.group === "World");
   } else if (tpl.id === "phat-thanh-radio") {
@@ -163,8 +211,8 @@ export const CATEGORIES: Category[] = categoryTemplates.map(tpl => {
   });
 
   // Sort alphabetically from A-Z for local and essential categories
-  if (tpl.id.startsWith("dia-phuong-") || tpl.id === "thiet-yeu") {
-    formattedChannels.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  if (tpl.id === "dia-phuong" || tpl.id === "thiet-yeu") {
+    formattedChannels.sort((a, b) => getSortName(a.name, a.id).localeCompare(getSortName(b.name, b.id), "vi"));
   }
 
   return {
