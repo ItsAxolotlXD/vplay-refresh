@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, 
   Heart, 
+  ThumbsUp,
   Sliders, 
   Sparkles, 
   Info, 
@@ -46,7 +47,8 @@ import {
   Puzzle,
   ShoppingBag,
   Pin,
-  Loader2
+  Loader2,
+  Share2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -343,6 +345,33 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [showDropdownMenu, setShowDropdownMenu] = useState<boolean>(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+
+  const updateMenuCoords = () => {
+    if (menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setMenuCoords({
+        top: rect.bottom + 8,
+        left: rect.left
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (showDropdownMenu && activeTab === "live") {
+      updateMenuCoords();
+      const handleScrollAndResize = () => {
+        updateMenuCoords();
+      };
+      window.addEventListener("resize", handleScrollAndResize);
+      window.addEventListener("scroll", handleScrollAndResize, { capture: true, passive: true });
+      return () => {
+        window.removeEventListener("resize", handleScrollAndResize);
+        window.removeEventListener("scroll", handleScrollAndResize, { capture: true });
+      };
+    }
+  }, [showDropdownMenu, activeTab]);
   const [showAboutModal, setShowAboutModal] = useState<boolean>(false);
   const [showClock, setShowClock] = useState<boolean>(() => {
     const saved = localStorage.getItem("vplay360_show_clock");
@@ -1503,248 +1532,227 @@ export default function App() {
                         setPlaybackErrorType(null);
                       }
                     }}
+                    onOpenNativeStream={() => {
+                      if (installedPlugins.open_native !== "installed") {
+                        setRequiredPluginFeatureName("Mở luồng gốc");
+                        setShowPluginRequiredModal(true);
+                      } else {
+                        window.open(selectedChannel.url, "_blank");
+                      }
+                    }}
                   />
                 )}
 
-                {/* Live tab Actions Button Bar - Placed perfectly under the channel player exactly as requested */}
-                <div className="w-full max-w-5xl mx-auto mt-3 sm:mt-5 flex items-center justify-center gap-2 sm:gap-3 z-10 relative px-2">
-                  {/* Hamburger menu button (3 gạch ngang) */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowDropdownMenu(prev => !prev)}
-                      className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#d0bcff] hover:bg-[#bba3f0] active:bg-[#a88ee6] text-[#381e72] border-none flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-[10.5px] sm:text-xs font-semibold"
-                      title="Menu"
-                    >
-                      <Menu className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#381e72]" />
-                      <span>Menu</span>
-                    </button>
+                {/* Integrated Control Row next to Categories - Scrollable together and pushed up as requested */}
+                <div className="w-full max-w-5xl mx-auto px-2 relative mt-1.5 sm:mt-2 lg:mt-2.5">
+                  <div className="flex items-center w-full border-b lg:border-none border-white/5 pb-1 lg:pb-2">
+                    {/* Entire row is scrollable horizontal container so Menu, Add Channel and Categories scroll together */}
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-1 min-w-0 pb-1">
+                      {/* Hamburger menu button (3 gạch ngang) with dropdown opening BELOW */}
+                      <div className="relative shrink-0">
+                        <button
+                          ref={menuButtonRef}
+                          onClick={() => {
+                            updateMenuCoords();
+                            setShowDropdownMenu(prev => !prev);
+                          }}
+                          className="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#d0bcff] hover:bg-[#bba3f0] active:bg-[#a88ee6] text-[#381e72] border-none flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-[11px] sm:text-xs font-semibold h-8 sm:h-9"
+                        >
+                          <Menu className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#381e72]" />
+                          <span>Menu</span>
+                        </button>
+                      </div>
 
-                    <AnimatePresence>
-                      {showDropdownMenu && (
-                        <>
-                          {/* Invisible Backdrop for click-away */}
-                          <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
-                          
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.85, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.85, y: 15 }}
-                            style={{ originX: 0.2, originY: 1 }}
-                            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                            className="absolute bottom-full left-0 mb-3 w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
-                          >
-                            {/* Clock & Calendar toggle with checkmark */}
-                            <button
-                              onClick={() => {
-                                toggleShowClock();
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
-                            >
-                              <div className="flex items-center">
-                                <Clock className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                                <span>Đồng hồ và Lịch</span>
-                              </div>
-                              {showClock && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
-                            </button>
+                      {/* Add custom channel button */}
+                      <button
+                        onClick={() => {
+                          if (installedPlugins.add_custom !== "installed") {
+                            setRequiredPluginFeatureName("Thêm kênh mới");
+                            setShowPluginRequiredModal(true);
+                          } else {
+                            setShowCustomModal(true);
+                          }
+                        }}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
+                      >
+                        <Plus className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-300 hover:rotate-90" />
+                      </button>
 
-                            {/* Xuất luồng kênh (Only visible on Live tab) */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                if (installedPlugins.export_stream !== "installed") {
-                                  setRequiredPluginFeatureName("Xuất luồng");
-                                  setShowPluginRequiredModal(true);
-                                } else {
-                                  exportChannelsToM3u8();
-                                }
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Xuất luồng kênh
-                            </button>
+                      {/* Subtle Vertical Divider inside the scrollable view */}
+                      <div className="h-6 w-px bg-white/10 shrink-0 self-center mx-1" />
 
-                            {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                if (installedPlugins.multiview !== "installed") {
-                                  setRequiredPluginFeatureName("Multiview");
-                                  setShowPluginRequiredModal(true);
-                                } else {
-                                  handleOpenMultiviewSelector();
-                                }
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Xem Multiview
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                if (installedPlugins.pip !== "installed") {
-                                  setRequiredPluginFeatureName("Picture in Picture");
-                                  setShowPluginRequiredModal(true);
-                                } else {
-                                  handleTogglePictureInPicture();
-                                }
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Picture in Picture
-                            </button>
-
-                            {/* Divider */}
-                            <div className="border-t border-black/10 my-2" />
-
-                            {/* About this version */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                setShowAboutModal(true);
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Info className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Về phiên bản này
-                            </button>
-
-                            {/* Reload app */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                window.location.reload();
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <RefreshCw className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Tải lại ứng dụng
-                            </button>
-
-                            {/* Thử nghiệm */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                setActiveTab("settings");
-                                setActiveSettingSection("experimental");
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Pizza className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Thử nghiệm
-                            </button>
-
-                            {/* Open Settings */}
-                            <button
-                              onClick={() => {
-                                setShowDropdownMenu(false);
-                                setActiveTab("settings");
-                                setActiveSettingSection(null);
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Settings className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Mở cài đặt
-                            </button>
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Share button */}
-                  <button
-                    onClick={handleShareChannel}
-                    className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn text-[10.5px] sm:text-xs font-normal"
-                    title="Chia sẻ kênh này"
-                  >
-                    <img 
-                      src="https://static.wikia.nocookie.net/ep-deo/images/1/10/Share.png/revision/latest?cb=20260625011333" 
-                      className="w-3 sm:w-3.5 h-3 sm:h-3.5 brightness-0 invert opacity-90 object-contain" 
-                      referrerPolicy="no-referrer"
-                      alt="Share"
-                    />
-                    <span>Chia sẻ</span>
-                  </button>
-
-                  {/* TV button */}
-                  <a
-                    href={installedPlugins.open_native === "installed" ? selectedChannel?.url : "#"}
-                    target={installedPlugins.open_native === "installed" ? "_blank" : undefined}
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      if (installedPlugins.open_native !== "installed") {
-                        e.preventDefault();
-                        setRequiredPluginFeatureName("Mở luồng gốc");
-                        setShowPluginRequiredModal(true);
-                      }
-                    }}
-                    className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg cursor-default bouncy-btn animate-fade-in text-[10.5px] sm:text-xs font-normal"
-                    title="Mở luồng phát gốc"
-                  >
-                    <Tv className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-white opacity-90" />
-                    <span>Mở luồng gốc</span>
-                  </a>
-
-                  {/* Add custom channel button */}
-                  <button
-                    onClick={() => {
-                      if (installedPlugins.add_custom !== "installed") {
-                        setRequiredPluginFeatureName("Thêm kênh mới");
-                        setShowPluginRequiredModal(true);
-                      } else {
-                        setShowCustomModal(true);
-                      }
-                    }}
-                    className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#ff9502] hover:bg-[#ffa31a] active:bg-[#e08300] text-white border-none text-[10.5px] sm:text-xs font-normal flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-lg shadow-orange-500/15 cursor-default bouncy-btn"
-                    title="Thêm link m3u8 của riêng bạn"
-                  >
-                    <Plus className="w-3 sm:w-3.5 h-3 sm:h-3.5 transition-transform duration-300 hover:rotate-90" />
-                    <span>Thêm kênh</span>
-                  </button>
-                </div>
-
-                {/* Glass Category Filter row - Nested inside sticky container so it stays hard locked on mobile */}
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 mt-3 mb-1 lg:mb-6 lg:pb-4 lg:mt-4 border-b lg:border-none border-white/5 scrollbar-none">
-                  <button
-                    onClick={() => setSelectedCategory("all")}
-                    className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
-                      selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
-                    }`}
-                  >
-                    Tất cả ({flattenedChannels.length})
-                  </button>
-                  
-                  {allAvailableCategoryList.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn flex items-center justify-center gap-2 ${
-                        selectedCategory === cat.id ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
-                      }`}
-                    >
-                      {cat.logo ? (
-                        <div className="flex items-center gap-2 sm:gap-2.5">
-                          <img
-                            src={cat.logo}
-                            alt={cat.name}
-                            className="h-5.5 sm:h-7 w-auto object-contain select-none max-w-[60px] sm:max-w-[90px]"
-                            referrerPolicy="no-referrer"
-                          />
-                          {(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
+                      {/* Tất cả filter button */}
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn h-8 sm:h-9 flex items-center justify-center ${
+                          selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
+                        }`}
+                      >
+                        Tất cả ({flattenedChannels.length})
+                      </button>
+                      
+                      {allAvailableCategoryList.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn flex items-center justify-center gap-2 h-8 sm:h-9 ${
+                            selectedCategory === cat.id ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
+                          }`}
+                        >
+                          {cat.logo ? (
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <img
+                                src={cat.logo}
+                                alt={cat.name}
+                                className="h-3.5 sm:h-4.5 w-auto object-contain select-none max-w-[40px] sm:max-w-[65px]"
+                                referrerPolicy="no-referrer"
+                              />
+                              {(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
+                                <span>{cat.name} ({cat.channels.length})</span>
+                              )}
+                              {!(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
+                                <span className="opacity-75">({cat.channels.length})</span>
+                              )}
+                            </div>
+                          ) : (
                             <span>{cat.name} ({cat.channels.length})</span>
                           )}
-                          {!(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
-                            <span className="opacity-75">({cat.channels.length})</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dropdown Menu rendered out-of-flow with fixed position to prevent parent overflow cropping */}
+                  <AnimatePresence>
+                    {showDropdownMenu && (
+                      <>
+                        {/* Invisible Backdrop for click-away */}
+                        <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
+                        
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.85, y: -10 }}
+                          style={{ 
+                            position: "fixed",
+                            top: `${menuCoords.top}px`,
+                            left: `${menuCoords.left}px`,
+                            originX: 0, 
+                            originY: 0 
+                          }}
+                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                          className="w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
+                        >
+                          {/* Favorite toggle with checkmark */}
+                          {selectedChannel && (() => {
+                            const isCurrentChannelFavorite = favorites.includes(selectedChannel.id);
+                            return (
+                              <button
+                                onClick={() => {
+                                  setShowDropdownMenu(false);
+                                  toggleFavorite(selectedChannel.id);
+                                }}
+                                className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
+                              >
+                                <div className="flex items-center">
+                                  <ThumbsUp className={`w-4 h-4 mr-2.5 stroke-[2] ${isCurrentChannelFavorite ? "text-amber-500 fill-amber-500" : "text-black/70"}`} />
+                                  <span>{isCurrentChannelFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}</span>
+                                </div>
+                                {isCurrentChannelFavorite && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
+                              </button>
+                            );
+                          })()}
+
+                          {/* Mở luồng gốc */}
+                          {selectedChannel && (
+                            <a
+                              href={installedPlugins.open_native === "installed" ? selectedChannel.url : "#"}
+                              target={installedPlugins.open_native === "installed" ? "_blank" : undefined}
+                              rel="noopener noreferrer"
+                              onClick={(e) => {
+                                setShowDropdownMenu(false);
+                                if (installedPlugins.open_native !== "installed") {
+                                  e.preventDefault();
+                                  setRequiredPluginFeatureName("Mở luồng gốc");
+                                  setShowPluginRequiredModal(true);
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Tv className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Mở luồng gốc
+                            </a>
                           )}
-                        </div>
-                      ) : (
-                        <span>{cat.name} ({cat.channels.length})</span>
-                      )}
-                    </button>
-                  ))}
+
+                          {/* Chia sẻ kênh */}
+                          {selectedChannel && (
+                            <button
+                              onClick={() => {
+                                      setShowDropdownMenu(false);
+                                      handleShareChannel();
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            >
+                              <Share2 className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                              Chia sẻ kênh
+                            </button>
+                          )}
+
+                          {/* Divider */}
+                          <div className="border-t border-black/10 my-2" />
+
+                          {/* Xuất luồng kênh (Only visible on Live tab) */}
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.export_stream !== "installed") {
+                                setRequiredPluginFeatureName("Xuất luồng");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                exportChannelsToM3u8();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                          >
+                            <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Xuất luồng kênh
+                          </button>
+
+                          {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.multiview !== "installed") {
+                                setRequiredPluginFeatureName("Multiview");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                handleOpenMultiviewSelector();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                          >
+                            <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Xem Multiview
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDropdownMenu(false);
+                              if (installedPlugins.pip !== "installed") {
+                                setRequiredPluginFeatureName("Picture in Picture");
+                                setShowPluginRequiredModal(true);
+                              } else {
+                                handleTogglePictureInPicture();
+                              }
+                            }}
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                          >
+                            <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Picture in Picture
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </div>
@@ -2155,7 +2163,7 @@ export default function App() {
                             </div>
                           </div>
                       
-                          {/* Heart/Fav Button overlay (shown on top corner) */}
+                          {/* ThumbsUp/Fav Button overlay (shown on top corner) */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2164,7 +2172,7 @@ export default function App() {
                             className="absolute top-1 right-1 p-1 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/90 hover:scale-110 active:scale-120 duration-200"
                             title={isFav ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
                           >
-                            <Heart className={`w-3.5 h-3.5 ${isFav ? "text-red-500 fill-red-500" : "text-white/70 hover:text-white"}`} />
+                            <ThumbsUp className={`w-3.5 h-3.5 ${isFav ? "text-amber-400 fill-amber-400" : "text-white/70 hover:text-white"}`} />
                           </button>
                         </div>
                       </div>
@@ -2259,7 +2267,7 @@ export default function App() {
                             </div>
                           </div>
                       
-                          {/* Heart/Unfav Button overlay (shown on top corner or toggleable) */}
+                          {/* ThumbsUp/Unfav Button overlay (shown on top corner or toggleable) */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -2268,7 +2276,7 @@ export default function App() {
                             className="absolute top-1 right-1 p-1 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-black/90 hover:scale-110 active:scale-120 duration-200"
                             title="Xóa khỏi yêu thích"
                           >
-                            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+                            <ThumbsUp className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                           </button>
                         </div>
                       </div>
@@ -4809,11 +4817,11 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      <div className="fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40">
+      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""}`}>
         <div className="progressive-blur-dock" />
       </div>
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu`}>
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""}`}>
           <AnimatePresence mode="wait">
             {activeTab === "search" ? (
               <motion.div

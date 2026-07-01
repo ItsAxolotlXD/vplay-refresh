@@ -20,7 +20,7 @@ import {
   SkipBack,
   SkipForward,
   RefreshCw,
-  Heart
+  ThumbsUp
 } from "lucide-react";
 import { Channel } from "../data/channels";
 
@@ -35,6 +35,7 @@ interface ChannelPlayerProps {
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   onPlaybackError?: (error: boolean, isTimeout?: boolean) => void;
+  onOpenNativeStream?: () => void;
 }
 
 export default function ChannelPlayer({
@@ -48,6 +49,7 @@ export default function ChannelPlayer({
   isFavorite = false,
   onToggleFavorite,
   onPlaybackError,
+  onOpenNativeStream,
 }: ChannelPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -586,13 +588,13 @@ export default function ChannelPlayer({
 
               {/* Centered 5 Glassmorphic Buttons exactly as required by mock */}
               <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3.5">
-                {/* Button 1: Dynamic Heart Favorite button */}
+                {/* Button 1: Dynamic ThumbsUp Favorite button */}
                 <button 
                   onClick={onToggleFavorite}
                   className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default group"
                   title={isFavorite ? "Bỏ yêu thích" : "Yêu thích kênh"}
                 >
-                  <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-red-500 fill-red-500 scale-110" : "text-white/80 group-hover:text-red-400 group-hover:scale-110"}`} />
+                  <ThumbsUp className={`w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all duration-300 ${isFavorite ? "text-amber-400 fill-amber-400 scale-110" : "text-white/80 group-hover:text-amber-300 group-hover:scale-110"}`} />
                 </button>
 
                 {/* Button 2: Skip back */}
@@ -626,17 +628,19 @@ export default function ChannelPlayer({
                   <SkipForward className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
                 </button>
 
-                {/* Button 5: Loop context / reload button */}
+                {/* Button 5: Open native stream */}
                 <button 
                   onClick={() => {
-                    setHasError(false);
-                    setIsLoading(true);
-                    if (videoRef.current) videoRef.current.load();
+                    if (onOpenNativeStream) {
+                      onOpenNativeStream();
+                    } else {
+                      window.open(channel.url, "_blank");
+                    }
                   }}
                   className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 backdrop-blur-[1.5px] border border-white/10 bouncy-btn flex items-center justify-center text-white shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] cursor-default"
-                  title="Tải lại luồng"
+                  title="Mở luồng gốc"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-once" />
+                  <Tv className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 </button>
               </div>
 
