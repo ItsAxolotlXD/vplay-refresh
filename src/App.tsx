@@ -1707,10 +1707,10 @@ export default function App() {
                 </div>
 
                 {/* Glass Category Filter row - Nested inside sticky container so it stays hard locked on mobile */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 mt-3 mb-1 lg:mb-6 lg:pb-4 lg:mt-4 border-b lg:border-none border-white/5 scrollbar-none">
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 mt-3 mb-1 lg:mb-6 lg:pb-4 lg:mt-4 border-b lg:border-none border-white/5 scrollbar-none">
                   <button
                     onClick={() => setSelectedCategory("all")}
-                    className={`px-5 py-2 sm:px-6 sm:py-2.5 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
+                    className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
                       selectedCategory === "all" ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                     }`}
                   >
@@ -1721,11 +1721,28 @@ export default function App() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-5 py-2 sm:px-6 sm:py-2.5 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn ${
+                      className={`px-5 py-2.5 sm:px-6 sm:py-3 rounded-[20px] text-[11px] sm:text-xs font-normal whitespace-nowrap cursor-default bouncy-btn flex items-center justify-center gap-2 ${
                         selectedCategory === cat.id ? "glass-pill-active" : "glass-pill text-white/60 hover:text-white"
                       }`}
                     >
-                      {cat.name} ({cat.channels.length})
+                      {cat.logo ? (
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <img
+                            src={cat.logo}
+                            alt={cat.name}
+                            className="h-5.5 sm:h-7 w-auto object-contain select-none max-w-[60px] sm:max-w-[90px]"
+                            referrerPolicy="no-referrer"
+                          />
+                          {(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
+                            <span>{cat.name} ({cat.channels.length})</span>
+                          )}
+                          {!(cat.id === 'dia-phuong' || cat.id === 'thiet-yeu' || cat.id === 'quoc-te') && (
+                            <span className="opacity-75">({cat.channels.length})</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span>{cat.name} ({cat.channels.length})</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -1755,15 +1772,26 @@ export default function App() {
                           category.id === 'htv' ? 'bg-orange-500' :
                           category.id === 'quoc-te' ? 'bg-amber-400' : 'bg-pink-500'
                         }`} />
-                        <h2 className="text-xl font-extrabold tracking-tight text-white/95 uppercase drop-shadow-sm font-sans">
-                          {category.name}
-                        </h2>
+                        {category.logo ? (
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={category.logo}
+                              alt={category.name}
+                              className="h-6 sm:h-7.5 w-auto object-contain select-none max-w-[110px] sm:max-w-[150px]"
+                              referrerPolicy="no-referrer"
+                            />
+                            {(category.id === 'dia-phuong' || category.id === 'thiet-yeu' || category.id === 'quoc-te') && (
+                              <span className="text-base sm:text-lg font-bold text-white/90 font-sans tracking-tight">
+                                {category.name}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <h2 className="text-xl font-extrabold tracking-tight text-white/95 uppercase drop-shadow-sm font-sans">
+                            {category.name}
+                          </h2>
+                        )}
                       </div>
-                      
-                      {/* Count badge in gray glass pill like in image */}
-                      <span className="text-xs bg-white/5 border border-white/10 text-white/50 px-3 py-1 rounded-full font-mono">
-                        {category.channels.length} Kênh
-                      </span>
                     </div>
 
                     {/* Channels responsive grid aligned properly: exactly 3 columns on mobile and 5 columns on desktop */}

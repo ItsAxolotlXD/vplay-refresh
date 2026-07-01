@@ -17,6 +17,7 @@ export interface Category {
   id: string;
   name: string;
   description: string;
+  logo?: string;
   channels: Channel[];
 }
 
@@ -80,13 +81,13 @@ export const processedChannels: Channel[] = rawChannels.map((ch: any) => {
 
 // Category template definitions
 const categoryTemplates = [
-  { id: "vtv", name: "Kênh VTV", description: "Các kênh sóng truyền hình quốc gia VTV" },
-  { id: "vtvcab", name: "Kênh VTVcab", description: "Kênh giải trí thể thao, phim ảnh tổng hợp đặc sắc" },
-  { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh" },
-  { id: "sctv", name: "Kênh SCTV", description: "Các kênh giải trí, khoa học và phim truyện SCTV cáp" },
-  { id: "thiet-yeu", name: "Kênh Thiết yếu", description: "Truyền hình thiết yếu quốc gia" },
-  { id: "dia-phuong", name: "Kênh Địa phương", description: "Truyền hình địa phương, liên tỉnh bản quyền" },
-  { id: "quoc-te", name: "Kênh Quốc Tế & Đặc Sắc", description: "Kênh tin tức thời sự thế giới, phim hoạt hình nổi tiếng nước ngoài" },
+  { id: "vtv", name: "Kênh VTV", description: "Các kênh sóng truyền hình quốc gia VTV", logo: "https://static.wikia.nocookie.net/logos/images/1/13/VTV_logo_%28b%E1%BA%A3n_2%29.png/revision/latest/scale-to-width-down/1000?cb=20240103140637&path-prefix=vi" },
+  { id: "vtvcab", name: "Kênh VTVcab", description: "Kênh giải trí thể thao, phim ảnh tổng hợp đặc sắc", logo: "https://static.wikia.nocookie.net/logos/images/4/45/VTVcab_logo.png/revision/latest/scale-to-width-down/1000?cb=20230331092733&path-prefix=vi" },
+  { id: "htv", name: "Kênh HTV", description: "Các kênh sóng truyền hình Đài Thành phố Hồ Chí Minh", logo: "https://static.wikia.nocookie.net/logos/images/d/dd/HTV_logo_2012_%281%29.png/revision/latest/scale-to-width-down/1000?cb=20231118121202&path-prefix=vi" },
+  { id: "sctv", name: "Kênh SCTV", description: "Các kênh giải trí, khoa học và phim truyện SCTV cáp", logo: "https://static.wikia.nocookie.net/logos/images/1/15/SCTV.png/revision/latest/scale-to-width-down/1000?cb=20230624130447&path-prefix=vi" },
+  { id: "thiet-yeu", name: "Kênh Thiết yếu", description: "Truyền hình thiết yếu quốc gia", logo: "https://em-content.zobj.net/source/microsoft/379/check-mark-button_2705.png" },
+  { id: "dia-phuong", name: "Kênh Địa phương", description: "Truyền hình địa phương, liên tỉnh bản quyền", logo: "https://vectorflags.s3.amazonaws.com/flags/vn-wave-01.png" },
+  { id: "quoc-te", name: "Kênh Quốc Tế & Đặc Sắc", description: "Kênh tin tức thời sự thế giới, phim hoạt hình nổi tiếng nước ngoài", logo: "https://em-content.zobj.net/source/microsoft/379/globe-with-meridians_1f310.png" },
   { id: "phat-thanh-radio", name: "Kênh Phát Thanh (Radio)", description: "Các đài phát thanh VOV, VOH, FM Giao thông đặc sắc" },
   { id: "thu-nghiem", name: "Kênh Thử Nghiệm", description: "Kênh truyền hình thử nghiệm luồng phát kỹ thuật" }
 ];
