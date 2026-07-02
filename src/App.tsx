@@ -1563,6 +1563,15 @@ export default function App() {
                         </button>
                       </div>
 
+                      {/* Back to Home button (Only visible on mobile when bottom dock is hidden) */}
+                      <button
+                        onClick={() => setActiveTab("home")}
+                        className="sm:hidden w-8 h-8 rounded-full bg-[#d0bcff] hover:bg-[#bba3f0] active:bg-[#a88ee6] text-[#381e72] border-none flex items-center justify-center shrink-0 shadow-lg cursor-default bouncy-btn"
+                        title="Về Trang chủ"
+                      >
+                        <Home className="w-4 h-4 text-[#381e72]" />
+                      </button>
+
                       {/* Add custom channel button */}
                       <button
                         onClick={() => {
