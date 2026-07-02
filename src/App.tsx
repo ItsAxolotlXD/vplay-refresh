@@ -48,7 +48,9 @@ import {
   ShoppingBag,
   Pin,
   Loader2,
-  Share2
+  Share2,
+  Send,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -125,6 +127,21 @@ const homeSlides = [
     btnIcon: "play"
   }
 ];
+
+const formatVIntelMessage = (text: string) => {
+  if (!text) return "";
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={idx} className="font-extrabold text-[#d0bcff]">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
 
 export default function App() {
   // Local time state clock
@@ -566,6 +583,13 @@ export default function App() {
       case "settings":
         return { icon: Settings, label: "Cài đặt", isImg: false };
       case "search":
+        if (expVIntelligence) {
+          return { 
+            icon: "https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330", 
+            label: "V-Intelligence", 
+            isImg: true 
+          };
+        }
         return { 
           icon: "https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi", 
           label: "Tìm kiếm", 
@@ -601,7 +625,7 @@ export default function App() {
       case "settings":
         return activeTab === "settings" && activeSettingSection === null;
       case "search":
-        return activeTab === "search";
+        return expVIntelligence ? showVIntel : activeTab === "search";
       case "profile":
         return activeTab === "settings" && activeSettingSection === "profile";
       case "plugin_store":
@@ -624,8 +648,18 @@ export default function App() {
         setActiveSettingSection(null);
         break;
       case "search":
-        setPrevTab(activeTab as any);
-        setActiveTab("search");
+        if (expVIntelligence) {
+          if (!vIntelIconSpinning) {
+            setVIntelIconSpinning(true);
+            setTimeout(() => {
+              setShowVIntel(!showVIntel);
+              setVIntelIconSpinning(false);
+            }, 600);
+          }
+        } else {
+          setPrevTab(activeTab as any);
+          setActiveTab("search");
+        }
         break;
       case "profile":
         setActiveTab("settings");
@@ -810,7 +844,21 @@ export default function App() {
   const [expLowLatency, setExpLowLatency] = useState<boolean>(() => localStorage.getItem("vplay_exp_lowlatency") === "true");
   const [expCache, setExpCache] = useState<boolean>(() => localStorage.getItem("vplay_exp_cache") === "true");
   const [expAmbientGlow, setExpAmbientGlow] = useState<boolean>(() => localStorage.getItem("vplay_exp_glow") === "true");
+  const [expVIntelligence, setExpVIntelligence] = useState<boolean>(() => localStorage.getItem("vplay_exp_vintel") === "true");
   const [testStreamUrl, setTestStreamUrl] = useState<string>("");
+
+  // V-Intelligence panel states
+  const [showVIntel, setShowVIntel] = useState<boolean>(false);
+  const [vIntelIconSpinning, setVIntelIconSpinning] = useState<boolean>(false);
+  const [vIntelMode, setVIntelMode] = useState<'chat' | 'search'>('chat');
+  const [vIntelMessages, setVIntelMessages] = useState<{ role: string; content: string; recommendedChannels?: string[]; action?: any }[]>([
+    {
+      role: "model",
+      content: "Xin chào! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?"
+    }
+  ]);
+  const [vIntelInput, setVIntelInput] = useState<string>("");
+  const [vIntelLoading, setVIntelLoading] = useState<boolean>(false);
 
   // Design System Demo states
   const [demoToggleState, setDemoToggleState] = useState<boolean>(false);
@@ -835,6 +883,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("vplay_exp_glow", String(expAmbientGlow));
   }, [expAmbientGlow]);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_exp_vintel", String(expVIntelligence));
+  }, [expVIntelligence]);
 
   const [countdown, setCountdown] = useState({
     days: "00",
@@ -966,6 +1018,91 @@ export default function App() {
       if (topEl) {
         topEl.scrollIntoView({ behavior: "smooth" });
       }
+    }
+  };
+
+  // V-Intelligence Message handler
+  const handleSendVIntelMessage = async () => {
+    if (!vIntelInput.trim() || vIntelLoading) return;
+    
+    const userText = vIntelInput.trim();
+    setVIntelInput("");
+    
+    const newMessages = [
+      ...vIntelMessages,
+      { role: "user", content: userText }
+    ];
+    setVIntelMessages(newMessages);
+    setVIntelLoading(true);
+    
+    try {
+      const response = await fetch("/api/vintelligence", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          mode: vIntelMode
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Không thể kết nối với trợ lý ảo V-Intelligence");
+      }
+      
+      const data = await response.json();
+      
+      setVIntelMessages(prev => [
+        ...prev,
+        {
+          role: "model",
+          content: data.reply || "Tôi không nhận được phản hồi phù hợp.",
+          recommendedChannels: data.recommendedChannels || [],
+          action: data.action || null
+        }
+      ]);
+
+      // Execute returned action if any
+      if (data.action && data.action.type) {
+        const { type, target, section } = data.action;
+        
+        if (type === "open_channel" && target) {
+          const ch = flattenedChannels.find(c => c.id === target);
+          if (ch) {
+            handleSelectChannel(ch);
+            setActiveTab("live");
+            if (window.innerWidth < 640) {
+              setShowVIntel(false);
+            }
+          }
+        } else if (type === "switch_tab" && target) {
+          setActiveTab(target as any);
+          if (target === "settings") {
+            setActiveSettingSection(null);
+          }
+          if (window.innerWidth < 640) {
+            setShowVIntel(false);
+          }
+        } else if (type === "open_settings" && section) {
+          setActiveTab("settings");
+          setActiveSettingSection(section);
+          if (window.innerWidth < 640) {
+            setShowVIntel(false);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      setVIntelMessages(prev => [
+        ...prev,
+        {
+          role: "model",
+          content: `Đã xảy ra lỗi: ${err.message || "Không thể tải phản hồi từ trợ lý ảo V-Intelligence."}`
+        }
+      ]);
+    } finally {
+      setVIntelLoading(false);
     }
   };
 
@@ -3431,9 +3568,10 @@ export default function App() {
                     const matchLowLatency = isMatched("Mô phỏng độ trễ cực thấp") || isMatched("Ultra-Low Latency") || isMatched("độ trễ") || isMatched("latency") || isMatched("bộ đệm") || isMatched("hls");
                     const matchCache = isMatched("Bộ đệm luồng thử nghiệm") || isMatched("Stream Caching") || isMatched("bộ đệm") || isMatched("cache") || isMatched("ram") || isMatched("gián đoạn");
                     const matchAmbient = isMatched("Ánh sáng viền động") || isMatched("Dynamic Ambient Glow") || isMatched("ambient") || isMatched("glow") || isMatched("viền") || isMatched("video") || isMatched("thuật toán");
+                    const matchVIntelligence = isMatched("Trợ lý ảo V-Intelligence") || isMatched("V-Intelligence") || isMatched("trí tuệ nhân tạo") || isMatched("ai") || isMatched("gemini") || isMatched("chat") || isMatched("bot");
                     const matchPlayground = isMatched("Bàn thử nghiệm luồng phát") || isMatched("HLS Stream Playground") || isMatched("bàn thử nghiệm") || isMatched("playground") || isMatched("m3u8") || isMatched("mp4") || isMatched("phát thử");
 
-                    const hasResults = matchLowLatency || matchCache || matchAmbient || matchPlayground;
+                    const hasResults = matchLowLatency || matchCache || matchAmbient || matchVIntelligence || matchPlayground;
 
                     return (
                       <div className="space-y-6">
@@ -3530,7 +3668,7 @@ export default function App() {
                               <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
                                 <div className="space-y-1 pr-4">
                                   <h4 className="text-sm font-semibold text-white">Ánh sáng viền động (Dynamic Ambient Glow)</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Sử dụng thuật toán phân tích màu video thời gian thực để chiếu sáng viền trình phát.</p>
+                                  <p className="text-xs text-white/60 leading-relaxed font-sans">Sử dụng thuật toán phân tích màu video thời gian thực để chiếu sáng viền trình phát.</p>
                                 </div>
                                 <button
                                   onClick={() => setExpAmbientGlow(!expAmbientGlow)}
@@ -3540,6 +3678,40 @@ export default function App() {
                                 >
                                   <motion.div
                                     animate={{ x: expAmbientGlow ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Option V-Intelligence */}
+                            {matchVIntelligence && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
+                                <div className="space-y-1 pr-4">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-sm font-semibold text-white">Trợ lý ảo V-Intelligence</h4>
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">Mới</span>
+                                  </div>
+                                  <p className="text-xs text-white/60 leading-relaxed font-sans">V-Intelligence là mô hình trí tuệ thông minh nhân tạo nhằm giúp trải nghiệm xem truyền hình của bạn trở nên sinh động và hấp dẫn hơn, là người bạn trợ lý đắc lực của người dùng Vplay.</p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const newVal = !expVIntelligence;
+                                    setExpVIntelligence(newVal);
+                                    if (!newVal) {
+                                      setShowVIntel(false);
+                                    }
+                                  }}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                                    expVIntelligence ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: expVIntelligence ? 20 : 0 }}
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                     className="relative w-6 h-5 flex items-center justify-center group"
                                   >
@@ -4900,7 +5072,7 @@ export default function App() {
                           const isActive = isDockItemActive(tab.id);
                           const config = getDockItemConfig(tab.id);
                           const filterStyle = config.isImg 
-                            ? { filter: isActive ? "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" : "brightness(0) invert(1) opacity(0.8)" } 
+                            ? ((tab.id === "search" && expVIntelligence) ? {} : { filter: isActive ? "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" : "brightness(0) invert(1) opacity(0.8)" }) 
                             : {};
   
                           return (
@@ -4926,7 +5098,9 @@ export default function App() {
                                 />
                               )}
                               {config.isImg ? (
-                                <img 
+                                <motion.img 
+                                  animate={tab.id === "search" && vIntelIconSpinning ? { rotate: 360 } : { rotate: 0 }}
+                                  transition={{ duration: 0.6, ease: "easeInOut" }}
                                   src={config.icon} 
                                   className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
                                   style={filterStyle}
@@ -4972,10 +5146,12 @@ export default function App() {
                         />
                       )}
                       {config.isImg ? (
-                        <img 
+                        <motion.img 
+                          animate={vIntelIconSpinning ? { rotate: 360 } : { rotate: 0 }}
+                          transition={{ duration: 0.6, ease: "easeInOut" }}
                           src={config.icon} 
                           className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
-                          style={config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" }}
+                          style={expVIntelligence ? {} : (config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" })}
                           alt={config.label}
                           referrerPolicy="no-referrer"
                         />
@@ -5961,6 +6137,211 @@ export default function App() {
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* V-Intelligence Assistant Panel */}
+      <AnimatePresence>
+        {expVIntelligence && showVIntel && (
+          <motion.div
+            initial={{ opacity: 0, x: 400 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 400 }}
+            transition={{ type: "spring", stiffness: 260, damping: 25 }}
+            className="fixed inset-y-0 right-0 z-[110] w-full sm:w-[400px] h-full bg-[#161322]/95 backdrop-blur-[25px] border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col transform-gpu overflow-hidden"
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
+              <div className="flex items-center gap-3">
+                <img
+                  src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
+                  className="w-7 h-7 object-contain animate-pulse"
+                  alt="V-Intelligence"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="text-left">
+                  <h3 className="text-sm font-extrabold bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight font-sans">
+                    V-Intelligence
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowVIntel(false)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer bouncy-btn active:scale-90"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Menu mini tab selector */}
+            <div className="p-3 bg-black/10 border-b border-white/5 flex gap-2">
+              <button
+                onClick={() => setVIntelMode('chat')}
+                className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
+                  vIntelMode === 'chat'
+                    ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                    : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                Trò chuyện
+              </button>
+              <button
+                onClick={() => setVIntelMode('search')}
+                className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
+                  vIntelMode === 'search'
+                    ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                    : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Tìm kiếm thông minh (AI)
+              </button>
+            </div>
+
+            {/* Messages body list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar select-none">
+              {vIntelMessages.map((msg, idx) => {
+                const isUser = msg.role === 'user';
+                return (
+                  <div
+                    key={idx}
+                    className={`flex gap-3 items-start w-full ${isUser ? 'flex-row-reverse justify-start' : 'flex-row justify-start'}`}
+                  >
+                    {/* Avatar */}
+                    {isUser ? (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md shrink-0">
+                        <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
+                          <User className="w-4 h-4 text-white/90" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
+                        <img
+                          src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
+                          className="w-5 h-5 object-contain"
+                          alt="V-Intelligence"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
+                    {/* Chat Bubble */}
+                    <div
+                      className={`px-3.5 py-2.5 rounded-2xl text-xs sm:text-[13px] leading-relaxed max-w-[78%] text-left font-sans ${
+                        isUser
+                          ? "bg-[#d0bcff] text-[#381e72] rounded-tr-none shadow-md"
+                          : "bg-white/5 border border-white/10 text-white/90 rounded-tl-none"
+                      }`}
+                    >
+                      <div className="whitespace-pre-line">
+                        {formatVIntelMessage(msg.content)}
+                      </div>
+
+                      {/* Render recommended channels if any */}
+                      {!isUser && msg.recommendedChannels && msg.recommendedChannels.length > 0 && (
+                        <div className="mt-3.5 pt-3.5 border-t border-white/10 space-y-2">
+                          <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-2">Kênh đề xuất:</p>
+                          <div className="grid grid-cols-1 gap-1.5">
+                            {msg.recommendedChannels.map(chId => {
+                              const ch = flattenedChannels.find(c => c.id === chId);
+                              if (!ch) return null;
+                              return (
+                                <div
+                                  key={chId}
+                                  onClick={() => {
+                                    handleSelectChannel(ch);
+                                    setActiveTab("live");
+                                    // Optionally close on small screens
+                                    if (window.innerWidth < 640) {
+                                      setShowVIntel(false);
+                                    }
+                                  }}
+                                  className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 flex items-center justify-between transition-all duration-300 cursor-pointer group/item bouncy-btn active:scale-[0.98]"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {ch.logoImg ? (
+                                      <img
+                                        src={ch.logoImg}
+                                        className="w-8 h-8 rounded bg-black/40 object-contain p-0.5"
+                                        alt={ch.name}
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    ) : (
+                                      <div className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold text-white ${ch.logoBg || 'bg-[#381e72]'}`}>
+                                        {ch.logoText || "TV"}
+                                      </div>
+                                    )}
+                                    <div className="text-left">
+                                      <p className="text-xs font-semibold text-white group-hover/item:text-[#d0bcff] transition-colors">{ch.name}</p>
+                                      <p className="text-[9px] text-white/40">{ch.group}</p>
+                                    </div>
+                                  </div>
+                                  <div className="px-3 py-1 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] text-[10px] font-extrabold flex items-center gap-0.5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transition-all">
+                                    <Tv className="w-2.5 h-2.5" />
+                                    Xem
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Loader */}
+              {vIntelLoading && (
+                <div className="flex gap-3 items-start w-full flex-row justify-start">
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
+                    <img
+                      src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
+                      className="w-5 h-5 object-contain animate-pulse"
+                      alt="V-Intelligence"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="bg-white/5 border border-white/10 text-white/80 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 max-w-[78%] animate-pulse">
+                    <Loader2 className="w-4 h-4 text-[#d0bcff] animate-spin" />
+                    <span className="text-xs text-white/50 font-sans">V-Intelligence đang suy nghĩ...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input area */}
+            <div className="p-4 border-t border-white/10 bg-black/20">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendVIntelMessage();
+                }}
+                className="w-full flex items-center bg-white/[0.08] border border-white/15 rounded-full px-4 py-2 gap-2 focus-within:bg-white/[0.12] focus-within:border-white/25 transition-all"
+              >
+                <input
+                  type="text"
+                  value={vIntelInput}
+                  onChange={(e) => setVIntelInput(e.target.value)}
+                  placeholder={
+                    vIntelMode === 'search'
+                      ? "Tìm kênh bóng đá, thời sự, giải trí..."
+                      : "Trò chuyện bất cứ điều gì..."
+                  }
+                  disabled={vIntelLoading}
+                  className="flex-1 bg-transparent border-none text-white text-xs sm:text-sm placeholder-white/30 focus:outline-none disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={vIntelLoading || !vIntelInput.trim()}
+                  className="w-8 h-8 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] disabled:bg-white/10 text-[#381e72] disabled:text-white/30 flex items-center justify-center transition-all duration-300 cursor-pointer bouncy-btn active:scale-90 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5 fill-current" />
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
     </div>
