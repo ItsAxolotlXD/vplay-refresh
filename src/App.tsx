@@ -15,6 +15,7 @@ import {
   RefreshCw, 
   Play, 
   Clock,
+  History,
   Settings, 
   Package, 
   Flame, 
@@ -50,7 +51,10 @@ import {
   Loader2,
   Share2,
   Send,
-  MessageSquare
+  MessageSquare,
+  Mic,
+  Paintbrush,
+  File
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -88,6 +92,26 @@ const homeSlides = [
   },
   {
     id: 1,
+    titleTop: "Đón chào",
+    titleMain: "V-Intelligence!",
+    titleSub: "",
+    genreText: "TRỢ LÝ ẢO THÔNG MINH (AI)",
+    subSlogan: "TRẢI NGHIỆM TRUYỀN HÌNH THEO PHONG CÁCH TƯƠNG LAI",
+    thumbnail: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop",
+    channelId: "vintel-trigger",
+    channelPlayName: "V-Intelligence Virtual Assistant",
+    ageRating: "Mới",
+    ratingText: "Trợ lý đắc lực | Điều khiển thông minh & Tìm kiếm",
+    vignetteLeft: "from-black/90 via-black/55 to-transparent",
+    vignetteBottom: "from-[#211f26] via-[#211f26]/85 to-transparent",
+    vignetteTop: "from-black/45 via-transparent to-transparent",
+    logo: "https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323",
+    description: "Trợ lý AI thế hệ mới tích hợp sâu vào hệ thống Vplay giúp bạn tìm kiếm nhanh mọi kênh truyền hình, mở trực tiếp các mục cấu hình cài đặt và tự động hóa các tác vụ giải trí chỉ bằng một thao tác.",
+    btnText: "Thử ngay!",
+    btnIcon: "compass"
+  },
+  {
+    id: 2,
     titleTop: "VTV6",
     titleMain: "Vì một Việt Nam khỏe mạnh!",
     titleSub: "",
@@ -585,7 +609,7 @@ export default function App() {
       case "search":
         if (expVIntelligence) {
           return { 
-            icon: "https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330", 
+            icon: "https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323", 
             label: "V-Intelligence", 
             isImg: true 
           };
@@ -654,7 +678,7 @@ export default function App() {
             setTimeout(() => {
               setShowVIntel(!showVIntel);
               setVIntelIconSpinning(false);
-            }, 600);
+            }, 300);
           }
         } else {
           setPrevTab(activeTab as any);
@@ -844,21 +868,116 @@ export default function App() {
   const [expLowLatency, setExpLowLatency] = useState<boolean>(() => localStorage.getItem("vplay_exp_lowlatency") === "true");
   const [expCache, setExpCache] = useState<boolean>(() => localStorage.getItem("vplay_exp_cache") === "true");
   const [expAmbientGlow, setExpAmbientGlow] = useState<boolean>(() => localStorage.getItem("vplay_exp_glow") === "true");
-  const [expVIntelligence, setExpVIntelligence] = useState<boolean>(() => localStorage.getItem("vplay_exp_vintel") === "true");
+  const [expVIntelligence, setExpVIntelligence] = useState<boolean>(() => localStorage.getItem("vplay_exp_vintel") !== "false");
   const [testStreamUrl, setTestStreamUrl] = useState<string>("");
+
+  // V-Intelligence Session Interface
+  interface VIntelSession {
+    id: string;
+    title: string;
+    timestamp: string;
+    messages: { role: string; content: string; recommendedChannels?: string[]; action?: any }[];
+    mode: 'chat' | 'search';
+  }
 
   // V-Intelligence panel states
   const [showVIntel, setShowVIntel] = useState<boolean>(false);
   const [vIntelIconSpinning, setVIntelIconSpinning] = useState<boolean>(false);
-  const [vIntelMode, setVIntelMode] = useState<'chat' | 'search'>('chat');
-  const [vIntelMessages, setVIntelMessages] = useState<{ role: string; content: string; recommendedChannels?: string[]; action?: any }[]>([
-    {
-      role: "model",
-      content: "Xin chào! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?"
+  const [vIntelMode, setVIntelMode] = useState<'chat' | 'search' | 'settings' | 'history'>('chat');
+  const [vIntelUserName, setVIntelUserName] = useState<string>(() => localStorage.getItem("vplay_vintel_user_name") || "");
+  const [vIntelSmartAction, setVIntelSmartAction] = useState<boolean>(() => localStorage.getItem("vplay_vintel_smart_action") !== "false");
+  const [vIntelHistorySearchQuery, setVIntelHistorySearchQuery] = useState<string>("");
+  const [vIntelSearchTabQuery, setVIntelSearchTabQuery] = useState<string>("");
+  const [vIntelToast, setVIntelToast] = useState<{ message: string; id: number } | null>(null);
+
+  const triggerVIntelToast = (message: string) => {
+    setVIntelToast({ message, id: Date.now() });
+  };
+
+  useEffect(() => {
+    if (vIntelToast) {
+      const t = setTimeout(() => {
+        setVIntelToast(null);
+      }, 3000);
+      return () => clearTimeout(t);
     }
-  ]);
+  }, [vIntelToast]);
+
+  const [vIntelSessions, setVIntelSessions] = useState<VIntelSession[]>(() => {
+    const saved = localStorage.getItem("vplay_vintel_sessions");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [
+      {
+        id: "default",
+        title: "Cuộc trò chuyện mặc định",
+        timestamp: new Date().toLocaleString('vi-VN'),
+        messages: [
+          {
+            role: "model",
+            content: "Xin chào! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?"
+          }
+        ],
+        mode: "chat"
+      }
+    ];
+  });
+
+  const [activeSessionId, setActiveSessionId] = useState<string>(() => {
+    return localStorage.getItem("vplay_vintel_active_session_id") || "default";
+  });
+
+  const [vIntelMessages, setVIntelMessages] = useState<{ role: string; content: string; recommendedChannels?: string[]; action?: any }[]>(() => {
+    const savedSess = localStorage.getItem("vplay_vintel_sessions");
+    const activeId = localStorage.getItem("vplay_vintel_active_session_id") || "default";
+    if (savedSess) {
+      try {
+        const parsed = JSON.parse(savedSess);
+        const activeSess = parsed.find((s: any) => s.id === activeId);
+        if (activeSess && activeSess.messages) {
+          return activeSess.messages;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [
+      {
+        role: "model",
+        content: "Xin chào! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?"
+      }
+    ];
+  });
+
+  const [editingMessageIdx, setEditingMessageIdx] = useState<number | null>(null);
+  const [editingMessageContent, setEditingMessageContent] = useState<string>("");
+
   const [vIntelInput, setVIntelInput] = useState<string>("");
   const [vIntelLoading, setVIntelLoading] = useState<boolean>(false);
+  const vIntelFileRef = useRef<HTMLInputElement>(null);
+  const [vIntelAttachedFile, setVIntelAttachedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_vintel_user_name", vIntelUserName);
+  }, [vIntelUserName]);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_vintel_smart_action", String(vIntelSmartAction));
+  }, [vIntelSmartAction]);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_vintel_sessions", JSON.stringify(vIntelSessions));
+  }, [vIntelSessions]);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_vintel_active_session_id", activeSessionId);
+  }, [activeSessionId]);
 
   // Design System Demo states
   const [demoToggleState, setDemoToggleState] = useState<boolean>(false);
@@ -1021,12 +1140,76 @@ export default function App() {
     }
   };
 
+  // V-Intelligence Session Management Helpers
+  const handleCreateNewSession = () => {
+    const newId = "sess_" + Date.now();
+    const newSession: VIntelSession = {
+      id: newId,
+      title: "Cuộc trò chuyện mới",
+      timestamp: new Date().toLocaleString('vi-VN'),
+      messages: [
+        {
+          role: "model",
+          content: vIntelUserName 
+            ? `Xin chào ${vIntelUserName}! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?`
+            : "Xin chào! Tôi là V-Intelligence, trợ lý AI thông minh của bạn tại Vplay. Tôi có thể giúp gì cho bạn hôm nay?"
+        }
+      ],
+      mode: "chat"
+    };
+
+    setVIntelSessions(prev => [...prev, newSession]);
+    setActiveSessionId(newId);
+    setVIntelMessages(newSession.messages);
+    if (vIntelMode === 'settings' || vIntelMode === 'history') {
+      setVIntelMode('chat');
+    }
+    setEditingMessageIdx(null);
+    triggerVIntelToast("Đã tạo cuộc trò chuyện mới!");
+  };
+
+  const handleSwitchSession = (sessionId: string) => {
+    const sess = vIntelSessions.find(s => s.id === sessionId);
+    if (sess) {
+      setActiveSessionId(sessionId);
+      setVIntelMessages(sess.messages);
+      setEditingMessageIdx(null);
+      if (vIntelMode === 'settings' || vIntelMode === 'history') {
+        setVIntelMode('chat');
+      }
+      triggerVIntelToast(`Đã chuyển sang: ${sess.title}`);
+    }
+  };
+
+  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (vIntelSessions.length <= 1) {
+      triggerVIntelToast("Không thể xóa cuộc trò chuyện duy nhất!");
+      return;
+    }
+    const filtered = vIntelSessions.filter(s => s.id !== sessionId);
+    setVIntelSessions(filtered);
+    if (activeSessionId === sessionId) {
+      const fallback = filtered[filtered.length - 1] || filtered[0];
+      setActiveSessionId(fallback.id);
+      setVIntelMessages(fallback.messages);
+      setEditingMessageIdx(null);
+    }
+    triggerVIntelToast("Đã xóa cuộc trò chuyện");
+  };
+
   // V-Intelligence Message handler
   const handleSendVIntelMessage = async () => {
-    if (!vIntelInput.trim() || vIntelLoading) return;
+    if ((!vIntelInput.trim() && !vIntelAttachedFile) || vIntelLoading) return;
     
-    const userText = vIntelInput.trim();
+    let userText = vIntelInput.trim();
+    if (vIntelAttachedFile) {
+      const fileLabel = `📎 [Tệp đính kèm: ${vIntelAttachedFile.name}]`;
+      userText = userText ? `${userText}\n${fileLabel}` : fileLabel;
+    }
+    
     setVIntelInput("");
+    setVIntelAttachedFile(null);
     
     const newMessages = [
       ...vIntelMessages,
@@ -1034,6 +1217,18 @@ export default function App() {
     ];
     setVIntelMessages(newMessages);
     setVIntelLoading(true);
+
+    // Sync to session history & auto-name session if it is default
+    setVIntelSessions(prev => prev.map(s => {
+      if (s.id === activeSessionId) {
+        const isDefaultOrGenericTitle = s.title === "Cuộc trò chuyện mặc định" || s.title.startsWith("Cuộc trò chuyện");
+        const titleText = isDefaultOrGenericTitle 
+          ? (userText.length > 25 ? userText.substring(0, 25) + "..." : userText)
+          : s.title;
+        return { ...s, title: titleText, messages: newMessages };
+      }
+      return s;
+    }));
     
     try {
       const response = await fetch("/api/vintelligence", {
@@ -1043,7 +1238,9 @@ export default function App() {
         },
         body: JSON.stringify({
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          mode: vIntelMode
+          mode: vIntelMode === 'search' ? 'search' : 'chat',
+          userName: vIntelUserName,
+          smartAction: vIntelSmartAction
         })
       });
       
@@ -1053,18 +1250,20 @@ export default function App() {
       
       const data = await response.json();
       
-      setVIntelMessages(prev => [
-        ...prev,
+      const nextMessages = [
+        ...newMessages,
         {
           role: "model",
           content: data.reply || "Tôi không nhận được phản hồi phù hợp.",
           recommendedChannels: data.recommendedChannels || [],
           action: data.action || null
         }
-      ]);
-
+      ];
+      setVIntelMessages(nextMessages);
+      setVIntelSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: nextMessages } : s));
+ 
       // Execute returned action if any
-      if (data.action && data.action.type) {
+      if (vIntelSmartAction && data.action && data.action.type) {
         const { type, target, section } = data.action;
         
         if (type === "open_channel" && target) {
@@ -1352,7 +1551,7 @@ export default function App() {
                   
                   {/* Tooltip */}
                   <div className="absolute top-full right-0 mt-2 px-4 py-1.5 bg-[#1a162b]/95 backdrop-blur-md border border-white/15 text-white text-xs font-sans font-medium rounded-full opacity-0 scale-[0.4] pointer-events-none group-hover/menu:opacity-100 group-hover/menu:scale-100 tooltip-bounce shadow-2xl whitespace-nowrap z-50 text-center select-none">
-                    Trình đơn hệ thống
+                    Menu
                     <div className="absolute bottom-full right-3 -mb-1 border-4 border-transparent border-b-[#1a162b]/95" />
                   </div>
                 </button>
@@ -1371,6 +1570,31 @@ export default function App() {
                         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                         className="absolute right-0 mt-3 w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.1)] z-50 py-3.5 text-black overflow-hidden"
                       >
+                        {/* Ask V-Intelligence */}
+                        {expVIntelligence && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                if (!vIntelIconSpinning) {
+                                  setVIntelIconSpinning(true);
+                                  setTimeout(() => {
+                                    setShowVIntel(true);
+                                    setVIntelIconSpinning(false);
+                                  }, 300);
+                                } else {
+                                  setShowVIntel(true);
+                                }
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-[#6750a4] font-sans font-bold cursor-pointer transition-colors"
+                            >
+                              <Sparkles className="w-4 h-4 mr-2.5 text-[#6750a4] stroke-[2] animate-pulse" />
+                              Ask V-Intelligence
+                            </button>
+                            <div className="border-t border-black/10 my-1" />
+                          </>
+                        )}
+
                         {/* Clock & Calendar toggle with checkmark */}
                         <button
                           onClick={() => {
@@ -1789,6 +2013,31 @@ export default function App() {
                           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                           className="w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
                         >
+                          {/* Ask V-Intelligence */}
+                          {expVIntelligence && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setShowDropdownMenu(false);
+                                  if (!vIntelIconSpinning) {
+                                    setVIntelIconSpinning(true);
+                                    setTimeout(() => {
+                                      setShowVIntel(true);
+                                      setVIntelIconSpinning(false);
+                                    }, 300);
+                                  } else {
+                                    setShowVIntel(true);
+                                  }
+                                }}
+                                className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-[#6750a4] font-sans font-bold cursor-pointer transition-colors"
+                              >
+                                <Sparkles className="w-4 h-4 mr-2.5 text-[#6750a4] stroke-[2] animate-pulse" />
+                                Ask V-Intelligence
+                              </button>
+                              <div className="border-t border-black/10 my-1" />
+                            </>
+                          )}
+
                           {/* Favorite toggle with checkmark */}
                           {selectedChannel && (() => {
                             const isCurrentChannelFavorite = favorites.includes(selectedChannel.id);
@@ -2149,6 +2398,17 @@ export default function App() {
                   <button 
                     onClick={() => {
                       const slideObj = homeSlides[currentSlide];
+                      if (slideObj.channelId === "vintel-trigger") {
+                        if (!vIntelIconSpinning) {
+                          setVIntelIconSpinning(true);
+                          setTimeout(() => {
+                            setShowVIntel(true);
+                            setVIntelIconSpinning(false);
+                            setVIntelMode("chat");
+                          }, 300);
+                        }
+                        return;
+                      }
                       if (slideObj.channelId === "vietnam-wild-live") {
                         setShowEventFeedPopup(true);
                         return;
@@ -5100,7 +5360,7 @@ export default function App() {
                               {config.isImg ? (
                                 <motion.img 
                                   animate={tab.id === "search" && vIntelIconSpinning ? { rotate: 360 } : { rotate: 0 }}
-                                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                                  transition={{ duration: 0.3, ease: "easeInOut" }}
                                   src={config.icon} 
                                   className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
                                   style={filterStyle}
@@ -5148,7 +5408,7 @@ export default function App() {
                       {config.isImg ? (
                         <motion.img 
                           animate={vIntelIconSpinning ? { rotate: 360 } : { rotate: 0 }}
-                          transition={{ duration: 0.6, ease: "easeInOut" }}
+                          transition={{ duration: 0.3, ease: "easeInOut" }}
                           src={config.icon} 
                           className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
                           style={expVIntelligence ? {} : (config.isImg && isActive ? { filter: "brightness(0) saturate(100%) invert(10%) sepia(95%) saturate(3474%) hue-rotate(235deg) brightness(83%) contrast(142%)" } : { filter: "brightness(0) invert(1) opacity(0.8)" })}
@@ -6082,58 +6342,57 @@ export default function App() {
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
             >
-            <motion.div
-              initial={{ opacity: 0, scale: 1.15 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.15 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
-            >
-              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug flex items-center gap-2">
-                <div className={`w-2.5 h-2.5 rounded-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} animate-ping shrink-0`} />
-                Vui lòng đợi
-              </h3>
-              <p className="text-[12.5px] text-white/65 mb-5 leading-relaxed mt-2">
-                {isInstalling ? (
-                  <>Đang cài đặt gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
-                ) : (
-                  <>Đang gỡ bỏ gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
-                )}
-              </p>
-
-              {/* Progress Bar */}
-              <div className="w-full space-y-2 mb-6">
-                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden border border-white/5">
-                  <motion.div 
-                    className={`h-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} rounded-full`}
-                    animate={{ width: `${percent}%` }}
-                    transition={{ duration: 1.0, ease: "linear" }}
-                  />
-                </div>
-                <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-[#d0bcff]' : 'text-red-400'} font-mono font-bold`}>
-                  <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
-                  <span>{percent}%</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  // Cancel action: restore back to previous state
-                  setInstalledPlugins(prev => ({
-                    ...prev,
-                    [activePluginId]: isInstalling ? "idle" : "installed"
-                  }));
-                  setPluginProgress(p => {
-                    const cp = { ...p };
-                    delete cp[activePluginId];
-                    return cp;
-                  });
-                }}
-                className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[14px] text-center cursor-default transform-gpu"
+              <motion.div
+                initial={{ opacity: 0, scale: 1.15 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.15 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
               >
-                {isInstalling ? 'Hủy cài đặt gói' : 'Hủy gỡ bỏ gói'}
-              </button>
-            </motion.div>
+                <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} animate-ping shrink-0`} />
+                  Vui lòng đợi
+                </h3>
+                <p className="text-[12.5px] text-white/65 mb-5 leading-relaxed mt-2">
+                  {isInstalling ? (
+                    <>Đang cài đặt gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
+                  ) : (
+                    <>Đang gỡ bỏ gói tiện ích <strong className="text-white font-semibold">{pluginName}</strong>...</>
+                  )}
+                </p>
+
+                {/* Progress Bar */}
+                <div className="w-full space-y-2 mb-6">
+                  <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden border border-white/5">
+                    <motion.div 
+                      className={`h-full ${isInstalling ? 'bg-[#d0bcff]' : 'bg-red-500'} rounded-full`}
+                      animate={{ width: `${percent}%` }}
+                      transition={{ duration: 1.0, ease: "linear" }}
+                    />
+                  </div>
+                  <div className={`flex justify-between text-[11px] ${isInstalling ? 'text-[#d0bcff]' : 'text-red-400'} font-mono font-bold`}>
+                    <span>{isInstalling ? 'Đang cài đặt...' : 'Đang gỡ bỏ...'}</span>
+                    <span>{percent}%</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setInstalledPlugins(prev => ({
+                      ...prev,
+                      [activePluginId]: isInstalling ? "idle" : "installed"
+                    }));
+                    setPluginProgress(p => {
+                      const cp = { ...p };
+                      delete cp[activePluginId];
+                      return cp;
+                    });
+                  }}
+                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[14px] text-center cursor-default transform-gpu"
+                >
+                  {isInstalling ? 'Hủy cài đặt gói' : 'Hủy gỡ bỏ gói'}
+                </button>
+              </motion.div>
             </motion.div>
           );
         })()}
@@ -6150,196 +6409,705 @@ export default function App() {
             className="fixed inset-y-0 right-0 z-[110] w-full sm:w-[400px] h-full bg-[#161322]/95 backdrop-blur-[25px] border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col transform-gpu overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/20">
+            <div className="py-2.5 px-4 flex items-center justify-between bg-black/20">
               <div className="flex items-center gap-3">
-                <img
-                  src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
-                  className="w-7 h-7 object-contain animate-pulse"
-                  alt="V-Intelligence"
-                  referrerPolicy="no-referrer"
-                />
+                <button
+                  onClick={handleCreateNewSession}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/5 active:scale-90 transition-all cursor-pointer group shrink-0"
+                  title="Tạo cuộc trò chuyện mới"
+                >
+                  <img
+                    src="https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323"
+                    className={`w-7 h-7 object-contain transition-transform duration-500 group-hover:scale-110 ${vIntelLoading ? 'animate-[spin_1.2s_linear_infinite]' : ''}`}
+                    alt="V-Intelligence"
+                    referrerPolicy="no-referrer"
+                  />
+                </button>
                 <div className="text-left">
                   <h3 className="text-sm font-extrabold bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight font-sans">
                     V-Intelligence
                   </h3>
                 </div>
               </div>
-              <button
-                onClick={() => setShowVIntel(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer bouncy-btn active:scale-90"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setVIntelMode(vIntelMode === 'history' ? 'chat' : 'history');
+                  }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-90 animate-none"
+                  title="Lịch sử cuộc trò chuyện"
+                >
+                  <History className={`w-4 h-4 ${vIntelMode === 'history' ? 'text-[#d0bcff]' : ''}`} />
+                </button>
+                <button
+                  onClick={() => {
+                    setVIntelMode(vIntelMode === 'settings' ? 'chat' : 'settings');
+                  }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-90"
+                  title="Cài đặt V-Intelligence Sidebar"
+                >
+                  <Settings className={`w-4 h-4 ${vIntelMode === 'settings' ? 'text-[#d0bcff]' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setShowVIntel(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-90"
+                  title="Đóng"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+
+            {/* Tabs for History and Settings */}
+            {(vIntelMode === 'settings' || vIntelMode === 'history') && (
+              <div className="flex border-b border-white/5 bg-black/10 px-4 shrink-0 relative">
+                <button
+                  onClick={() => setVIntelMode('history')}
+                  className="flex-1 py-3 text-xs font-bold text-center relative focus:outline-none cursor-pointer"
+                >
+                  <span className={`transition-colors duration-300 font-sans ${vIntelMode === 'history' ? 'text-[#d0bcff]' : 'text-white/60 hover:text-white'}`}>
+                    Lịch sử trò chuyện
+                  </span>
+                  {vIntelMode === 'history' && (
+                    <motion.div
+                      layoutId="activeVIntelSubTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#d0bcff] rounded-full mx-auto w-12"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </button>
+                <button
+                  onClick={() => setVIntelMode('settings')}
+                  className="flex-1 py-3 text-xs font-bold text-center relative focus:outline-none cursor-pointer"
+                >
+                  <span className={`transition-colors duration-300 font-sans ${vIntelMode === 'settings' ? 'text-[#d0bcff]' : 'text-white/60 hover:text-white'}`}>
+                    Cài đặt trợ lý
+                  </span>
+                  {vIntelMode === 'settings' && (
+                    <motion.div
+                      layoutId="activeVIntelSubTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#d0bcff] rounded-full mx-auto w-12"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Menu mini tab selector */}
-            <div className="p-3 bg-black/10 border-b border-white/5 flex gap-2">
-              <button
-                onClick={() => setVIntelMode('chat')}
-                className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
-                  vIntelMode === 'chat'
-                    ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
-                    : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                Trò chuyện
-              </button>
-              <button
-                onClick={() => setVIntelMode('search')}
-                className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
-                  vIntelMode === 'search'
-                    ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
-                    : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                Tìm kiếm thông minh (AI)
-              </button>
-            </div>
+            {vIntelMode !== 'settings' && vIntelMode !== 'history' && (
+              <div className="p-3 bg-black/10 border-b border-white/5 flex gap-2">
+                <button
+                  onClick={() => setVIntelMode('chat')}
+                  className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
+                    vIntelMode === 'chat'
+                      ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                      : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Trò chuyện
+                </button>
+                <button
+                  onClick={() => setVIntelMode('search')}
+                  className={`flex-1 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer bouncy-btn active:scale-95 shadow-sm ${
+                    vIntelMode === 'search'
+                      ? "bg-[#d0bcff] text-[#381e72] font-bold shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
+                      : "bg-white/5 border border-white/5 text-white/60 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <img
+                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi"
+                    className={`w-3.5 h-3.5 object-contain transition-all duration-300 ${vIntelMode === 'search' ? 'brightness-0' : 'brightness-0 invert opacity-65'}`}
+                    alt="Search"
+                    referrerPolicy="no-referrer"
+                  />
+                  Search with AI
+                </button>
+              </div>
+            )}
 
-            {/* Messages body list */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar select-none">
-              {vIntelMessages.map((msg, idx) => {
-                const isUser = msg.role === 'user';
-                return (
-                  <div
-                    key={idx}
-                    className={`flex gap-3 items-start w-full ${isUser ? 'flex-row-reverse justify-start' : 'flex-row justify-start'}`}
-                  >
-                    {/* Avatar */}
-                    {isUser ? (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md shrink-0">
-                        <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
-                          <User className="w-4 h-4 text-white/90" />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
-                        <img
-                          src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
-                          className="w-5 h-5 object-contain"
-                          alt="V-Intelligence"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                    )}
-
-                    {/* Chat Bubble */}
-                    <div
-                      className={`px-3.5 py-2.5 rounded-2xl text-xs sm:text-[13px] leading-relaxed max-w-[78%] text-left font-sans ${
-                        isUser
-                          ? "bg-[#d0bcff] text-[#381e72] rounded-tr-none shadow-md"
-                          : "bg-white/5 border border-white/10 text-white/90 rounded-tl-none"
-                      }`}
+            {/* Body */}
+            {vIntelMode === 'history' ? (
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar text-left text-white select-none flex flex-col">
+                {/* Search bar */}
+                <div className="relative shrink-0 mb-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm lịch sử trò chuyện..."
+                    value={vIntelHistorySearchQuery}
+                    onChange={(e) => setVIntelHistorySearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#d0bcff] focus:ring-1 focus:ring-[#d0bcff] focus:outline-none text-white text-xs transition-all placeholder:text-white/30"
+                  />
+                  {vIntelHistorySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setVIntelHistorySearchQuery("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all text-xs cursor-pointer font-sans"
                     >
-                      <div className="whitespace-pre-line">
-                        {formatVIntelMessage(msg.content)}
-                      </div>
+                      Xóa
+                    </button>
+                  )}
+                </div>
 
-                      {/* Render recommended channels if any */}
-                      {!isUser && msg.recommendedChannels && msg.recommendedChannels.length > 0 && (
-                        <div className="mt-3.5 pt-3.5 border-t border-white/10 space-y-2">
-                          <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-2">Kênh đề xuất:</p>
-                          <div className="grid grid-cols-1 gap-1.5">
-                            {msg.recommendedChannels.map(chId => {
-                              const ch = flattenedChannels.find(c => c.id === chId);
-                              if (!ch) return null;
-                              return (
-                                <div
-                                  key={chId}
-                                  onClick={() => {
-                                    handleSelectChannel(ch);
-                                    setActiveTab("live");
-                                    // Optionally close on small screens
-                                    if (window.innerWidth < 640) {
-                                      setShowVIntel(false);
-                                    }
-                                  }}
-                                  className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 flex items-center justify-between transition-all duration-300 cursor-pointer group/item bouncy-btn active:scale-[0.98]"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    {ch.logoImg ? (
-                                      <img
-                                        src={ch.logoImg}
-                                        className="w-8 h-8 rounded bg-black/40 object-contain p-0.5"
-                                        alt={ch.name}
-                                        referrerPolicy="no-referrer"
-                                      />
-                                    ) : (
-                                      <div className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold text-white ${ch.logoBg || 'bg-[#381e72]'}`}>
-                                        {ch.logoText || "TV"}
-                                      </div>
-                                    )}
-                                    <div className="text-left">
-                                      <p className="text-xs font-semibold text-white group-hover/item:text-[#d0bcff] transition-colors">{ch.name}</p>
-                                      <p className="text-[9px] text-white/40">{ch.group}</p>
-                                    </div>
-                                  </div>
-                                  <div className="px-3 py-1 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] text-[10px] font-extrabold flex items-center gap-0.5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transition-all">
-                                    <Tv className="w-2.5 h-2.5" />
-                                    Xem
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                {/* Session list */}
+                <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                  {(() => {
+                    const filtered = vIntelSessions.filter(s => {
+                      if (!vIntelHistorySearchQuery.trim()) return true;
+                      const q = vIntelHistorySearchQuery.toLowerCase();
+                      return s.title.toLowerCase().includes(q) || s.messages.some(m => m.content.toLowerCase().includes(q));
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-white/40 text-xs font-sans">
+                          Không tìm thấy cuộc trò chuyện nào phù hợp.
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                      );
+                    }
 
-              {/* Loader */}
-              {vIntelLoading && (
-                <div className="flex gap-3 items-start w-full flex-row justify-start">
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
-                    <img
-                      src="https://static.wikia.nocookie.net/logopedia/images/6/65/Windows_Copilot_2023_%28Preview%29.svg/revision/latest?cb=20230615034330"
-                      className="w-5 h-5 object-contain animate-pulse"
-                      alt="V-Intelligence"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="bg-white/5 border border-white/10 text-white/80 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 max-w-[78%] animate-pulse">
-                    <Loader2 className="w-4 h-4 text-[#d0bcff] animate-spin" />
-                    <span className="text-xs text-white/50 font-sans">V-Intelligence đang suy nghĩ...</span>
+                    return filtered.map((sess) => {
+                      const isActive = sess.id === activeSessionId;
+                      return (
+                        <div
+                          key={sess.id}
+                          onClick={() => handleSwitchSession(sess.id)}
+                          className={`group/sess p-3 rounded-xl border flex items-center justify-between gap-3 transition-all duration-300 cursor-pointer ${
+                            isActive
+                              ? "bg-white/10 border-[#d0bcff]/40 shadow-md"
+                              : "bg-white/[0.02] border-white/5 hover:bg-white/[0.06] hover:border-white/10"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#d0bcff]' : 'text-white/30'}`} />
+                            <div className="text-left min-w-0">
+                              <p className={`text-xs font-semibold truncate ${isActive ? 'text-[#d0bcff]' : 'text-white/80'}`}>
+                                {sess.title}
+                              </p>
+                              <p className="text-[10px] text-white/30 font-mono mt-0.5">
+                                {sess.timestamp}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Delete button */}
+                          {vIntelSessions.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteSession(sess.id, e)}
+                              className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-red-400 transition-all cursor-pointer opacity-0 group-hover/sess:opacity-100 shrink-0"
+                              title="Xóa cuộc trò chuyện"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* Back to Chat button */}
+                <div className="pt-4 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setVIntelMode('chat')}
+                    className="w-full py-2.5 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-300 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] cursor-pointer bouncy-btn active:scale-95"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Quay lại trò chuyện
+                  </button>
+                </div>
+              </div>
+            ) : vIntelMode === 'settings' ? (
+              <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar text-left text-white select-none">
+                {/* 1. User Name input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#d0bcff] uppercase tracking-wider block font-sans">
+                    Tên gọi người dùng
+                  </label>
+                  <input
+                    type="text"
+                    value={vIntelUserName}
+                    onChange={(e) => setVIntelUserName(e.target.value)}
+                    placeholder="V-Intelligence nên gọi bạn là gì?"
+                    className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/25 focus:bg-white/[0.1] transition-all font-sans"
+                  />
+                  <p className="text-[10px] text-white/40 leading-relaxed font-sans">
+                    V-Intelligence nên gọi bạn như thế nào? Nếu để trống thì V-Intelligence sẽ không xưng danh người dùng.
+                  </p>
+                </div>
+
+                {/* 2. Information */}
+                <div className="p-4 rounded-xl bg-white/[0.04] border border-white/5 space-y-3">
+                  <h4 className="text-xs font-bold text-white/40 uppercase tracking-wider font-sans">
+                    Information
+                  </h4>
+                  <div className="space-y-1 text-xs font-sans">
+                    <p className="font-bold text-white">V-Intelligence by Vplay</p>
+                    <p className="text-[#d0bcff] font-mono text-[10px]">Version: 1.0 (Beta)</p>
+                    <p className="text-white/60 leading-relaxed text-[11px] sm:text-xs mt-2 pt-2 border-t border-white/5">
+                      V-Intelligence là mô hình trí tuệ thông minh nhân tạo nhằm giúp trải nghiệm xem truyền hình của bạn trở nên sinh động và hấp dẫn hơn, là người bạn trợ lý đắc lực của người dùng Vplay.
+                    </p>
                   </div>
                 </div>
+
+                {/* 3. Smart action toggle (Placed at the bottom!) */}
+                <div className="p-4 rounded-xl bg-white/[0.04] border border-white/5 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-white font-sans">
+                      Smart action
+                    </h4>
+                    <p className="text-[10px] text-white/50 leading-relaxed font-sans">
+                      Khi tắt thì V-Intelligence không có khả năng thực hiện các hành động như mở kênh, thay đổi cài đặt app.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVIntelSmartAction(!vIntelSmartAction)}
+                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
+                      vIntelSmartAction ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ x: vIntelSmartAction ? 20 : 0 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      className="relative w-6 h-5 flex items-center justify-center group"
+                    >
+                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                      <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
+                    </motion.div>
+                  </button>
+                </div>
+
+                {/* 4. Back to Chat button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setVIntelMode('chat')}
+                    className="w-full py-2.5 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] font-bold text-xs flex items-center justify-center gap-1.5 transition-all duration-300 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] cursor-pointer bouncy-btn active:scale-95"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Quay lại trò chuyện
+                  </button>
+                </div>
+              </div>
+            ) : vIntelMode === 'search' ? (
+              <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar text-left text-white select-none flex flex-col h-full min-h-0">
+                {/* Search input with custom search icon */}
+                <div className="relative shrink-0 mb-3">
+                  <img
+                    src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-60"
+                    alt="Search icon"
+                    referrerPolicy="no-referrer"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm kênh truyền hình..."
+                    value={vIntelSearchTabQuery}
+                    onChange={(e) => setVIntelSearchTabQuery(e.target.value)}
+                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#d0bcff] focus:ring-1 focus:ring-[#d0bcff] focus:outline-none text-white text-xs transition-all placeholder:text-white/30"
+                  />
+                  {vIntelSearchTabQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setVIntelSearchTabQuery("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-all text-xs cursor-pointer font-sans"
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+
+                {/* Search Results List */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-6 min-h-0">
+                  {(() => {
+                    const q = vIntelSearchTabQuery.trim().toLowerCase();
+
+                    // Channels Filter
+                    const filteredChs = q 
+                      ? processedChannels.filter(ch => ch.name.toLowerCase().includes(q) || ch.id.toLowerCase().includes(q) || ch.group.toLowerCase().includes(q))
+                      : processedChannels.slice(0, 15); // Show first 15 channels as recommendations when empty
+
+                    const hasResults = filteredChs.length > 0;
+
+                    if (!hasResults) {
+                      return (
+                        <div className="text-center py-12 text-white/40 text-xs sm:text-sm font-sans flex flex-col items-center gap-2">
+                          <AlertCircle className="w-8 h-8 text-white/20 animate-bounce" />
+                          <span>Không tìm thấy kết quả nào phù hợp với từ khóa "{vIntelSearchTabQuery}".</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-6">
+                        {/* TV Channels Group */}
+                        {filteredChs.length > 0 && (
+                          <div className="space-y-2 animate-fadeIn">
+                            <div className="flex items-center justify-between px-1">
+                              <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-wider font-sans">Kênh truyền hình</h4>
+                              {!q && (
+                                <span className="text-[9px] font-semibold text-white/30 tracking-tight font-sans">Gợi ý kênh</span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {filteredChs.map(ch => {
+                                const isCurrent = selectedChannel && selectedChannel.id === ch.id;
+                                return (
+                                  <button
+                                    key={ch.id}
+                                    onClick={() => {
+                                      handleSelectChannel(ch);
+                                      setActiveTab("live");
+                                      triggerVIntelToast(`Đã mở kênh ${ch.name}!`);
+                                    }}
+                                    className={`w-full text-left rounded-xl p-2.5 flex items-center gap-3.5 transition-all duration-300 group cursor-pointer border ${
+                                      isCurrent 
+                                        ? "bg-indigo-950/40 border-[#d0bcff]/40 shadow-lg" 
+                                        : "bg-white/[0.03] hover:bg-white/[0.08] border-white/5 hover:border-white/15"
+                                    }`}
+                                  >
+                                    {ch.logoImg ? (
+                                      <div className="w-12 h-12 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                        <img
+                                          src={ch.logoImg}
+                                          className="w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+                                          alt={ch.name}
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-12 h-12 flex items-center justify-center text-white text-[13px] font-black shrink-0 tracking-tighter group-hover:scale-105 transition-transform uppercase">
+                                        {ch.logoText || ch.name.substring(0, 3)}
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-1.5">
+                                        <h5 className={`text-xs font-bold truncate group-hover:text-[#d0bcff] transition-colors ${isCurrent ? 'text-[#d0bcff]' : 'text-white'}`}>{ch.name}</h5>
+                                        {isCurrent && (
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                        )}
+                                      </div>
+                                      <p className="text-[10px] text-white/40 truncate mt-0.5">{ch.group}</p>
+                                    </div>
+                                    <Play className={`w-3.5 h-3.5 text-white/30 group-hover:text-[#d0bcff] group-hover:translate-x-0.5 transition-all ${isCurrent ? 'text-[#d0bcff] animate-pulse' : ''}`} />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar select-none">
+                {vIntelMessages.map((msg, idx) => {
+                  const isUser = msg.role === 'user';
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex gap-3 items-start w-full ${isUser ? 'flex-row-reverse justify-start' : 'flex-row justify-start'}`}
+                    >
+                      {/* Avatar */}
+                      {isUser ? (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 via-indigo-600 to-teal-400 p-0.5 shadow-md shrink-0">
+                          <div className="w-full h-full rounded-full bg-[#120e24] flex items-center justify-center select-none text-white">
+                            <User className="w-4 h-4 text-white/90" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
+                          <img
+                            src="https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323"
+                            className={`w-5 h-5 object-contain ${vIntelLoading && idx === vIntelMessages.length - 1 ? 'animate-[spin_1.2s_linear_infinite]' : ''}`}
+                            alt="V-Intelligence"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+
+                      {/* Chat Bubble */}
+                      <div
+                        className={`px-3.5 py-2.5 rounded-2xl text-xs sm:text-[13px] leading-relaxed max-w-[78%] text-left font-sans ${
+                          isUser
+                            ? "bg-[#d0bcff] text-[#381e72] rounded-tr-none shadow-md"
+                            : "bg-white/5 border border-white/10 text-white/90 rounded-tl-none"
+                        }`}
+                      >
+                        {editingMessageIdx === idx ? (
+                          <div className="w-full space-y-2 py-1">
+                            <textarea
+                              value={editingMessageContent}
+                              onChange={(e) => setEditingMessageContent(e.target.value)}
+                              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d0bcff] font-sans resize-y min-w-[200px]"
+                              rows={Math.max(2, editingMessageContent.split('\n').length)}
+                            />
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setEditingMessageIdx(null)}
+                                className="px-2.5 py-1 text-[10px] text-white/50 hover:text-white rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...vIntelMessages];
+                                  updated[idx].content = editingMessageContent;
+                                  setVIntelMessages(updated);
+                                  setVIntelSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: updated } : s));
+                                  setEditingMessageIdx(null);
+                                  triggerVIntelToast("Đã cập nhật tin nhắn!");
+                                }}
+                                className="px-2.5 py-1 text-[10px] bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] font-bold rounded-lg transition-all cursor-pointer"
+                              >
+                                Lưu
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="whitespace-pre-line group relative pr-5">
+                            {formatVIntelMessage(msg.content)}
+                            
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingMessageIdx(idx);
+                                setEditingMessageContent(msg.content);
+                              }}
+                              className="absolute top-1.5 right-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-[#d0bcff] transition-all p-1 cursor-pointer"
+                              title="Chỉnh sửa tin nhắn"
+                            >
+                              <Pen className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Render recommended channels if any */}
+                        {!isUser && msg.recommendedChannels && msg.recommendedChannels.length > 0 && (
+                          <div className="mt-3.5 pt-3.5 border-t border-white/10 space-y-2">
+                            <p className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-2">Kênh đề xuất:</p>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {msg.recommendedChannels.map(chId => {
+                                const ch = flattenedChannels.find(c => c.id === chId);
+                                if (!ch) return null;
+                                return (
+                                  <div
+                                    key={chId}
+                                    onClick={() => {
+                                      handleSelectChannel(ch);
+                                      setActiveTab("live");
+                                      // Optionally close on small screens
+                                      if (window.innerWidth < 640) {
+                                        setShowVIntel(false);
+                                      }
+                                    }}
+                                    className="p-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 flex items-center justify-between transition-all duration-300 cursor-pointer group/item bouncy-btn active:scale-[0.98]"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {ch.logoImg ? (
+                                        <img
+                                          src={ch.logoImg}
+                                          className="w-8 h-8 rounded bg-black/40 object-contain p-0.5"
+                                          alt={ch.name}
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      ) : (
+                                        <div className={`w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold text-white ${ch.logoBg || 'bg-[#381e72]'}`}>
+                                          {ch.logoText || "TV"}
+                                        </div>
+                                      )}
+                                      <div className="text-left">
+                                        <p className="text-xs font-semibold text-white group-hover/item:text-[#d0bcff] transition-colors">{ch.name}</p>
+                                        <p className="text-[9px] text-white/40">{ch.group}</p>
+                                      </div>
+                                    </div>
+                                    <div className="px-3 py-1 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] text-[#381e72] text-[10px] font-extrabold flex items-center gap-0.5 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transition-all">
+                                      <Tv className="w-2.5 h-2.5" />
+                                      Xem
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Loader */}
+                {vIntelLoading && (
+                  <div className="flex gap-3 items-start w-full flex-row justify-start">
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center p-1 border border-white/10 shrink-0">
+                      <img
+                        src="https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323"
+                        className="w-5 h-5 object-contain animate-[spin_1.2s_linear_infinite]"
+                        alt="V-Intelligence"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="bg-white/5 border border-white/10 text-white/80 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 max-w-[78%] animate-pulse">
+                      <Loader2 className="w-4 h-4 text-[#d0bcff] animate-spin" />
+                      <span className="text-xs text-white/50 font-sans">V-Intelligence đang suy nghĩ...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Floating local V-Intelligence Toast inside Drawer */}
+            <AnimatePresence>
+              {vIntelToast && (
+                <motion.div
+                  key={vIntelToast.id}
+                  initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className={`absolute ${vIntelMode === 'settings' || vIntelMode === 'history' ? 'bottom-4' : 'bottom-20'} left-4 right-4 z-[150] bg-indigo-950/95 border border-[#d0bcff]/40 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center justify-between gap-2 backdrop-blur-md`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#d0bcff] animate-pulse shrink-0" />
+                    <span className="font-sans font-semibold text-white/90 truncate">{vIntelToast.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVIntelToast(null)}
+                    className="text-white/40 hover:text-white p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
 
             {/* Input area */}
-            <div className="p-4 border-t border-white/10 bg-black/20">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSendVIntelMessage();
-                }}
-                className="w-full flex items-center bg-white/[0.08] border border-white/15 rounded-full px-4 py-2 gap-2 focus-within:bg-white/[0.12] focus-within:border-white/25 transition-all"
-              >
+            {vIntelMode === 'chat' && (
+              <div className="p-4 border-t border-white/10 bg-black/20">
+                {/* Hidden file input always present in DOM to prevent iframe security click blocks */}
                 <input
-                  type="text"
-                  value={vIntelInput}
-                  onChange={(e) => setVIntelInput(e.target.value)}
-                  placeholder={
-                    vIntelMode === 'search'
-                      ? "Tìm kênh bóng đá, thời sự, giải trí..."
-                      : "Trò chuyện bất cứ điều gì..."
-                  }
-                  disabled={vIntelLoading}
-                  className="flex-1 bg-transparent border-none text-white text-xs sm:text-sm placeholder-white/30 focus:outline-none disabled:opacity-50"
+                  type="file"
+                  ref={vIntelFileRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setVIntelAttachedFile(file);
+                      triggerVIntelToast("Đã đính kèm tệp: " + file.name);
+                    }
+                    // Reset input value so same file can be selected again
+                    e.target.value = "";
+                  }}
+                  accept="image/*,application/*,text/*"
+                  style={{ display: "none" }}
                 />
-                <button
-                  type="submit"
-                  disabled={vIntelLoading || !vIntelInput.trim()}
-                  className="w-8 h-8 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] disabled:bg-white/10 text-[#381e72] disabled:text-white/30 flex items-center justify-center transition-all duration-300 cursor-pointer bouncy-btn active:scale-90 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] shrink-0"
+
+                {/* Beautiful Attached File Capsule */}
+                {vIntelAttachedFile && (
+                  <div className="mb-3 px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs text-white/90 animate-fade-in shadow-inner">
+                    <div className="flex items-center gap-2 truncate">
+                      <File className="w-3.5 h-3.5 text-indigo-300 shrink-0" />
+                      <span className="truncate font-sans font-medium">{vIntelAttachedFile.name}</span>
+                      <span className="text-[10px] text-white/40 font-mono">({(vIntelAttachedFile.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVIntelAttachedFile(null)}
+                      className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all cursor-pointer shrink-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendVIntelMessage();
+                  }}
+                  className="w-full flex items-center bg-white/[0.08] border border-white/15 rounded-full px-3 py-1.5 gap-1.5 focus-within:bg-white/[0.12] focus-within:border-white/25 transition-all"
                 >
-                  <Send className="w-3.5 h-3.5 fill-current" />
-                </button>
-              </form>
-            </div>
+                  {/* Plus button to attach file */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      vIntelFileRef.current?.click();
+                    }}
+                    className="w-8 h-8 rounded-full hover:bg-white/10 active:scale-90 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer shrink-0 bouncy-btn"
+                    title="Đính kèm tệp (hình ảnh, file)"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+
+                  <input
+                    type="text"
+                    value={vIntelInput}
+                    onChange={(e) => setVIntelInput(e.target.value)}
+                    placeholder={
+                      vIntelMode === 'search'
+                        ? "Tìm kênh bóng đá, thời sự, giải trí..."
+                        : "Ask me anything..."
+                    }
+                    disabled={vIntelLoading}
+                    className="flex-1 bg-transparent border-none text-white text-xs sm:text-sm placeholder-white/30 focus:outline-none disabled:opacity-50 px-1"
+                  />
+
+                  {/* Mic button to type using voice */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                      if (SpeechRecognition) {
+                        const recognition = new SpeechRecognition();
+                        recognition.lang = 'vi-VN';
+                        recognition.interimResults = false;
+                        recognition.maxAlternatives = 1;
+                        
+                        triggerVIntelToast("Đang lắng nghe giọng nói của bạn...");
+                        recognition.start();
+                        
+                        recognition.onresult = (event: any) => {
+                           const speechResult = event.results[0][0].transcript;
+                           setVIntelInput(prev => {
+                             const prefix = prev.trim() ? prev + " " : "";
+                             return prefix + speechResult;
+                           });
+                           triggerVIntelToast("Đã nhập: " + speechResult);
+                        };
+                        
+                        recognition.onerror = (event: any) => {
+                          console.error(event.error);
+                          triggerVIntelToast("Lỗi giọng nói: " + event.error);
+                        };
+                      } else {
+                        triggerVIntelToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
+                      }
+                    }}
+                    className="w-8 h-8 rounded-full hover:bg-white/10 active:scale-90 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer shrink-0 bouncy-btn"
+                    title="Chat bằng giọng nói"
+                  >
+                    <Mic className="w-4 h-4 text-teal-400" />
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={vIntelLoading || (!vIntelInput.trim() && !vIntelAttachedFile)}
+                    className="w-8 h-8 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] disabled:bg-white/10 text-[#381e72] disabled:text-white/30 flex items-center justify-center transition-all duration-300 cursor-pointer bouncy-btn active:scale-90 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5 fill-current" />
+                  </button>
+                </form>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

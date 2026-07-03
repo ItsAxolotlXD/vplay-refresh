@@ -25,7 +25,7 @@ try {
 // API endpoint for V-Intelligence
 app.post("/api/vintelligence", async (req, res) => {
   try {
-    const { messages, mode } = req.body; // messages: Array<{role: string, content: string}>, mode: 'chat' | 'search'
+    const { messages, mode, userName, smartAction } = req.body; // messages: Array<{role: string, content: string}>, mode: 'chat' | 'search'
     
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -39,8 +39,14 @@ app.post("/api/vintelligence", async (req, res) => {
       group: ch.group
     }));
     
+    const isSmartActionEnabled = smartAction !== false;
+    const userIntro = userName ? `Người dùng hiện tại tên là "${userName}". Hãy xưng hô thân mật bằng cách gọi họ bằng tên "${userName}" khi thích hợp (ví dụ: "Chào anh/chị ${userName}", "Chào ${userName}", "Cảm ơn ${userName}").` : "Người dùng chưa thiết lập tên gọi cụ thể. Vui lòng xưng hô lịch sự, thân mật chung chung và không dùng tên riêng.";
+    const actionRestriction = !isSmartActionEnabled ? "\nHành động thông minh (smart actions) ĐÃ BỊ TẮT bởi cài đặt của người dùng. Bạn TUYỆT ĐỐI không được thực hiện bất kỳ hành động tự động nào dưới đây (tức là luôn trả về đối tượng action là null)." : "";
+
     const systemInstruction = `Bạn là V-Intelligence, trợ lý trí tuệ nhân tạo đắc lực và thân thiện của Vplay - ứng dụng xem truyền hình mượt mà chất lượng cao.
 Nhiệm vụ của bạn là trò chuyện, tư vấn kênh truyền hình, giải đáp thắc mắc và tự động kích hoạt các thao tác hệ thống theo yêu cầu của người dùng.
+
+${userIntro}
 
 Dưới đây là danh sách các kênh truyền hình có trên Vplay:
 ${JSON.stringify(channelsContext)}
@@ -65,7 +71,7 @@ HƯỚNG DẪN CHI TIẾT & QUY TẮC:
    - Chứa mảng các "id" kênh phù hợp với nhu cầu của người dùng từ danh sách kênh ở trên. Nếu không có hoặc không cần đề xuất, hãy trả về mảng rỗng [].
    - Không tự bịa ra ID kênh không có trong danh sách.
 
-3. HÀNH ĐỘNG HỆ THỐNG (action):
+3. HÀNH ĐỘNG HỆ THỐNG (action):${actionRestriction}
    - Bạn có thể điều khiển ứng dụng trực tiếp bằng cách trả về đối tượng "action". Nếu người dùng không yêu cầu bất kỳ hành động nào dưới đây, hãy đặt "action": null.
    - Khi người dùng muốn MỞ KÊNH, XEM KÊNH, BẬT KÊNH (ví dụ: "mở kênh vtv1 hd", "bật htv7", "cho tôi xem bóng đá trên vtchd"):
      + Hãy tìm kênh phù hợp nhất trong danh sách, đặt "action": { "type": "open_channel", "target": "<id_kenh_phu_hop>" }
