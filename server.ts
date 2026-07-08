@@ -145,6 +145,291 @@ CHẾ ĐỘ HIỆN TẠI: Chế độ ${mode === 'search' ? 'Tìm kiếm thông 
   }
 });
 
+// Helper function to parse Fandom Logopedia HTML with section-based image detection
+function parseFandomHtml(html: string) {
+  const sections: Array<{ heading: string; logos: Array<{ url: string; originalUrl: string; caption: string }> }> = [];
+  
+  // Clean comments
+  const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, "");
+  
+  // Split the HTML into headings (h2, h3, h4)
+  const headingRegex = /<h([234])[^>]*>([\s\S]*?)<\/h\1>/gi;
+  let match;
+  const headingPositions: Array<{ index: number; tag: string; headingText: string; length: number }> = [];
+  
+  while ((match = headingRegex.exec(cleanHtml)) !== null) {
+    const tag = match[1];
+    const fullHeader = match[2];
+    
+    // Extract text from mw-headline if exists, or just strip HTML
+    let headingText = "";
+    const headlineMatch = /<span[^>]*class="mw-headline"[^>]*>([\s\S]*?)<\/span>/i.exec(fullHeader);
+    if (headlineMatch) {
+      headingText = headlineMatch[1];
+    } else {
+      headingText = fullHeader;
+    }
+    // Remove any HTML tags inside the heading
+    headingText = headingText.replace(/<[^>]+>/g, "").trim();
+    
+    // Skip unhelpful headings like Navigation, Contents, References, etc.
+    const lowerHeading = headingText.toLowerCase();
+    if (
+      lowerHeading === "contents" || 
+      lowerHeading === "navigation" || 
+      lowerHeading === "references" || 
+      lowerHeading === "see also" ||
+      lowerHeading === "gallery" ||
+      lowerHeading === "external links"
+    ) {
+      continue;
+    }
+    
+    headingPositions.push({
+      index: match.index,
+      tag,
+      headingText: headingText,
+      length: match[0].length
+    });
+  }
+  
+  // If we found headings, divide into sections and parse logos
+  if (headingPositions.length > 0) {
+    for (let i = 0; i < headingPositions.length; i++) {
+      const current = headingPositions[i];
+      const nextIndex = i + 1 < headingPositions.length ? headingPositions[i + 1].index : cleanHtml.length;
+      const sectionHtml = cleanHtml.substring(current.index + current.length, nextIndex);
+      
+      const logos: Array<{ url: string; originalUrl: string; caption: string }> = [];
+      
+      // Method A: Check for official MediaWiki gallery boxes
+      const itemRegex = /<(li|div)[^>]*(class="[^"]*gallerybox[^"]*"|class="[^"]*wikia-gallery-item[^"]*")[^>]*>([\s\S]*?)<\/\1>/gi;
+      let itemMatch;
+      
+      while ((itemMatch = itemRegex.exec(sectionHtml)) !== null) {
+        const itemContent = itemMatch[3];
+        const imgMatch = /<img[^>]+>/i.exec(itemContent);
+        if (!imgMatch) continue;
+        const imgTag = imgMatch[0];
+        
+        let url = "";
+        const dataSrcMatch = /data-src="([^"]+)"/i.exec(imgTag);
+        const srcMatch = /src="([^"]+)"/i.exec(imgTag);
+        
+        if (dataSrcMatch && dataSrcMatch[1] && !dataSrcMatch[1].includes("placeholder")) {
+          url = dataSrcMatch[1];
+        } else if (srcMatch && srcMatch[1]) {
+          url = srcMatch[1];
+        }
+        
+        if (!url) continue;
+        url = url.replace(/&amp;/g, "&");
+        const originalUrl = url
+          .replace(/\/scale-to-width-down\/\d+/g, "")
+          .replace(/\/thumbnail\/width\/\d+\/height\/\d+/g, "");
+          
+        let caption = "";
+        const captionMatch = /<div[^>]+class="[^"]*(gallerytext|lightbox-caption|caption)[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(itemContent);
+        if (captionMatch) {
+          caption = captionMatch[2].replace(/<[^>]+>/g, "").trim();
+        } else {
+          caption = itemContent.replace(/<[^>]+>/g, "").trim();
+        }
+        
+        caption = caption
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+          
+        logos.push({ url, originalUrl, caption: caption || "Logo" });
+      }
+      
+      // Method B: If no gallery elements in this section, scan for standard img tags that are Fandom assets (used in wikitables)
+      if (logos.length === 0) {
+        const imgRegex = /<img[^>]+>/gi;
+        let imgTagMatch;
+        while ((imgTagMatch = imgRegex.exec(sectionHtml)) !== null) {
+          const imgTag = imgTagMatch[0];
+          
+          let url = "";
+          const srcMatch = /src="([^"]+)"/i.exec(imgTag);
+          const dataSrcMatch = /data-src="([^"]+)"/i.exec(imgTag);
+          
+          if (dataSrcMatch && dataSrcMatch[1] && !dataSrcMatch[1].includes("placeholder")) {
+            url = dataSrcMatch[1];
+          } else if (srcMatch && srcMatch[1]) {
+            url = srcMatch[1];
+          }
+          
+          if (!url) continue;
+          if (!url.includes("static.wikia.nocookie.net") || url.includes("sprite") || url.includes("placeholder") || url.includes("window-icon")) {
+            continue;
+          }
+          
+          url = url.replace(/&amp;/g, "&");
+          const originalUrl = url
+            .replace(/\/scale-to-width-down\/\d+/g, "")
+            .replace(/\/thumbnail\/width\/\d+\/height\/\d+/g, "");
+            
+          let caption = "";
+          const altMatch = /alt="([^"]+)"/i.exec(imgTag);
+          const titleAttrMatch = /title="([^"]+)"/i.exec(imgTag);
+          const imgKeyMatch = /data-image-name="([^"]+)"/i.exec(imgTag);
+          
+          if (altMatch && altMatch[1] && !altMatch[1].startsWith("File:") && altMatch[1] !== "Logo") {
+            caption = altMatch[1];
+          } else if (titleAttrMatch && titleAttrMatch[1] && !titleAttrMatch[1].startsWith("File:")) {
+            caption = titleAttrMatch[1];
+          } else if (imgKeyMatch && imgKeyMatch[1]) {
+            caption = imgKeyMatch[1].replace(/\.[^/.]+$/, "").replace(/_/g, " ");
+          } else {
+            caption = "Logo";
+          }
+          
+          logos.push({ url, originalUrl, caption });
+        }
+      }
+      
+      if (logos.length > 0) {
+        sections.push({
+          heading: current.headingText,
+          logos
+        });
+      }
+    }
+  }
+  
+  // Fallback if no sections or logos found at all
+  if (sections.length === 0) {
+    const logos: Array<{ url: string; originalUrl: string; caption: string }> = [];
+    const imgRegex = /<img[^>]+>/gi;
+    let imgTagMatch;
+    while ((imgTagMatch = imgRegex.exec(cleanHtml)) !== null) {
+      const imgTag = imgTagMatch[0];
+      let url = "";
+      const srcMatch = /src="([^"]+)"/i.exec(imgTag);
+      const dataSrcMatch = /data-src="([^"]+)"/i.exec(imgTag);
+      
+      if (dataSrcMatch && dataSrcMatch[1] && !dataSrcMatch[1].includes("placeholder")) {
+        url = dataSrcMatch[1];
+      } else if (srcMatch && srcMatch[1]) {
+        url = srcMatch[1];
+      }
+      
+      if (!url) continue;
+      if (!url.includes("static.wikia.nocookie.net") || url.includes("sprite") || url.includes("placeholder") || url.includes("window-icon")) {
+        continue;
+      }
+      
+      url = url.replace(/&amp;/g, "&");
+      const originalUrl = url
+        .replace(/\/scale-to-width-down\/\d+/g, "")
+        .replace(/\/thumbnail\/width\/\d+\/height\/\d+/g, "");
+        
+      logos.push({
+        url,
+        originalUrl,
+        caption: "Logo"
+      });
+    }
+    
+    if (logos.length > 0) {
+      sections.push({
+        heading: "Logo tìm thấy",
+        logos
+      });
+    }
+  }
+  
+  return sections;
+}
+
+// API endpoint for fetching and parsing Fandom Logos using MediaWiki Action API (bypasses Cloudflare)
+app.post("/api/fandom-logos", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: "Vui lòng cung cấp đường link Fandom Logopedia" });
+    }
+
+    console.log(`Processing Fandom request: ${url}`);
+    
+    // Parse URL into language and pageName
+    let lang = "en";
+    let pageName = "";
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      
+      if (pathParts[0] === "vi" && pathParts[1] === "wiki") {
+        lang = "vi";
+        pageName = decodeURIComponent(pathParts[2]);
+      } else if (pathParts[0] === "wiki") {
+        lang = "en";
+        pageName = decodeURIComponent(pathParts[1]);
+      } else {
+        // Fallback: use last segment of path as pageName if not matching exact /wiki/
+        pageName = decodeURIComponent(pathParts[pathParts.length - 1] || "");
+      }
+    } catch (e) {
+      // If not a full URL but just page name, we can guess page name directly
+      pageName = url.trim();
+    }
+
+    if (!pageName) {
+      return res.status(400).json({ error: "Không tìm thấy tên trang hợp lệ từ liên kết cung cấp." });
+    }
+
+    const apiUrl = lang === "vi" 
+      ? `https://logos.fandom.com/vi/api.php` 
+      : `https://logos.fandom.com/api.php`;
+
+    const queryUrl = `${apiUrl}?action=parse&page=${encodeURIComponent(pageName)}&format=json&prop=text|images&redirects=1`;
+    console.log(`Requesting Fandom API: ${queryUrl}`);
+
+    const response = await fetch(queryUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fandom API returned error state: ${response.status} ${response.statusText}`);
+    }
+
+    const data: any = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error.info || "Trang Fandom không tồn tại hoặc lỗi API.");
+    }
+
+    const pageTitle = data.parse.title || pageName;
+    const html = data.parse.text["*"];
+
+    const sections = parseFandomHtml(html);
+
+    if (sections.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy logo nào trong trang này. Vui lòng kiểm tra lại liên kết." });
+    }
+
+    res.json({
+      title: pageTitle,
+      sections
+    });
+  } catch (error: any) {
+    console.error("Fandom Logos API Error:", error);
+    res.status(500).json({
+      error: "Không thể lấy dữ liệu từ Fandom Logopedia. Vui lòng kiểm tra lại liên kết.",
+      details: error.message
+    });
+  }
+});
+
 // Serve Vite in development, static files in production
 async function start() {
   if (process.env.NODE_ENV !== "production") {

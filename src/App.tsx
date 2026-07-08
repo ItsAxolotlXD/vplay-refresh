@@ -32,6 +32,7 @@ import {
   ChevronUp,
   ChevronDown,
   ExternalLink,
+  Copy,
   MapPin,
   Globe,
   Bell,
@@ -61,7 +62,9 @@ import {
   Volume,
   Volume1,
   Volume2,
-  VolumeX
+  VolumeX,
+  FolderOpen,
+  BookOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
@@ -230,7 +233,7 @@ export default function App() {
   }, []);
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<"home" | "live" | "settings" | "search">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "live" | "settings" | "search" | "fandom_logos">("home");
   const [prevTab, setPrevTab] = useState<"home" | "live" | "settings">("home");
 
   useEffect(() => {
@@ -878,6 +881,90 @@ export default function App() {
   const [expVIntelligence, setExpVIntelligence] = useState<boolean>(() => localStorage.getItem("vplay_exp_vintel") !== "false");
   const [testStreamUrl, setTestStreamUrl] = useState<string>("");
   const [directStreamUrl, setDirectStreamUrl] = useState<string>("");
+  
+  // Fandom Logos States
+  const [showFandomModal, setShowFandomModal] = useState<boolean>(false);
+  const [fandomLang, setFandomLang] = useState<"vi" | "uk">("vi");
+  const [fandomPageName, setFandomPageName] = useState<string>("");
+  const [fandomLoading, setFandomLoading] = useState<boolean>(false);
+  const [fandomError, setFandomError] = useState<string | null>(null);
+  const [fandomData, setFandomData] = useState<{
+    title: string;
+    sections: Array<{
+      heading: string;
+      logos: Array<{ url: string; originalUrl: string; caption: string }>;
+    }>;
+  } | null>(null);
+
+  const handleFandomInputChange = (value: string) => {
+    setFandomPageName(value);
+    
+    // Check if user pasted a full fandom link
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+      try {
+        const urlObj = new URL(value);
+        if (urlObj.hostname === "logos.fandom.com") {
+          const pathParts = urlObj.pathname.split("/").filter(Boolean);
+          if (pathParts[0] === "vi" && pathParts[1] === "wiki") {
+            setFandomLang("vi");
+            setFandomPageName(decodeURIComponent(pathParts[2]));
+          } else if (pathParts[0] === "wiki") {
+            setFandomLang("uk");
+            setFandomPageName(decodeURIComponent(pathParts[1]));
+          }
+        }
+      } catch (err) {
+        // Safe to ignore URL parsing errors
+      }
+    }
+  };
+
+  const handleGenerateFandomLogos = async () => {
+    if (!fandomPageName.trim()) {
+      setFandomError("Vui lòng điền tên trang hoặc đường link.");
+      return;
+    }
+    
+    setFandomLoading(true);
+    setFandomError(null);
+    
+    let targetUrl = "";
+    const cleanName = fandomPageName.trim();
+    if (cleanName.startsWith("http://") || cleanName.startsWith("https://")) {
+      targetUrl = cleanName;
+    } else {
+      if (fandomLang === "vi") {
+        targetUrl = `https://logos.fandom.com/vi/wiki/${encodeURIComponent(cleanName)}`;
+      } else {
+        targetUrl = `https://logos.fandom.com/wiki/${encodeURIComponent(cleanName)}`;
+      }
+    }
+    
+    try {
+      const response = await fetch("/api/fandom-logos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ url: targetUrl })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Không thể tải logo.");
+      }
+      
+      setFandomData(data);
+      setActiveTab("fandom_logos");
+      setShowFandomModal(false);
+      triggerToast("Đã tải toàn bộ logo thành công!");
+    } catch (err: any) {
+      setFandomError(err.message || "Đã xảy ra lỗi.");
+    } finally {
+      setFandomLoading(false);
+    }
+  };
   const [showPlayUrlModal, setShowPlayUrlModal] = useState<boolean>(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
   const [feedbackText, setFeedbackText] = useState<string>("");
@@ -2170,7 +2257,8 @@ export default function App() {
                       onClick={() => setActiveMenu(activeMenu === 'file' ? null : 'file')}
                       className={`flex items-center h-7 px-2 hover:bg-white/10 rounded-lg text-[11px] font-google text-white/90 font-normal transition-all ${activeMenu === 'file' ? 'bg-white/10 text-white' : ''}`}
                     >
-                      File
+                      <FolderOpen className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">File</span>
                     </button>
                     <AnimatePresence>
                       {activeMenu === 'file' && (
@@ -2209,7 +2297,8 @@ export default function App() {
                       onClick={() => setActiveMenu(activeMenu === 'plugins' ? null : 'plugins')}
                       className={`flex items-center h-7 px-2 hover:bg-white/10 rounded-lg text-[11px] font-google text-white/90 font-normal transition-all ${activeMenu === 'plugins' ? 'bg-white/10 text-white' : ''}`}
                     >
-                      Plugins
+                      <Puzzle className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Plugins</span>
                     </button>
                     <AnimatePresence>
                       {activeMenu === 'plugins' && (
@@ -2260,7 +2349,8 @@ export default function App() {
                       onClick={() => setActiveMenu(activeMenu === 'shortcuts' ? null : 'shortcuts')}
                       className={`flex items-center h-7 px-2 hover:bg-white/10 rounded-lg text-[11px] font-google text-white/90 font-normal transition-all ${activeMenu === 'shortcuts' ? 'bg-white/10 text-white' : ''}`}
                     >
-                      Shortcuts
+                      <Layers className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Shortcuts</span>
                     </button>
                     <AnimatePresence>
                       {activeMenu === 'shortcuts' && (
@@ -2305,7 +2395,8 @@ export default function App() {
                       onClick={() => setActiveMenu(activeMenu === 'help' ? null : 'help')}
                       className={`flex items-center h-7 px-2 hover:bg-white/10 rounded-lg text-[11px] font-google text-white/90 font-normal transition-all ${activeMenu === 'help' ? 'bg-white/10 text-white' : ''}`}
                     >
-                      Help
+                      <BookOpen className="w-3.5 h-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Help</span>
                     </button>
                     <AnimatePresence>
                       {activeMenu === 'help' && (
@@ -2354,9 +2445,8 @@ export default function App() {
                           src="https://static.wikia.nocookie.net/logopedia/images/d/d5/Windows_Copilot_2023.svg/revision/latest/scale-to-width-down/200?cb=20230615034323" 
                           alt="V-Intelligence" 
                           referrerPolicy="no-referrer"
-                          className="w-3.5 h-3.5 mr-1 object-contain"
+                          className="w-3.5 h-3.5 sm:mr-1 object-contain"
                         />
-                        Intelligence
                       </button>
                       <AnimatePresence>
                         {activeMenu === 'intelligence' && (
@@ -2373,6 +2463,13 @@ export default function App() {
                             >
                               <MessageSquare className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
                               <span>Ask V-Intelligence</span>
+                            </button>
+                            <button 
+                              onClick={() => { setShowFandomModal(true); setActiveMenu(null); }} 
+                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
+                            >
+                              <Sparkles className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
+                              <span>Generate Fandom Logos</span>
                             </button>
                             <button 
                               onClick={() => { setShowRandomSuggestModal(true); setActiveMenu(null); }} 
@@ -5355,7 +5452,7 @@ export default function App() {
                                    {/* State: Alert Backdrop */}
                                    <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
                                      <span className="text-[11px] font-semibold text-teal-400 text-left">Backdrop Blur</span>
-                                     <div className="my-auto p-2 rounded-[12px] bg-black/40 backdrop-blur-[20px] border border-white/5 text-center text-white text-[10px] select-none">
+                                     <div className="my-auto p-2 rounded-[12px] bg-black/50 backdrop-blur-[20px] border border-white/5 text-center text-white text-[10px] select-none">
                                        backdrop-blur-[20px]
                                      </div>
                                    </div>
@@ -5390,11 +5487,11 @@ export default function App() {
                                    </div>
                                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                      <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Độ trong (Opacity)</div>
-                                     <div className="text-xs font-semibold text-white/95 mt-1">100% container | 40% backdrop</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1">100% container | 50% backdrop</div>
                                    </div>
                                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                      <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Màu nền (Background)</div>
-                                     <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#211f26 (Hộp thoại) | #000000 (Backdrop)</div>
+                                     <div className="text-xs font-semibold text-white/95 mt-1 font-mono text-[11px] select-all">#211f26 (Hộp thoại) | #000000 (Backdrop 50%)</div>
                                    </div>
                                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                                      <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Viền phản chiếu (Shiny Border)</div>
@@ -6009,6 +6106,142 @@ export default function App() {
           </div>
         )}
 
+        {/* VIEW: FANDOM LOGOS PAGE */}
+        {activeTab === "fandom_logos" && fandomData && (
+          <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-fade-in font-sans pb-32">
+            {/* Header section with back button */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab("home")}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 shadow-md cursor-pointer transition-all bouncy-btn"
+                  title="Quay lại"
+                >
+                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      Fandom Logopedia
+                    </span>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight mt-1 leading-tight">
+                    {fandomData.title}
+                  </h1>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowFandomModal(true)}
+                className="self-start md:self-auto px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-400 text-xs text-white border border-indigo-500/10 flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95 transform-gpu"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Trích xuất trang khác</span>
+              </button>
+            </div>
+
+            {/* Layout like Fandom: Chronological / Section list */}
+            <div className="space-y-12">
+              {fandomData.sections.map((section, sIdx) => (
+                <div key={sIdx} className="space-y-4">
+                  {/* Date Title / Heading with solid line */}
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-sm sm:text-base font-bold text-[#d0bcff] tracking-tight bg-white/5 px-4 py-1.5 rounded-xl border border-white/10 select-none">
+                      {section.heading}
+                    </h2>
+                    <div className="flex-1 h-[1px] bg-gradient-to-r from-white/20 to-transparent" />
+                  </div>
+
+                  {/* Logo Gallery Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {section.logos.map((logo, lIdx) => (
+                      <div 
+                        key={lIdx} 
+                        className="group flex flex-col rounded-3xl bg-[#1c1b21]/80 backdrop-blur-md border border-white/5 hover:border-indigo-500/30 overflow-hidden shadow-lg hover:shadow-[0_8px_30px_rgb(99,102,241,0.15)] transition-all duration-300 transform-gpu hover:-translate-y-1"
+                      >
+                        {/* Logo image box */}
+                        <div className="relative aspect-video w-full bg-black/40 flex items-center justify-center p-6 border-b border-white/5 overflow-hidden">
+                          {/* Image element with referrers bypass */}
+                          <img
+                            src={logo.url}
+                            alt={logo.caption || "Fandom Logo"}
+                            referrerPolicy="no-referrer"
+                            className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+
+                        {/* Caption & details */}
+                        <div className="p-4 flex-1 flex flex-col justify-between gap-3 text-left">
+                          <p className="text-[12px] text-white/80 leading-relaxed font-sans line-clamp-3">
+                            {logo.caption || "Logo không có mô tả"}
+                          </p>
+
+                          {/* Action Options */}
+                          <div className="grid grid-cols-3 gap-1 bg-white/5 p-1 rounded-xl">
+                            {/* Copy button */}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(logo.originalUrl);
+                                triggerToast("Đã sao chép liên kết ảnh gốc!");
+                              }}
+                              className="py-2 px-1 rounded-lg text-center text-white/70 hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer"
+                              title="Sao chép liên kết ảnh"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-semibold">Copy</span>
+                            </button>
+
+                            {/* Open in new tab */}
+                            <a
+                              href={logo.originalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-2 px-1 rounded-lg text-center text-white/70 hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer"
+                              title="Mở trong tab mới"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-semibold">Mở tab</span>
+                            </a>
+
+                            {/* Download Button */}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  triggerToast("Đang chuẩn bị tải xuống...");
+                                  const response = await fetch(logo.originalUrl);
+                                  const blob = await response.blob();
+                                  const blobUrl = URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = blobUrl;
+                                  const ext = logo.originalUrl.split(".").pop()?.split("?")[0] || "png";
+                                  link.download = `${fandomData.title.replace(/\s+/g, "_")}_${section.heading.replace(/\s+/g, "_")}_${lIdx + 1}.${ext}`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  URL.revokeObjectURL(blobUrl);
+                                  triggerToast("Tải xuống hoàn tất!");
+                                } catch (err) {
+                                  window.open(logo.originalUrl, "_blank");
+                                  triggerToast("Đã mở ảnh trong tab mới để lưu.");
+                                }
+                              }}
+                              className="py-2 px-1 rounded-lg text-center text-white/70 hover:text-white hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-1 cursor-pointer"
+                              title="Tải xuống ảnh gốc"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-semibold">Tải về</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
@@ -6224,7 +6457,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6312,7 +6545,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setShowCustomModal(false)}
-                    className="flex-1 py-3 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-[#ff453a] font-semibold text-[14px] text-center border border-white/5 cursor-default"
+                    className="flex-1 py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white border border-white/10 font-semibold text-[14px] text-center cursor-default transition-all duration-200 bouncy-btn"
                   >
                     Hủy bỏ
                   </button>
@@ -6337,7 +6570,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6465,7 +6698,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6500,7 +6733,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6561,6 +6794,109 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* GENERATE FANDOM LOGOS MODAL */}
+      <AnimatePresence>
+        {showFandomModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4 animate-fade-in"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[420px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu border border-white/10"
+            >
+              <div className="absolute top-5 right-5">
+                <button 
+                  onClick={() => { setShowFandomModal(false); setFandomError(null); }}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center justify-center transition-all cursor-pointer text-white/60 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 flex items-center justify-center shadow-inner">
+                  <Sparkles className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
+                    Generate Fandom Logos
+                  </h3>
+                  <p className="text-[11px] text-white/50 leading-none mt-0.5">
+                    Trích xuất và tải toàn bộ logo từ Fandom Logopedia
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mt-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-white/50">Ngôn ngữ / Vùng miền</label>
+                  <select
+                    value={fandomLang}
+                    onChange={(e) => setFandomLang(e.target.value as "vi" | "uk")}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-white/5 text-white border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs font-medium cursor-pointer"
+                  >
+                    <option value="vi" className="bg-[#211f26] text-white">Vietnamese (logos.fandom.com/vi/)</option>
+                    <option value="uk" className="bg-[#211f26] text-white">International / English (logos.fandom.com/)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-white/50">Tên trang hoặc đường dẫn</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: VTV, Disney_Channel, HBO hoặc dán link đầy đủ..."
+                    value={fandomPageName}
+                    onChange={(e) => handleFandomInputChange(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-white/5 text-white placeholder-white/30 border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-xs font-normal"
+                  />
+                  <div className="text-[10px] text-white/40 break-all font-mono">
+                    Đường dẫn trích xuất:{" "}
+                    <span className="text-indigo-400">
+                      {fandomPageName.startsWith("http://") || fandomPageName.startsWith("https://") ? (
+                        fandomPageName
+                      ) : (
+                        `https://logos.fandom.com/${fandomLang === "vi" ? "vi/wiki/" : "wiki/"}${fandomPageName || "[tên_trang]"}`
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                {fandomError && (
+                  <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 leading-relaxed font-sans font-normal">
+                    {fandomError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleGenerateFandomLogos}
+                  disabled={fandomLoading}
+                  className="w-full py-3 px-4 rounded-full bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:pointer-events-none active:scale-95 transition-all duration-300 text-white font-bold text-xs text-center cursor-default shadow-lg flex items-center justify-center gap-2"
+                >
+                  {fandomLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Đang trích xuất dữ liệu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Generate Logo</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* SUBMIT FEEDBACK MODAL */}
       <AnimatePresence>
         {showFeedbackModal && (
@@ -6569,7 +6905,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6628,7 +6964,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -6657,7 +6993,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowTestVplayConfirmModal(false)}
-                  className="flex-1 py-3 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-[#ff453a] font-semibold text-[14px] text-center border border-white/5 cursor-default"
+                  className="flex-1 py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white border border-white/10 font-semibold text-[14px] text-center cursor-default transition-all duration-200 bouncy-btn"
                 >
                   Hủy bỏ
                 </button>
@@ -6688,7 +7024,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             {/* Backdrop click handler inside the outer div */}
             <div 
@@ -6930,7 +7266,7 @@ export default function App() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowRandomSuggestModal(false)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-sans font-medium text-xs hover:bg-white/10 hover:text-white transition-colors cursor-pointer text-center"
+                  className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-sans font-semibold text-xs border border-white/10 transition-all duration-200 bouncy-btn cursor-default text-center"
                 >
                   Close
                 </button>
@@ -6954,7 +7290,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7005,7 +7341,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7088,7 +7424,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7184,7 +7520,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[110] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[110] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7231,7 +7567,7 @@ export default function App() {
               <div className="flex justify-end gap-2.5">
                 <button
                   onClick={() => setShowMultiviewSelectorPopup(false)}
-                  className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white font-medium text-[13px] text-center cursor-default transition-all"
+                  className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold text-[13px] text-center border border-white/10 cursor-default transition-all duration-200 bouncy-btn"
                 >
                   Hủy bỏ
                 </button>
@@ -7249,7 +7585,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.12 }}
@@ -7429,7 +7765,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7458,7 +7794,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => setShowPluginRequiredModal(false)}
-                  className="w-full py-3.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all duration-300 text-white/80 font-semibold text-[14px] text-center border border-white/5 cursor-default transform-gpu"
+                  className="w-full py-3.5 px-4 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold text-[14px] text-center border border-white/10 cursor-default transition-all duration-200 bouncy-btn transform-gpu"
                 >
                   Đóng
                 </button>
@@ -7476,7 +7812,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[120] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
@@ -7505,7 +7841,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => setPluginToUninstall(null)}
-                  className="w-full py-3.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all duration-300 text-white/80 font-semibold text-[14px] text-center border border-white/5 cursor-default transform-gpu"
+                  className="w-full py-3.5 px-4 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold text-[14px] text-center border border-white/10 cursor-default transition-all duration-200 bouncy-btn transform-gpu"
                 >
                   Hủy
                 </button>
@@ -7548,7 +7884,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 bg-white/30 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[130] flex items-center justify-center p-4"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 1.15 }}
