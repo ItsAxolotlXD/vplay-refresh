@@ -2260,35 +2260,27 @@ export default function App() {
                       <FolderOpen className="w-3.5 h-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">File</span>
                     </button>
-                    <AnimatePresence>
-                      {activeMenu === 'file' && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -16 }}
-                          transition={{ duration: 0.2, ease: "linear" }}
-                          className="absolute left-0 top-full mt-1.5 w-64 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5"
-                        >
-                          <button onClick={() => { setShowPlayUrlModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Play className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Xem luồng kênh qua URL</span>
-                          </button>
-                          <button onClick={() => { setShowCustomModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Plus className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Thêm luồng kênh vào danh sách</span>
-                          </button>
-                          <div className="border-t border-white/10 mx-1 my-1" />
-                          <button onClick={() => { fileInputRef.current?.click(); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Upload className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Nhập file m3u/m3u8</span>
-                          </button>
-                          <button onClick={() => { handleM3uExport(); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Download className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Xuất file m3u/m3u8</span>
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {activeMenu === 'file' && (
+                      <div className="absolute left-0 top-full mt-1.5 w-64 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5">
+                        <button onClick={() => { setShowPlayUrlModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Play className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Xem luồng kênh qua URL</span>
+                        </button>
+                        <button onClick={() => { setShowCustomModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Plus className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Thêm luồng kênh vào danh sách</span>
+                        </button>
+                        <div className="border-t border-white/10 mx-1 my-1" />
+                        <button onClick={() => { fileInputRef.current?.click(); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Upload className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Nhập file m3u/m3u8</span>
+                        </button>
+                        <button onClick={() => { handleM3uExport(); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Download className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Xuất file m3u/m3u8</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Plugins Menu */}
@@ -2300,47 +2292,45 @@ export default function App() {
                       <Puzzle className="w-3.5 h-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">Plugins</span>
                     </button>
-                    <AnimatePresence>
-                      {activeMenu === 'plugins' && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -16 }}
-                          transition={{ duration: 0.2, ease: "linear" }}
-                          className="absolute left-0 top-full mt-1.5 w-60 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5"
-                        >
-                          <button onClick={() => { setActiveTab("settings"); setActiveSettingSection("plugin_store"); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <ShoppingBag className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Mở cửa hàng tiện ích</span>
-                          </button>
-                          <div className="border-t border-white/10 mx-1 my-1" />
-                          <div className="px-4 py-1 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Tiện ích đã cài đặt</div>
-                          {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").map(([id]) => (
-                            <div key={id} className="mx-1 px-3.5 py-1.5 w-[calc(100%-8px)] rounded-lg text-[12.5px] text-slate-900 flex items-center justify-between font-sans font-normal hover:bg-[#007aff] hover:text-white transition-all duration-200 ease-out group">
-                              <div className="flex items-center gap-2.5">
-                                <Puzzle className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                                <span>{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
-                              </div>
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0 group-hover:bg-white transition-colors duration-200" />
+                    {activeMenu === 'plugins' && (
+                      <div className="absolute left-0 top-full mt-1.5 w-60 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5">
+                        <button onClick={() => { setActiveTab("settings"); setActiveSettingSection("plugin_store"); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <ShoppingBag className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Mở cửa hàng tiện ích</span>
+                        </button>
+                        <div className="border-t border-white/10 mx-1 my-1" />
+                        <div className="px-4 py-1 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Tiện ích đã cài đặt</div>
+                        {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").map(([id]) => (
+                          <div key={id} className="mx-1 px-3.5 py-1.5 w-[calc(100%-8px)] rounded-lg text-[12.5px] text-slate-900 flex items-center justify-between font-sans font-normal hover:bg-[#007aff] hover:text-white group">
+                            <div className="flex items-center gap-2.5">
+                              <Puzzle className="w-4 h-4 text-black group-hover:text-white" />
+                              <span>{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
                             </div>
-                          ))}
-                          {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").length === 0 && (
-                            <div className="px-4 py-1.5 text-[12.5px] text-black/50 italic font-sans font-normal pl-11">Chưa cài đặt tiện ích nào</div>
-                          )}
-                          <div className="border-t border-white/10 mx-1 my-1" />
-                          <div className="px-4 py-1 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Tiện ích có sẵn</div>
-                          {["export_stream", "multiview", "open_native", "quick_switch", "add_custom"].map((id) => (
-                            <button key={id} onClick={() => { setActiveTab("settings"); setActiveSettingSection("plugin_store"); setActiveMenu(null); }} className="mx-1 px-3.5 py-1.5 w-[calc(100%-8px)] rounded-lg text-left text-[12.5px] text-slate-900 hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center justify-between group">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0 group-hover:bg-white" />
+                          </div>
+                        ))}
+                        {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").length === 0 && (
+                          <div className="px-4 py-1.5 text-[12.5px] text-black/50 italic font-sans font-normal pl-11">Chưa cài đặt tiện ích nào</div>
+                        )}
+                        <div className="border-t border-white/10 mx-1 my-1" />
+                        <div className="px-4 py-1 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Tiện ích có sẵn</div>
+                        {["export_stream", "multiview", "open_native", "quick_switch", "add_custom"]
+                          .filter((id) => installedPlugins[id] !== "installed")
+                          .map((id) => (
+                            <button key={id} onClick={() => { setActiveTab("settings"); setActiveSettingSection("plugin_store"); setActiveMenu(null); }} className="mx-1 px-3.5 py-1.5 w-[calc(100%-8px)] rounded-lg text-left text-[12.5px] text-slate-900 hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center justify-between group">
                               <div className="flex items-center gap-2.5">
-                                <Puzzle className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
+                                <Puzzle className="w-4 h-4 text-black group-hover:text-white" />
                                 <span>{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
                               </div>
-                              <span className="text-[9px] bg-indigo-500/10 text-indigo-800 group-hover:bg-white/20 group-hover:text-white px-1.5 py-0.5 rounded-full font-bold transition-all">Store</span>
+                              <span className="text-[9px] bg-indigo-500/10 text-indigo-800 group-hover:bg-white/20 group-hover:text-white px-1.5 py-0.5 rounded-full font-bold">Store</span>
                             </button>
                           ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                        {["export_stream", "multiview", "open_native", "quick_switch", "add_custom"]
+                          .filter((id) => installedPlugins[id] !== "installed").length === 0 && (
+                            <div className="px-4 py-1.5 text-[12.5px] text-black/50 italic font-sans font-normal pl-11 select-none">Không còn tiện ích nào có sẵn</div>
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Shortcuts Menu */}
@@ -2352,41 +2342,33 @@ export default function App() {
                       <Layers className="w-3.5 h-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">Shortcuts</span>
                     </button>
-                    <AnimatePresence>
-                      {activeMenu === 'shortcuts' && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -16 }}
-                          transition={{ duration: 0.2, ease: "linear" }}
-                          className="absolute left-0 top-full mt-1.5 w-64 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5"
-                        >
-                          <div className="px-4 py-1.5 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Kênh yêu thích</div>
-                          {favoriteChannelsList.length > 0 ? (
-                            <div className="max-h-60 overflow-y-auto flex flex-col gap-0.5">
-                              {favoriteChannelsList.map((ch) => (
-                                <button
-                                  key={ch.id}
-                                  onClick={() => {
-                                    handleSelectChannel(ch);
-                                    setActiveTab("live");
-                                    setActiveMenu(null);
-                                  }}
-                                  className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center justify-between text-slate-900 group"
-                                >
-                                  <span className="truncate">{ch.name}</span>
-                                  <span className="text-[9px] bg-indigo-500/10 text-indigo-800 group-hover:bg-white/20 group-hover:text-white px-1.5 py-0.5 rounded font-bold shrink-0 transition-all">Phát</span>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="px-4 py-2.5 text-[12.5px] text-black/50 font-sans font-normal leading-normal select-none">
-                              Thêm một vài kênh vào danh sách yêu thích để hiển thị ở đây.
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {activeMenu === 'shortcuts' && (
+                      <div className="absolute left-0 top-full mt-1.5 w-64 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5">
+                        <div className="px-4 py-1.5 text-[10px] font-bold text-black/60 uppercase tracking-wider select-none">Kênh yêu thích</div>
+                        {favoriteChannelsList.length > 0 ? (
+                          <div className="max-h-60 overflow-y-auto flex flex-col gap-0.5">
+                            {favoriteChannelsList.map((ch) => (
+                              <button
+                                key={ch.id}
+                                onClick={() => {
+                                  handleSelectChannel(ch);
+                                  setActiveTab("live");
+                                  setActiveMenu(null);
+                                }}
+                                className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center justify-between text-slate-900 group"
+                              >
+                                <span className="truncate">{ch.name}</span>
+                                <span className="text-[9px] bg-indigo-500/10 text-indigo-800 group-hover:bg-white/20 group-hover:text-white px-1.5 py-0.5 rounded font-bold shrink-0">Phát</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-4 py-2.5 text-[12.5px] text-black/50 font-sans font-normal leading-normal select-none">
+                            Thêm một vài kênh vào danh sách yêu thích để hiển thị ở đây.
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Help Menu */}
@@ -2398,40 +2380,32 @@ export default function App() {
                       <BookOpen className="w-3.5 h-3.5 sm:mr-1" />
                       <span className="hidden sm:inline">Help</span>
                     </button>
-                    <AnimatePresence>
-                      {activeMenu === 'help' && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -16 }}
-                          transition={{ duration: 0.2, ease: "linear" }}
-                          className="absolute left-0 top-full mt-1.5 w-56 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5"
-                        >
-                          <button onClick={() => { setShowAboutModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Info className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>About Vplay</span>
-                          </button>
-                          <button onClick={() => { setShowFeedbackModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <MessageSquare className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Submit Feedback</span>
-                          </button>
-                          <button onClick={() => { setActiveTab("settings"); setActiveSettingSection("design_system"); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Layers className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Design Components</span>
-                          </button>
-                          <div className="border-t border-white/10 mx-1 my-1" />
-                          <button onClick={() => { setShowTestVplayConfirmModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-semibold transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <Beaker className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Switch to Test Vplay</span>
-                          </button>
-                          <div className="border-t border-white/10 mx-1 my-1" />
-                          <button onClick={() => { window.location.reload(); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group">
-                            <RefreshCw className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                            <span>Reload App</span>
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {activeMenu === 'help' && (
+                      <div className="absolute left-0 top-full mt-1.5 w-56 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5">
+                        <button onClick={() => { setShowAboutModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Info className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>About Vplay</span>
+                        </button>
+                        <button onClick={() => { setShowFeedbackModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <MessageSquare className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Submit Feedback</span>
+                        </button>
+                        <button onClick={() => { setActiveTab("settings"); setActiveSettingSection("design_system"); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <Layers className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Design Components</span>
+                        </button>
+                        <div className="border-t border-white/10 mx-1 my-1" />
+                        <button onClick={() => { setShowTestVplayConfirmModal(true); setActiveMenu(null); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-semibold flex items-center gap-2.5 text-slate-900 group">
+                          <Beaker className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Switch to Test Vplay</span>
+                        </button>
+                        <div className="border-t border-white/10 mx-1 my-1" />
+                        <button onClick={() => { window.location.reload(); }} className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group">
+                          <RefreshCw className="w-4 h-4 text-black group-hover:text-white" />
+                          <span>Reload App</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Intelligence Menu Tab */}
@@ -2448,96 +2422,88 @@ export default function App() {
                           className="w-3.5 h-3.5 sm:mr-1 object-contain"
                         />
                       </button>
-                      <AnimatePresence>
-                        {activeMenu === 'intelligence' && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -16 }}
-                            transition={{ duration: 0.2, ease: "linear" }}
-                            className="absolute left-0 top-full mt-1.5 w-72 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2.5 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5"
+                      {activeMenu === 'intelligence' && (
+                        <div className="absolute left-0 top-full mt-1.5 w-72 rounded-2xl bg-white/80 backdrop-blur-[20px] border border-white/20 shadow-[0_12px_40px_rgba(0,0,0,0.25)] z-50 py-2.5 text-slate-900 overflow-hidden text-left flex flex-col gap-0.5">
+                          <button 
+                            onClick={() => { setShowVIntel(true); setVIntelMode('chat'); setActiveMenu(null); }} 
+                            className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group"
                           >
-                            <button 
-                              onClick={() => { setShowVIntel(true); setVIntelMode('chat'); setActiveMenu(null); }} 
-                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
-                            >
-                              <MessageSquare className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                              <span>Ask V-Intelligence</span>
-                            </button>
-                            <button 
-                              onClick={() => { setShowFandomModal(true); setActiveMenu(null); }} 
-                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
-                            >
-                              <Sparkles className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                              <span>Generate Fandom Logos</span>
-                            </button>
-                            <button 
-                              onClick={() => { setShowRandomSuggestModal(true); setActiveMenu(null); }} 
-                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
-                            >
-                              <Shuffle className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                              <span>Random suggestion</span>
-                            </button>
-                            <button 
-                              onClick={() => { setActiveTab("search"); setActiveMenu(null); }} 
-                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
-                            >
-                              <Search className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                              <span>Open search channels</span>
-                            </button>
-                            <button 
-                              onClick={() => { setActiveTab("settings"); setActiveSettingSection("experimental"); setActiveMenu(null); }} 
-                              className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal transition-all duration-200 ease-out flex items-center gap-2.5 text-slate-900 group"
-                            >
-                              <Settings className="w-4 h-4 text-black group-hover:text-white transition-colors duration-200" />
-                              <span>Cài đặt V-Intelligence</span>
-                            </button>
-                            
-                            <div className="border-t border-white/10 mx-1 my-1.5" />
-                            
-                            {/* Quick Chat Section */}
-                            <div className="px-4 py-1.5">
-                              <div className="flex items-center justify-between mb-1.5 select-none">
-                                <span className="text-[11px] font-bold text-black/60 uppercase tracking-wider">Quick chat</span>
-                                <button 
-                                  onClick={() => {
-                                    setVIntelInput(quickChatInput);
-                                    setShowVIntel(true);
-                                    setVIntelMode('chat');
-                                    setActiveMenu(null);
-                                  }}
-                                  className="text-black/60 hover:text-black hover:bg-black/5 transition-all p-1 rounded"
-                                  title="Phóng to cuộc trò chuyện"
-                                >
-                                  <Maximize2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 bg-black/[0.04] border border-black/10 rounded-full pl-3.5 pr-1.5 py-1 focus-within:border-black/20 transition-all">
-                                <input 
-                                  type="text" 
-                                  placeholder="Hỏi V-Intelligence..." 
-                                  value={quickChatInput}
-                                  onChange={(e) => setQuickChatInput(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleQuickChatSend();
-                                    }
-                                  }}
-                                  className="bg-transparent border-none text-slate-900 text-[12px] focus:outline-none w-full placeholder-black/40"
-                                />
-                                <button 
-                                  onClick={() => handleQuickChatSend()}
-                                  disabled={!quickChatInput.trim()}
-                                  className="w-7 h-7 rounded-full bg-[#007aff] text-white flex items-center justify-center hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-[#007aff] transition-all cursor-pointer shrink-0"
-                                >
-                                  <Send className="w-3 h-3" />
-                                </button>
-                              </div>
+                            <MessageSquare className="w-4 h-4 text-black group-hover:text-white" />
+                            <span>Ask V-Intelligence</span>
+                          </button>
+                          <button 
+                            onClick={() => { setShowFandomModal(true); setActiveMenu(null); }} 
+                            className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group"
+                          >
+                            <Sparkles className="w-4 h-4 text-black group-hover:text-white" />
+                            <span>Generate Fandom Logos</span>
+                          </button>
+                          <button 
+                            onClick={() => { setShowRandomSuggestModal(true); setActiveMenu(null); }} 
+                            className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group"
+                          >
+                            <Shuffle className="w-4 h-4 text-black group-hover:text-white" />
+                            <span>Random suggestion</span>
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab("search"); setActiveMenu(null); }} 
+                            className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group"
+                          >
+                            <Search className="w-4 h-4 text-black group-hover:text-white" />
+                            <span>Open search channels</span>
+                          </button>
+                          <button 
+                            onClick={() => { setActiveTab("settings"); setActiveSettingSection("experimental"); setActiveMenu(null); }} 
+                            className="mx-1 px-3.5 py-2 w-[calc(100%-8px)] rounded-lg text-left text-[13px] hover:bg-[#007aff] hover:text-white font-sans font-normal flex items-center gap-2.5 text-slate-900 group"
+                          >
+                            <Settings className="w-4 h-4 text-black group-hover:text-white" />
+                            <span>Cài đặt V-Intelligence</span>
+                          </button>
+                          
+                          <div className="border-t border-white/10 mx-1 my-1.5" />
+                          
+                          {/* Quick Chat Section */}
+                          <div className="px-4 py-1.5">
+                            <div className="flex items-center justify-between mb-1.5 select-none">
+                              <span className="text-[11px] font-bold text-black/60 uppercase tracking-wider">Quick chat</span>
+                              <button 
+                                onClick={() => {
+                                  setVIntelInput(quickChatInput);
+                                  setShowVIntel(true);
+                                  setVIntelMode('chat');
+                                  setActiveMenu(null);
+                                }}
+                                className="text-black/60 hover:text-black hover:bg-black/5 p-1 rounded"
+                                title="Phóng to cuộc trò chuyện"
+                              >
+                                <Maximize2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                            
+                            <div className="flex items-center gap-2 bg-black/[0.04] border border-black/10 rounded-full pl-3.5 pr-1.5 py-1 focus-within:border-black/20 transition-all">
+                              <input 
+                                type="text" 
+                                placeholder="Hỏi V-Intelligence..." 
+                                value={quickChatInput}
+                                onChange={(e) => setQuickChatInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleQuickChatSend();
+                                  }
+                                }}
+                                className="bg-transparent border-none text-slate-900 text-[12px] focus:outline-none w-full placeholder-black/40"
+                              />
+                              <button 
+                                onClick={() => handleQuickChatSend()}
+                                disabled={!quickChatInput.trim()}
+                                className="w-7 h-7 rounded-full bg-[#007aff] text-white flex items-center justify-center hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-[#007aff] transition-all cursor-pointer shrink-0"
+                              >
+                                <Send className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2844,161 +2810,153 @@ export default function App() {
                   </div>
 
                   {/* Dropdown Menu rendered out-of-flow with fixed position to prevent parent overflow cropping */}
-                  <AnimatePresence>
-                    {showDropdownMenu && (
-                      <>
-                        {/* Invisible Backdrop for click-away */}
-                        <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
-                        
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.85, y: -10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.85, y: -10 }}
-                          style={{ 
-                            position: "fixed",
-                            top: `${menuCoords.top}px`,
-                            left: `${menuCoords.left}px`,
-                            originX: 0, 
-                            originY: 0 
-                          }}
-                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                          className="w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
-                        >
-                          {/* Ask V-Intelligence */}
-                          {expVIntelligence && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setShowDropdownMenu(false);
-                                  if (!vIntelIconSpinning) {
-                                    setVIntelIconSpinning(true);
-                                    setTimeout(() => {
-                                      setShowVIntel(true);
-                                      setVIntelIconSpinning(false);
-                                    }, 300);
-                                  } else {
-                                    setShowVIntel(true);
-                                  }
-                                }}
-                                className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-[#6750a4] font-sans font-bold cursor-pointer transition-colors"
-                              >
-                                <Sparkles className="w-4 h-4 mr-2.5 text-[#6750a4] stroke-[2] animate-pulse" />
-                                Ask V-Intelligence
-                              </button>
-                              <div className="border-t border-black/10 my-1" />
-                            </>
-                          )}
-
-                          {/* Favorite toggle with checkmark */}
-                          {selectedChannel && (() => {
-                            const isCurrentChannelFavorite = favorites.includes(selectedChannel.id);
-                            return (
-                              <button
-                                onClick={() => {
-                                  setShowDropdownMenu(false);
-                                  toggleFavorite(selectedChannel.id);
-                                }}
-                                className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black"
-                              >
-                                <div className="flex items-center">
-                                  <ThumbsUp className={`w-4 h-4 mr-2.5 stroke-[2] ${isCurrentChannelFavorite ? "text-amber-500 fill-amber-500" : "text-black/70"}`} />
-                                  <span>{isCurrentChannelFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}</span>
-                                </div>
-                                {isCurrentChannelFavorite && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
-                              </button>
-                            );
-                          })()}
-
-                          {/* Mở luồng gốc */}
-                          {selectedChannel && (
-                            <a
-                              href={installedPlugins.open_native === "installed" ? selectedChannel.url : "#"}
-                              target={installedPlugins.open_native === "installed" ? "_blank" : undefined}
-                              rel="noopener noreferrer"
-                              onClick={(e) => {
-                                setShowDropdownMenu(false);
-                                if (installedPlugins.open_native !== "installed") {
-                                  e.preventDefault();
-                                  setRequiredPluginFeatureName("Mở luồng gốc");
-                                  setShowPluginRequiredModal(true);
-                                }
-                              }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                            >
-                              <Tv className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Mở luồng gốc
-                            </a>
-                          )}
-
-                          {/* Chia sẻ kênh */}
-                          {selectedChannel && (
+                  {showDropdownMenu && (
+                    <>
+                      {/* Invisible Backdrop for click-away */}
+                      <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowDropdownMenu(false)} />
+                      
+                      <div
+                        style={{ 
+                          position: "fixed",
+                          top: `${menuCoords.top}px`,
+                          left: `${menuCoords.left}px`,
+                        }}
+                        className="w-56 rounded-[30px] bg-white/70 backdrop-blur-[15px] border border-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.35),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.1),0_12px_40px_rgba(0,0,0,0.25)] z-50 py-3.5 text-black overflow-hidden"
+                      >
+                        {/* Ask V-Intelligence */}
+                        {expVIntelligence && (
+                          <>
                             <button
                               onClick={() => {
-                                      setShowDropdownMenu(false);
-                                      handleShareChannel();
+                                setShowDropdownMenu(false);
+                                if (!vIntelIconSpinning) {
+                                  setVIntelIconSpinning(true);
+                                  setTimeout(() => {
+                                    setShowVIntel(true);
+                                    setVIntelIconSpinning(false);
+                                  }, 300);
+                                } else {
+                                  setShowVIntel(true);
+                                }
                               }}
-                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-[#6750a4] font-sans font-bold cursor-pointer transition-none"
                             >
-                              <Share2 className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                              Chia sẻ kênh
+                              <Sparkles className="w-4 h-4 mr-2.5 text-[#6750a4] stroke-[2] animate-pulse" />
+                              Ask V-Intelligence
                             </button>
-                          )}
+                            <div className="border-t border-black/10 my-1" />
+                          </>
+                        )}
 
-                          {/* Divider */}
-                          <div className="border-t border-black/10 my-2" />
+                        {/* Favorite toggle with checkmark */}
+                        {selectedChannel && (() => {
+                          const isCurrentChannelFavorite = favorites.includes(selectedChannel.id);
+                          return (
+                            <button
+                              onClick={() => {
+                                setShowDropdownMenu(false);
+                                toggleFavorite(selectedChannel.id);
+                              }}
+                              className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center justify-between font-sans font-normal text-black transition-none"
+                            >
+                              <div className="flex items-center">
+                                <ThumbsUp className={`w-4 h-4 mr-2.5 stroke-[2] ${isCurrentChannelFavorite ? "text-amber-500 fill-amber-500" : "text-black/70"}`} />
+                                <span>{isCurrentChannelFavorite ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}</span>
+                              </div>
+                              {isCurrentChannelFavorite && <Check className="w-4 h-4 text-black stroke-[3.5]" />}
+                            </button>
+                          );
+                        })()}
 
-                          {/* Xuất luồng kênh (Only visible on Live tab) */}
-                          <button
-                            onClick={() => {
+                        {/* Mở luồng gốc */}
+                        {selectedChannel && (
+                          <a
+                            href={installedPlugins.open_native === "installed" ? selectedChannel.url : "#"}
+                            target={installedPlugins.open_native === "installed" ? "_blank" : undefined}
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
                               setShowDropdownMenu(false);
-                              if (installedPlugins.export_stream !== "installed") {
-                                setRequiredPluginFeatureName("Xuất luồng");
+                              if (installedPlugins.open_native !== "installed") {
+                                e.preventDefault();
+                                setRequiredPluginFeatureName("Mở luồng gốc");
                                 setShowPluginRequiredModal(true);
-                              } else {
-                                exportChannelsToM3u8();
                               }
                             }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal transition-none"
                           >
-                            <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Xuất luồng kênh
-                          </button>
+                            <Tv className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Mở luồng gốc
+                          </a>
+                        )}
 
-                          {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                        {/* Chia sẻ kênh */}
+                        {selectedChannel && (
                           <button
                             onClick={() => {
-                              setShowDropdownMenu(false);
-                              if (installedPlugins.multiview !== "installed") {
-                                setRequiredPluginFeatureName("Multiview");
-                                setShowPluginRequiredModal(true);
-                              } else {
-                                handleOpenMultiviewSelector();
-                              }
+                                    setShowDropdownMenu(false);
+                                    handleShareChannel();
                             }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
+                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal transition-none"
                           >
-                            <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Xem Multiview
+                            <Share2 className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                            Chia sẻ kênh
                           </button>
-                          <button
-                            onClick={() => {
-                              setShowDropdownMenu(false);
-                              if (installedPlugins.pip !== "installed") {
-                                setRequiredPluginFeatureName("Picture in Picture");
-                                setShowPluginRequiredModal(true);
-                              } else {
-                                handleTogglePictureInPicture();
-                              }
-                            }}
-                            className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal"
-                          >
-                            <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
-                            Picture in Picture
-                          </button>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                        )}
+
+                        {/* Divider */}
+                        <div className="border-t border-black/10 my-2" />
+
+                        {/* Xuất luồng kênh (Only visible on Live tab) */}
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            if (installedPlugins.export_stream !== "installed") {
+                              setRequiredPluginFeatureName("Xuất luồng");
+                              setShowPluginRequiredModal(true);
+                            } else {
+                              exportChannelsToM3u8();
+                            }
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal transition-none"
+                        >
+                          <Download className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Xuất luồng kênh
+                        </button>
+
+                        {/* Multiview & Picture-in-Picture (Only visible on Live tab) */}
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            if (installedPlugins.multiview !== "installed") {
+                              setRequiredPluginFeatureName("Multiview");
+                              setShowPluginRequiredModal(true);
+                            } else {
+                              handleOpenMultiviewSelector();
+                            }
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal transition-none"
+                        >
+                          <Grid className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Xem Multiview
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowDropdownMenu(false);
+                            if (installedPlugins.pip !== "installed") {
+                              setRequiredPluginFeatureName("Picture in Picture");
+                              setShowPluginRequiredModal(true);
+                            } else {
+                              handleTogglePictureInPicture();
+                            }
+                          }}
+                          className="w-full px-5 py-2.5 text-left text-[13px] hover:bg-black/5 flex items-center text-black font-sans font-normal transition-none"
+                        >
+                          <Layers className="w-4 h-4 mr-2.5 text-black/70 stroke-[2]" />
+                          Picture in Picture
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -5281,28 +5239,22 @@ export default function App() {
                                         <ChevronDown className={`w-4 h-4 text-indigo-300 transition-transform duration-200 ${demoDropdownOpen ? "rotate-180" : ""}`} />
                                       </button>
                                       
-                                      <AnimatePresence>
-                                        {demoDropdownOpen && (
-                                          <motion.div
-                                            initial={{ opacity: 0, y: -5 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -5 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="absolute left-0 right-0 mt-1.5 rounded-xl bg-[#211f26] border border-white/10 shadow-xl overflow-hidden py-1"
-                                          >
-                                            {["Bản tin Sáng", "Bản tin Trưa", "Bản tin Chiều", "Bản tin Tối"].map((item, idx) => (
-                                              <button
-                                                key={item}
-                                                onClick={() => setDemoDropdownOpen(false)}
-                                                className="w-full py-2 px-3 text-left text-xs text-white/80 hover:text-white hover:bg-white/5 flex items-center justify-between transition-colors cursor-pointer"
-                                              >
-                                                <span>{item}</span>
-                                                {idx === 0 && <Check className="w-3.5 h-3.5 text-indigo-400" />}
-                                              </button>
-                                            ))}
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
+                                      {demoDropdownOpen && (
+                                        <div
+                                          className="absolute left-0 right-0 mt-1.5 rounded-xl bg-[#211f26] border border-white/10 shadow-xl overflow-hidden py-1 z-50"
+                                        >
+                                          {["Bản tin Sáng", "Bản tin Trưa", "Bản tin Chiều", "Bản tin Tối"].map((item, idx) => (
+                                            <button
+                                              key={item}
+                                              onClick={() => setDemoDropdownOpen(false)}
+                                              className="w-full py-2 px-3 text-left text-xs text-white/80 hover:text-white hover:bg-white/5 flex items-center justify-between transition-none cursor-pointer"
+                                            >
+                                              <span>{item}</span>
+                                              {idx === 0 && <Check className="w-3.5 h-3.5 text-indigo-400" />}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -7089,43 +7041,37 @@ export default function App() {
                     <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${openCatDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  <AnimatePresence>
-                    {openCatDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setOpenCatDropdown(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto p-1.5 scrollbar-thin text-left"
-                        >
-                          {allAvailableCategoryList.map((cat) => {
-                            const isSelected = randomSuggestCategories.includes(cat.id);
-                            return (
-                              <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setRandomSuggestCategories(randomSuggestCategories.filter(id => id !== cat.id));
-                                  } else {
-                                    setRandomSuggestCategories([...randomSuggestCategories, cat.id]);
-                                  }
-                                }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs rounded-lg hover:bg-white/5 text-white transition-colors"
-                              >
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-red-500 border-red-500' : 'border-white/20'}`}>
-                                  {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                </div>
-                                <span className="truncate">{cat.name}</span>
-                              </button>
-                            );
-                          })}
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                  {openCatDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenCatDropdown(false)} />
+                      <div
+                        className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto p-1.5 scrollbar-thin text-left"
+                      >
+                        {allAvailableCategoryList.map((cat) => {
+                          const isSelected = randomSuggestCategories.includes(cat.id);
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setRandomSuggestCategories(randomSuggestCategories.filter(id => id !== cat.id));
+                                } else {
+                                  setRandomSuggestCategories([...randomSuggestCategories, cat.id]);
+                                }
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs rounded-lg hover:bg-white/5 text-white transition-none"
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-none ${isSelected ? 'bg-red-500 border-red-500' : 'border-white/20'}`}>
+                                {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{cat.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Dropdown 2: Nội dung */}
@@ -7150,43 +7096,37 @@ export default function App() {
                     <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${openContentDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  <AnimatePresence>
-                    {openContentDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setOpenContentDropdown(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto p-1.5 scrollbar-thin text-left"
-                        >
-                          {["Tin tức", "Chính trị", "Văn hóa", "Giải trí", "Phim truyện", "Khoa học", "Giáo dục", "Tiếng Anh"].map((content) => {
-                            const isSelected = randomSuggestContents.includes(content);
-                            return (
-                              <button
-                                key={content}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setRandomSuggestContents(randomSuggestContents.filter(item => item !== content));
-                                  } else {
-                                    setRandomSuggestContents([...randomSuggestContents, content]);
-                                  }
-                                }}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs rounded-lg hover:bg-white/5 text-white transition-colors"
-                              >
-                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-red-500 border-red-500' : 'border-white/20'}`}>
-                                  {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
-                                </div>
-                                <span className="truncate">{content}</span>
-                              </button>
-                            );
-                          })}
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                  {openContentDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenContentDropdown(false)} />
+                      <div
+                        className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto p-1.5 scrollbar-thin text-left"
+                      >
+                        {["Tin tức", "Chính trị", "Văn hóa", "Giải trí", "Phim truyện", "Khoa học", "Giáo dục", "Tiếng Anh"].map((content) => {
+                          const isSelected = randomSuggestContents.includes(content);
+                          return (
+                            <button
+                              key={content}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setRandomSuggestContents(randomSuggestContents.filter(item => item !== content));
+                                } else {
+                                  setRandomSuggestContents([...randomSuggestContents, content]);
+                                }
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs rounded-lg hover:bg-white/5 text-white transition-none"
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-none ${isSelected ? 'bg-red-500 border-red-500' : 'border-white/20'}`}>
+                                {isSelected && <Check className="w-3 h-3 text-white stroke-[3]" />}
+                              </div>
+                              <span className="truncate">{content}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Dropdown 3: Chữ cái */}
@@ -7211,54 +7151,48 @@ export default function App() {
                     <ChevronDown className={`w-4 h-4 text-white/60 transition-transform ${openLetterDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   
-                  <AnimatePresence>
-                    {openLetterDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setOpenLetterDropdown(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                          className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-2xl shadow-2xl z-50 p-3 max-h-56 overflow-y-auto text-left"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-white/45 uppercase tracking-wider">Chọn chữ cái (A - Z)</span>
-                            {randomSuggestLetters.length > 0 && (
+                  {openLetterDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenLetterDropdown(false)} />
+                      <div
+                        className="absolute left-0 right-0 mt-1.5 bg-[#1a162b] border border-white/10 rounded-2xl shadow-2xl z-50 p-3 max-h-56 overflow-y-auto text-left"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-white/45 uppercase tracking-wider">Chọn chữ cái (A - Z)</span>
+                          {randomSuggestLetters.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setRandomSuggestLetters([])}
+                              className="text-[10px] text-red-400 hover:text-red-300 transition-none font-bold"
+                            >
+                              Xóa chọn
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map((letter) => {
+                            const isSelected = randomSuggestLetters.includes(letter);
+                            return (
                               <button
+                                key={letter}
                                 type="button"
-                                onClick={() => setRandomSuggestLetters([])}
-                                className="text-[10px] text-red-400 hover:text-red-300 transition-colors font-bold"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setRandomSuggestLetters(randomSuggestLetters.filter(l => l !== letter));
+                                  } else {
+                                    setRandomSuggestLetters([...randomSuggestLetters, letter]);
+                                  }
+                                }}
+                                className={`h-7 rounded-lg text-xs font-bold transition-none flex items-center justify-center ${isSelected ? 'bg-red-500 text-white shadow-md' : 'bg-white/5 hover:bg-white/10 text-white/70'}`}
                               >
-                                Xóa chọn
+                                {letter}
                               </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-7 gap-1">
-                            {Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map((letter) => {
-                              const isSelected = randomSuggestLetters.includes(letter);
-                              return (
-                                <button
-                                  key={letter}
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setRandomSuggestLetters(randomSuggestLetters.filter(l => l !== letter));
-                                    } else {
-                                      setRandomSuggestLetters([...randomSuggestLetters, letter]);
-                                    }
-                                  }}
-                                  className={`h-7 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${isSelected ? 'bg-red-500 text-white shadow-md' : 'bg-white/5 hover:bg-white/10 text-white/70'}`}
-                                >
-                                  {letter}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
