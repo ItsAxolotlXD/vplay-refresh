@@ -637,7 +637,7 @@ export default function App() {
           };
         }
         return { 
-          icon: "https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi", 
+          icon: "https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751", 
           label: "Tìm kiếm", 
           isImg: true 
         };
@@ -2093,7 +2093,12 @@ export default function App() {
                     onClick={() => { setActiveTab("search"); setActiveMenu(null); }} 
                     className="w-full px-4 py-2 text-left text-[13px] hover:bg-white/10 font-sans font-normal transition-colors flex items-center gap-2.5 text-white/90"
                   >
-                    <Search className="w-4 h-4 text-indigo-300" />
+                    <img 
+                      src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                      className="w-4 h-4 object-contain brightness-0 invert opacity-80" 
+                      alt="Search" 
+                      referrerPolicy="no-referrer"
+                    />
                     <span>Open search channels</span>
                   </button>
                   <button 
@@ -2135,7 +2140,7 @@ export default function App() {
                             handleQuickChatSend();
                           }
                         }}
-                        className="bg-transparent border-none text-white text-[12px] focus:outline-none w-full placeholder-white/30"
+                        className="bg-transparent border-none text-white text-[12px] focus:outline-none w-full placeholder-gray-400"
                       />
                       <button 
                         type="button"
@@ -2583,7 +2588,12 @@ export default function App() {
                 className={`p-1.5 sm:p-2 rounded-full hover:bg-white/10 active:scale-95 text-white/80 hover:text-white transition-all cursor-pointer flex items-center justify-center ${showSearchDropdown ? 'bg-white/10 text-white' : ''}`}
                 title="Tìm kiếm kênh"
               >
-                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <img 
+                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain brightness-0 invert opacity-80" 
+                  alt="Search" 
+                  referrerPolicy="no-referrer"
+                />
               </button>
 
               <AnimatePresence>
@@ -2604,11 +2614,11 @@ export default function App() {
                           placeholder="Spotlight Search"
                           value={menubarSearchQuery}
                           onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left font-sans"
+                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left font-sans"
                         />
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                           <img 
-                            src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                            src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                             className="w-4 h-4 brightness-0 invert opacity-60" 
                             referrerPolicy="no-referrer"
                             alt="Search"
@@ -4282,11 +4292,11 @@ export default function App() {
                         value={settingsSearchQuery}
                         onChange={(e) => setSettingsSearchQuery(e.target.value)}
                         placeholder="Tìm kiếm cài đặt..."
-                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
+                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                       />
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                         <img 
-                          src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                          src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                           className="w-4 h-4 brightness-0 invert opacity-60" 
                           referrerPolicy="no-referrer"
                           alt="Search"
@@ -4504,11 +4514,11 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
-                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                                 className="w-4 h-4 brightness-0 invert opacity-60" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
@@ -4776,11 +4786,11 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
-                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                                 className="w-4 h-4 brightness-0 invert opacity-60" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
@@ -4918,11 +4928,11 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
-                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                                 className="w-4 h-4 brightness-0 invert opacity-60" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
@@ -5035,11 +5045,11 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
-                                src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                                 className="w-4 h-4 brightness-0 invert opacity-60" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
@@ -5300,11 +5310,11 @@ export default function App() {
                                 value={settingDetailSearchQuery}
                                 onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                                 placeholder="Tìm kiếm cài đặt..."
-                                className="w-full pl-10 pr-10 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/45 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left h-8.5"
+                                className="w-full pl-10 pr-10 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left h-8.5"
                               />
                               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                                 <img 
-                                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                                   className="w-4 h-4 brightness-0 invert opacity-60" 
                                   referrerPolicy="no-referrer"
                                   alt="Search"
@@ -6289,11 +6299,11 @@ export default function App() {
                             value={pluginSearchQuery}
                             onChange={(e) => setPluginSearchQuery(e.target.value)}
                             placeholder="Tìm kiếm tiện ích..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-white/40 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-all duration-300 text-left"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-all duration-300 text-left"
                           />
                           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                             <img 
-                              src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                              src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                               className="w-4 h-4 brightness-0 invert opacity-60" 
                               referrerPolicy="no-referrer"
                               alt="Search"
@@ -6657,7 +6667,7 @@ export default function App() {
                 className="w-full h-16 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3),0_25px_50px_-12px_rgba(0,0,0,0.9)] flex items-center px-4 gap-2 relative transform-gpu focus-within:border-[#38bdf8] focus-within:ring-2 focus-within:ring-[#38bdf8]/30 transition-all duration-300"
               >
                 <img 
-                  src="https://static.wikia.nocookie.net/ftv/images/d/dc/Ass_glass.svg/revision/latest?cb=20260612062405&path-prefix=vi" 
+                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
                   className="w-5.5 h-5.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
                   referrerPolicy="no-referrer"
                   alt="Search"
@@ -6667,7 +6677,7 @@ export default function App() {
                   placeholder="Search channels"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-white/40 px-1 font-sans"
+                  className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder-gray-400 px-1 font-sans"
                   autoFocus
                 />
                 {searchQuery && (
@@ -8021,13 +8031,18 @@ export default function App() {
 
               {/* Search bar inside picker */}
               <div className="mb-4 relative shrink-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <img 
+                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-60 object-contain" 
+                  alt="Search" 
+                  referrerPolicy="no-referrer"
+                />
                 <input
                   type="text"
                   placeholder="Tìm kiếm kênh muốn thêm..."
                   value={pickerSearchQuery}
                   onChange={(e) => setPickerSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 focus:outline-none text-white text-xs transition-all placeholder:text-white/30"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 focus:outline-none text-white text-xs transition-all placeholder:text-gray-400"
                 />
               </div>
 
