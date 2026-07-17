@@ -19,10 +19,10 @@ try {
     cachedChannels = JSON.parse(fs.readFileSync(channelsPath, "utf-8"));
   }
 } catch (err) {
-  console.error("Failed to load channels for V-Intelligence:", err);
+  console.error("Failed to load channels for Firesteel:", err);
 }
 
-// API endpoint for V-Intelligence
+// API endpoint for Firesteel
 app.post("/api/vintelligence", async (req, res) => {
   try {
     const { messages, mode, userName, smartAction } = req.body; // messages: Array<{role: string, content: string}>, mode: 'chat' | 'search'
@@ -43,7 +43,7 @@ app.post("/api/vintelligence", async (req, res) => {
     const userIntro = userName ? `Người dùng hiện tại tên là "${userName}". Hãy xưng hô thân mật bằng cách gọi họ bằng tên "${userName}" khi thích hợp (ví dụ: "Chào anh/chị ${userName}", "Chào ${userName}", "Cảm ơn ${userName}").` : "Người dùng chưa thiết lập tên gọi cụ thể. Vui lòng xưng hô lịch sự, thân mật chung chung và không dùng tên riêng.";
     const actionRestriction = !isSmartActionEnabled ? "\nHành động thông minh (smart actions) ĐÃ BỊ TẮT bởi cài đặt của người dùng. Bạn TUYỆT ĐỐI không được thực hiện bất kỳ hành động tự động nào dưới đây (tức là luôn trả về đối tượng action là null)." : "";
 
-    const systemInstruction = `Bạn là V-Intelligence, trợ lý trí tuệ nhân tạo đắc lực và thân thiện của Vplay - ứng dụng xem truyền hình mượt mà chất lượng cao.
+    const systemInstruction = `Bạn là Firesteel, trợ lý trí tuệ nhân tạo đắc lực và thân thiện của Vplay - ứng dụng xem truyền hình mượt mà chất lượng cao.
 Nhiệm vụ của bạn là trò chuyện, tư vấn kênh truyền hình, giải đáp thắc mắc và tự động kích hoạt các thao tác hệ thống theo yêu cầu của người dùng.
 
 ${userIntro}
@@ -137,9 +137,9 @@ CHẾ ĐỘ HIỆN TẠI: Chế độ ${mode === 'search' ? 'Tìm kiếm thông 
     const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
     res.json(JSON.parse(resultText));
   } catch (error: any) {
-    console.error("V-Intelligence API Error:", error);
+    console.error("Firesteel API Error:", error);
     res.status(500).json({ 
-      error: "Không thể kết nối đến V-Intelligence. Vui lòng kiểm tra lại cấu hình API Key.",
+      error: "Không thể kết nối đến Firesteel. Vui lòng kiểm tra lại cấu hình API Key.",
       details: error.message 
     });
   }
@@ -330,7 +330,7 @@ function parseFandomHtml(html: string) {
       const originalUrl = url
         .replace(/\/scale-to-width-down\/\d+/g, "")
         .replace(/\/thumbnail\/width\/\d+\/height\/\d+/g, "");
-        
+      
       logos.push({
         url,
         originalUrl,
