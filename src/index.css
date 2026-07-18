@@ -205,7 +205,7 @@
   box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
 }
 
-.group:hover .menu-vertical-pill {
+button:hover .menu-vertical-pill {
   opacity: 1 !important;
   transform: scaleY(1) !important;
 }
@@ -225,7 +225,7 @@
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
 }
 
-.group:hover .menu-vertical-pill-red {
+button:hover .menu-vertical-pill-red {
   opacity: 1 !important;
   transform: scaleY(1) !important;
 }
