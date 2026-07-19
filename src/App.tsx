@@ -1882,10 +1882,10 @@ export default function App() {
           animate={{
             x: "-50%",
             y: "-50%",
-            scale: [0.75, 1.25, 0.75],
+            scale: [0.6, 1.8, 0.6],
           }}
           transition={{
-            duration: 10,
+            duration: 4.5,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -1931,10 +1931,10 @@ export default function App() {
           animate={{
             x: "-50%",
             y: "-50%",
-            scale: [0.75, 1.25, 0.75],
+            scale: [0.6, 1.8, 0.6],
           }}
           transition={{
-            duration: 10,
+            duration: 4.5,
             repeat: Infinity,
             ease: "easeInOut"
           }}
