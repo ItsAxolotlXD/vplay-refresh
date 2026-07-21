@@ -577,6 +577,7 @@ export default function App() {
         const homeItem = parsed.find((it: any) => it.id === "home") || { id: "home", label: "Home", enabled: true };
         const searchItem = parsed.find((it: any) => it.id === "search") || { id: "search", label: "Spotlight Search", enabled: true };
         searchItem.label = "Spotlight Search";
+        searchItem.enabled = true;
         
         const merged = [homeItem, searchItem, ...filtered];
         DEFAULT_DOCK_ITEMS.forEach(defItem => {
@@ -657,13 +658,6 @@ export default function App() {
       case "settings":
         return { icon: Settings, label: "Cài đặt", isImg: false };
       case "search":
-        if (expVIntelligence) {
-          return { 
-            icon: Flame, 
-            label: "Firesteel", 
-            isImg: false 
-          };
-        }
         return { 
           icon: "https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751", 
           label: "Spotlight Search", 
@@ -699,7 +693,7 @@ export default function App() {
       case "settings":
         return activeTab === "settings" && activeSettingSection === null;
       case "search":
-        return expVIntelligence ? showVIntel : activeTab === "search";
+        return activeTab === "search";
       case "profile":
         return activeTab === "settings" && activeSettingSection === "profile";
       case "plugin_store":
@@ -722,18 +716,8 @@ export default function App() {
         setActiveSettingSection(null);
         break;
       case "search":
-        if (expVIntelligence) {
-          if (!vIntelIconSpinning) {
-            setVIntelIconSpinning(true);
-            setTimeout(() => {
-              setShowVIntel(!showVIntel);
-              setVIntelIconSpinning(false);
-            }, 300);
-          }
-        } else {
-          setPrevTab(activeTab as any);
-          setActiveTab("search");
-        }
+        setPrevTab(activeTab as any);
+        setActiveTab("search");
         break;
       case "profile":
         setActiveTab("settings");
@@ -1043,6 +1027,7 @@ export default function App() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showPowerDropdown, setShowPowerDropdown] = useState<boolean>(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
+  const [isSleepMode, setIsSleepMode] = useState<boolean>(false);
   const [menubarSearchQuery, setMenubarSearchQuery] = useState<string>( "");
   const [spotlightCategoryFilter, setSpotlightCategoryFilter] = useState<string>("all");
   const [showSpotlightFilter, setShowSpotlightFilter] = useState<boolean>(false);
@@ -2172,7 +2157,7 @@ export default function App() {
                           className={`w-4.5 h-4.5 object-contain transition-transform duration-200 ${
                             isActive ? "scale-105" : "group-hover/sidebar:scale-105"
                           }`}
-                          style={config.isImg && tab.id === "search" && expVIntelligence ? {} : { filter: "brightness(0) invert(1)" }}
+                          style={{ filter: "brightness(0) invert(1)" }}
                           alt={config.label}
                           referrerPolicy="no-referrer"
                         />
@@ -3347,6 +3332,86 @@ export default function App() {
           {/* Right Side: compact clock and profile card */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-3 md:gap-4">
 
+            {/* Spotlight Search Button in Menubar */}
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  setShowSearchDropdown(!showSearchDropdown);
+                  setShowPowerDropdown(false);
+                  setShowVIntel(false);
+                }}
+                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all active:scale-95 cursor-pointer ${showSearchDropdown ? 'bg-white/10 text-[#38bdf8]' : ''}`}
+                title="Spotlight Search"
+              >
+                <Search className="w-4 h-4" />
+                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-[#38bdf8] rounded-full transition-transform duration-200 origin-center ${showSearchDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+              </button>
+              
+              <AnimatePresence>
+                {showSearchDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSearchDropdown(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-2 w-72 rounded-[28px] bg-[#1d1b24]/95 backdrop-blur-md border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 p-3 flex flex-col gap-2 font-sans"
+                    >
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Tìm nhanh kênh..."
+                          value={menubarSearchQuery}
+                          onChange={(e) => setMenubarSearchQuery(e.target.value)}
+                          className="w-full pl-8 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 focus:outline-none focus:bg-white/10 transition-all text-left"
+                        />
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                          <Search className="w-3.5 h-3.5 text-white/40" />
+                        </div>
+                        {menubarSearchQuery && (
+                          <button
+                            onClick={() => setMenubarSearchQuery("")}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-white/40 hover:text-white"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="max-h-64 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-1">
+                        {menubarSearchResults.length > 0 ? (
+                          menubarSearchResults.slice(0, 8).map((ch) => (
+                            <button
+                              key={ch.id}
+                              onClick={() => {
+                                handleSelectChannel(ch);
+                                setActiveTab("live");
+                                setShowSearchDropdown(false);
+                              }}
+                              className="relative pl-3 pr-2 py-2 rounded-xl text-left text-xs hover:bg-white/15 text-white/95 hover:text-white font-medium transition-colors flex items-center justify-between group gap-2 cursor-pointer"
+                            >
+                              <span className="truncate">{ch.name}</span>
+                              <span className="text-[8px] bg-red-600/20 text-red-400 group-hover:bg-red-600 group-hover:text-white px-1.5 py-0.5 rounded font-bold transition-all shrink-0">PHÁT</span>
+                            </button>
+                          ))
+                        ) : menubarSearchQuery.trim() ? (
+                          <div className="px-2 py-4 text-center text-xs text-white/40">
+                            Không tìm thấy kênh nào
+                          </div>
+                        ) : (
+                          <div className="px-2 py-4 text-center text-xs text-white/40">
+                            Nhập tên kênh để tìm nhanh
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Firesteel AI Button in Menubar */}
             {expVIntelligence && (
               <div className="relative group">
@@ -3367,6 +3432,71 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Power Button in Menubar */}
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  setShowPowerDropdown(!showPowerDropdown);
+                  setShowSearchDropdown(false);
+                  setShowVIntel(false);
+                }}
+                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'bg-rose-500/15 text-rose-300' : ''}`}
+                title="Hệ thống"
+              >
+                <Power className="w-4 h-4" />
+                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-rose-500 rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+              </button>
+              
+              <AnimatePresence>
+                {showPowerDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowPowerDropdown(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-2 w-56 rounded-[28px] bg-[#1d1b24]/95 backdrop-blur-md border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 py-2 text-white flex flex-col gap-1 font-sans text-left"
+                    >
+                      <button
+                        onClick={() => {
+                          setIsSleepMode(true);
+                          setShowPowerDropdown(false);
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Power className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span>Chế độ ngủ (Sleep)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          window.location.reload();
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="w-4 h-4 text-teal-400 shrink-0" />
+                        <span>Khởi động lại (Reload)</span>
+                      </button>
+
+                      <div className="border-t border-white/10 mx-1.5 my-1" />
+
+                      <button
+                        onClick={() => {
+                          setShowPowerDropdown(false);
+                          setShowFactoryResetConfirmModal(true);
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-red-500/10 active:bg-red-500/20 text-red-400 hover:text-red-300 font-bold flex items-center gap-2.5 transition-colors cursor-pointer animate-pulse"
+                      >
+                        <Beaker className="w-4 h-4 text-rose-500 shrink-0" />
+                        <span>Khôi phục cài đặt gốc</span>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Real-time Ticking Digital Clock on the far right (replacing User Profile) */}
             {showClock && (
@@ -7364,7 +7494,7 @@ export default function App() {
                           const isActive = isDockItemActive(tab.id);
                           const config = getDockItemConfig(tab.id);
                           const filterStyle = config.isImg 
-                            ? ((tab.id === "search" && expVIntelligence) ? {} : { filter: "brightness(0) invert(1)" }) 
+                            ? { filter: "brightness(0) invert(1)" } 
                             : {};
   
                           return (
@@ -7811,6 +7941,61 @@ export default function App() {
               >
                 Đóng thử nghiệm
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* IMMERSIVE SLEEP MODE OVERLAY */}
+      <AnimatePresence>
+        {isSleepMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+            onClick={() => {
+              setIsSleepMode(false);
+              triggerToast("Chào mừng quay trở lại!");
+            }}
+            className="fixed inset-0 bg-black z-[999] flex flex-col items-center justify-center cursor-pointer select-none"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 1 }}
+              className="text-center space-y-6"
+            >
+              {/* Soft Pulsing Ambient Ring */}
+              <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-0 rounded-full bg-indigo-500/10 blur-xl"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute w-28 h-28 rounded-full border border-white/5 bg-white/[0.02]"
+                />
+                <Power className="w-10 h-10 text-white/40 animate-pulse" />
+              </div>
+
+              {/* Clock display */}
+              <div className="space-y-1">
+                <h1 className="text-5xl font-extrabold text-white/80 tracking-widest font-google">
+                  {formatTime(time)}
+                </h1>
+                <p className="text-xs text-white/40 font-medium tracking-wide">
+                  {formatDateVietnamese(time)}
+                </p>
+              </div>
+
+              <div className="pt-8">
+                <p className="text-[11px] text-white/30 tracking-wider animate-pulse font-google uppercase">
+                  Nhấp chuột hoặc chạm bất kỳ để đánh thức
+                </p>
+              </div>
             </motion.div>
           </motion.div>
         )}
