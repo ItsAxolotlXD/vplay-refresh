@@ -766,6 +766,9 @@ export default function App() {
       default:
         break;
     }
+    if (isMobile) {
+      setShowMobileSidebar(false);
+    }
   };
 
   useEffect(() => {
@@ -2073,13 +2076,13 @@ export default function App() {
           <aside 
             className={`fixed top-0 left-0 h-screen z-[70] bg-[#0c0a0f]/95 md:bg-[#0c0a0f]/80 backdrop-blur-[20px] border-r border-white/5 transition-all duration-300 flex flex-col ${
               isMobile 
-                ? (showMobileSidebar ? "translate-x-0 w-20" : "-translate-x-full w-20") 
+                ? (showMobileSidebar ? "translate-x-0 w-full" : "-translate-x-full w-full") 
                 : (sidebarExpanded ? "w-72" : "w-20")
             }`}
           >
           {/* Header section with brand logo & collapse button */}
           <div className="h-20 flex items-center justify-between px-4 border-b border-white/5 select-none shrink-0">
-            {sidebarExpanded ? (
+            {(sidebarExpanded || isMobile) ? (
               <div className="flex items-center gap-3 pl-2">
                 <img
                   src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
@@ -2099,7 +2102,16 @@ export default function App() {
               </div>
             )}
 
-            {sidebarExpanded && (
+            {isMobile ? (
+              <button
+                type="button"
+                onClick={() => setShowMobileSidebar(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all cursor-pointer shrink-0"
+                title="Đóng Sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            ) : sidebarExpanded && (
               <button
                 type="button"
                 onClick={() => setSidebarExpanded(false)}
@@ -2112,7 +2124,7 @@ export default function App() {
           </div>
 
           {/* If collapsed, show an expand button at the top */}
-          {!sidebarExpanded && (
+          {!sidebarExpanded && !isMobile && (
             <div className="flex justify-center py-4 border-b border-white/5 shrink-0">
               <button
                 type="button"
@@ -2139,7 +2151,7 @@ export default function App() {
                       type="button"
                       onClick={() => handleDockItemClick(tab.id)}
                       className={`w-full relative flex items-center ${
-                        sidebarExpanded ? "justify-start px-4" : "justify-center"
+                        (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                       } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                         isActive
                           ? "bg-[#cc1827] text-white font-bold"
@@ -2147,7 +2159,7 @@ export default function App() {
                       }`}
                     >
                       {/* Tooltip when collapsed */}
-                      {!sidebarExpanded && (
+                      {!(sidebarExpanded || isMobile) && (
                         <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
                           {config.label}
                         </div>
@@ -2178,14 +2190,14 @@ export default function App() {
                       )}
 
                       {/* Text */}
-                      {sidebarExpanded && (
+                      {(sidebarExpanded || isMobile) && (
                         <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                           {config.label}
                         </span>
                       )}
 
                       {/* Show Chevron for expandable states in Sidebar */}
-                      {sidebarExpanded && (tab.id === "live" || tab.id === "settings") && (
+                      {(sidebarExpanded || isMobile) && (tab.id === "live" || tab.id === "settings") && (
                         <ChevronDown 
                           className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                             isActive ? "rotate-180" : ""
@@ -2195,7 +2207,7 @@ export default function App() {
                     </button>
 
                     {/* Submenu details when sidebar is expanded & active/open */}
-                    {sidebarExpanded && isActive && tab.id === "live" && (
+                    {(sidebarExpanded || isMobile) && isActive && tab.id === "live" && (
                       <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
                         <button
                           type="button"
@@ -2318,7 +2330,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!sidebarExpanded) {
+                  if (!sidebarExpanded && !isMobile) {
                     setSidebarExpanded(true);
                     setSidebarFavoritesOpen(true);
                   } else {
@@ -2326,25 +2338,25 @@ export default function App() {
                   }
                 }}
                 className={`w-full relative flex items-center ${
-                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                  (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
-                  sidebarFavoritesOpen && sidebarExpanded
+                  sidebarFavoritesOpen && (sidebarExpanded || isMobile)
                     ? "bg-white/5 text-white font-semibold"
                     : "text-white/75 hover:text-white hover:bg-white/5"
                 }`}
               >
-                {!sidebarExpanded && (
+                {!(sidebarExpanded || isMobile) && (
                   <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
                     Favorites
                   </div>
                 )}
                 <Heart className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     Favorites
                   </span>
                 )}
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <ChevronDown 
                     className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                       sidebarFavoritesOpen ? "rotate-180" : ""
@@ -2353,7 +2365,7 @@ export default function App() {
                 )}
               </button>
 
-              {sidebarExpanded && sidebarFavoritesOpen && (
+              {(sidebarExpanded || isMobile) && sidebarFavoritesOpen && (
                 <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
                   {favoriteChannelsList.length > 0 ? (
                     favoriteChannelsList.map((ch) => (
@@ -2383,7 +2395,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!sidebarExpanded) {
+                  if (!sidebarExpanded && !isMobile) {
                     setSidebarExpanded(true);
                     setSidebarFileOpen(true);
                   } else {
@@ -2391,25 +2403,25 @@ export default function App() {
                   }
                 }}
                 className={`w-full relative flex items-center ${
-                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                  (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
-                  sidebarFileOpen && sidebarExpanded
+                  sidebarFileOpen && (sidebarExpanded || isMobile)
                     ? "bg-white/5 text-white font-semibold"
                     : "text-white/75 hover:text-white hover:bg-white/5"
                 }`}
               >
-                {!sidebarExpanded && (
+                {!(sidebarExpanded || isMobile) && (
                   <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
                     File
                   </div>
                 )}
                 <FolderOpen className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     File
                   </span>
                 )}
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <ChevronDown 
                     className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                       sidebarFileOpen ? "rotate-180" : ""
@@ -2418,7 +2430,7 @@ export default function App() {
                 )}
               </button>
 
-              {sidebarExpanded && sidebarFileOpen && (
+              {(sidebarExpanded || isMobile) && sidebarFileOpen && (
                 <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
                   <button
                     type="button"
@@ -2468,105 +2480,12 @@ export default function App() {
               )}
             </div>
 
-            {/* COLLAPSIBLE SIDEBAR MENU: PLUGINS */}
-            <div className="space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!sidebarExpanded) {
-                    setSidebarExpanded(true);
-                    setSidebarPluginsOpen(true);
-                  } else {
-                    setSidebarPluginsOpen(!sidebarPluginsOpen);
-                  }
-                }}
-                className={`w-full relative flex items-center ${
-                  sidebarExpanded ? "justify-start px-4" : "justify-center"
-                } py-1.5 rounded-xl transition-all duration-300 cursor-pointer group/sidebar select-none ${
-                  sidebarPluginsOpen && sidebarExpanded
-                    ? "bg-white/5 text-white font-semibold"
-                    : "text-white/75 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {!sidebarExpanded && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
-                    Plugins
-                  </div>
-                )}
-                <Puzzle className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
-                {sidebarExpanded && (
-                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
-                    Plugins
-                  </span>
-                )}
-                {sidebarExpanded && (
-                  <ChevronDown 
-                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
-                      sidebarPluginsOpen ? "rotate-180" : ""
-                    }`} 
-                  />
-                )}
-              </button>
-
-              {sidebarExpanded && sidebarPluginsOpen && (
-                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("settings");
-                      setActiveSettingSection("plugin_store");
-                      triggerToast("Mở: Cửa hàng tiện ích");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-all flex items-center gap-2"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Mở cửa hàng tiện ích</span>
-                  </button>
-
-                  <div className="border-t border-white/5 my-1" />
-                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest pl-2">Tiện ích đã cài đặt</div>
-                  {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").map(([id]) => (
-                    <div key={id} className="text-left text-[11px] py-1 px-2 text-white/70 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Puzzle className="w-3 h-3 text-white shrink-0" />
-                        <span className="truncate">{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
-                      </div>
-                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                    </div>
-                  ))}
-                  {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").length === 0 && (
-                    <span className="text-[10px] text-white/40 italic pl-2">Chưa cài đặt tiện ích nào</span>
-                  )}
-
-                  <div className="border-t border-white/5 my-1" />
-                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest pl-2">Tiện ích có sẵn</div>
-                  {["export_stream", "multiview", "open_native", "quick_switch", "add_custom"].map((id) => (
-                    <button
-                      key={id}
-                      onClick={() => {
-                        setActiveTab("settings");
-                        setActiveSettingSection("plugin_store");
-                        triggerToast("Mở: Cửa hàng tiện ích");
-                      }}
-                      className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-all flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Puzzle className="w-3 h-3 text-white shrink-0" />
-                        <span className="truncate">{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
-                      </div>
-                      <span className="text-[8px] bg-indigo-500/20 text-indigo-300 px-1 rounded-full font-bold">Store</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* COLLAPSIBLE SIDEBAR MENU: HELP */}
             <div className="space-y-1">
               <button
                 type="button"
                 onClick={() => {
-                  if (!sidebarExpanded) {
+                  if (!sidebarExpanded && !isMobile) {
                     setSidebarExpanded(true);
                     setSidebarHelpOpen(true);
                   } else {
@@ -2574,25 +2493,25 @@ export default function App() {
                   }
                 }}
                 className={`w-full relative flex items-center ${
-                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                  (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
-                  sidebarHelpOpen && sidebarExpanded
+                  sidebarHelpOpen && (sidebarExpanded || isMobile)
                     ? "bg-white/5 text-white font-semibold"
                     : "text-white/75 hover:text-white hover:bg-white/5"
                 }`}
               >
-                {!sidebarExpanded && (
+                {!(sidebarExpanded || isMobile) && (
                   <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
                     Help
                   </div>
                 )}
                 <HelpCircle className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     Help
                   </span>
                 )}
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <ChevronDown 
                     className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                       sidebarHelpOpen ? "rotate-180" : ""
@@ -2601,7 +2520,7 @@ export default function App() {
                 )}
               </button>
 
-              {sidebarExpanded && sidebarHelpOpen && (
+              {(sidebarExpanded || isMobile) && sidebarHelpOpen && (
                 <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
                   <button
                     type="button"
@@ -4967,11 +4886,7 @@ export default function App() {
 
                   {/* Settings Search Section styled exactly like Plugin Store with custom glass icon */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 pt-2">
-                    <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-indigo-400" />
-                      Cấu hình & Cài đặt
-                    </h3>
-                    <div className="relative w-full sm:max-w-[280px]">
+                    <div className="relative w-full">
                       <input
                         type="text"
                         value={settingsSearchQuery}
@@ -5085,7 +5000,7 @@ export default function App() {
                                 <button
                                   key={sec.id}
                                   onClick={() => setActiveSettingSection(sec.id)}
-                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default transition-all duration-200"
+                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-0 hover:bg-white/15 text-white cursor-default transition-all duration-200"
                                 >
                                   <div className="w-9 h-9 flex items-center justify-center shrink-0 text-white bg-white/5 rounded-xl">
                                     <IconComp className="w-5 h-5 stroke-[1.8]" />
@@ -5115,7 +5030,7 @@ export default function App() {
                                 <button
                                   key={sec.id}
                                   onClick={() => setActiveSettingSection(sec.id)}
-                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-[3px] border-white/10 hover:border-white text-white cursor-default transition-all duration-200"
+                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-0 hover:bg-white/15 text-white cursor-default transition-all duration-200"
                                 >
                                   <div className="w-9 h-9 flex items-center justify-center shrink-0 text-white bg-white/5 rounded-xl">
                                     <IconComp className="w-5 h-5 stroke-[1.8]" />
@@ -7344,11 +7259,11 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "md:hidden" : ""}`}>
+      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "hidden" : ""}`}>
         <div className="progressive-blur-dock" />
       </div>
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "md:hidden" : ""}`}>
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "hidden" : ""}`}>
           <AnimatePresence mode="wait">
             {activeTab === "search" ? (
               <motion.div
