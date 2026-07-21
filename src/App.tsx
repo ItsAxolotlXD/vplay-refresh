@@ -405,14 +405,19 @@ export default function App() {
   }, [isHeaderSearchExpanded]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sidebarFileOpen, setSidebarFileOpen] = useState<boolean>(true);
+  const [sidebarPluginsOpen, setSidebarPluginsOpen] = useState<boolean>(true);
+  const [sidebarFavoritesOpen, setSidebarFavoritesOpen] = useState<boolean>(true);
+  const [sidebarHelpOpen, setSidebarHelpOpen] = useState<boolean>(true);
+  const [sidebarPowerOpen, setSidebarPowerOpen] = useState<boolean>(true);
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [showFactoryResetConfirmModal, setShowFactoryResetConfirmModal] = useState<boolean>(false);
   const [showResetSplash, setShowResetSplash] = useState<boolean>(false);
-  const [resetCountdown, setResetCountdown] = useState<number>(30);
+  const [resetCountdown, setResetCountdown] = useState<number>(60);
 
   const startFactoryResetCountdown = () => {
     setShowResetSplash(true);
-    setResetCountdown(30);
+    setResetCountdown(60);
     const interval = setInterval(() => {
       setResetCountdown((prev) => {
         if (prev <= 1) {
@@ -553,10 +558,10 @@ export default function App() {
 
   const [dockItems, setDockItems] = useState<{ id: string; label: string; enabled: boolean }[]>(() => {
     const DEFAULT_DOCK_ITEMS = [
-      { id: "home", label: "Trang chủ", enabled: true },
-      { id: "live", label: "Trực tiếp", enabled: true },
+      { id: "home", label: "Home", enabled: true },
+      { id: "search", label: "Spotlight Search", enabled: true },
+      { id: "live", label: "Live TV", enabled: true },
       { id: "settings", label: "Cài đặt", enabled: true },
-      { id: "search", label: "Tìm kiếm", enabled: true },
       { id: "remote", label: "Chuyển kênh", enabled: true },
       { id: "profile", label: "Hồ sơ", enabled: false },
       { id: "plugin_store", label: "Cửa hàng tiện ích", enabled: false },
@@ -568,7 +573,12 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const merged = [...parsed];
+        const filtered = parsed.filter((it: any) => it.id !== "search" && it.id !== "home");
+        const homeItem = parsed.find((it: any) => it.id === "home") || { id: "home", label: "Home", enabled: true };
+        const searchItem = parsed.find((it: any) => it.id === "search") || { id: "search", label: "Spotlight Search", enabled: true };
+        searchItem.label = "Spotlight Search";
+        
+        const merged = [homeItem, searchItem, ...filtered];
         DEFAULT_DOCK_ITEMS.forEach(defItem => {
           if (!merged.find(item => item.id === defItem.id)) {
             merged.push(defItem);
@@ -641,9 +651,9 @@ export default function App() {
   const getDockItemConfig = (id: string) => {
     switch (id) {
       case "home":
-        return { icon: Home, label: "Trang chủ", isImg: false };
+        return { icon: Home, label: "Home", isImg: false };
       case "live":
-        return { icon: Tv, label: "Trực tiếp", isImg: false };
+        return { icon: Tv, label: "Live TV", isImg: false };
       case "settings":
         return { icon: Settings, label: "Cài đặt", isImg: false };
       case "search":
@@ -656,7 +666,7 @@ export default function App() {
         }
         return { 
           icon: "https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751", 
-          label: "Tìm kiếm", 
+          label: "Spotlight Search", 
           isImg: true 
         };
       case "profile":
@@ -909,6 +919,32 @@ export default function App() {
   const [expCache, setExpCache] = useState<boolean>(() => localStorage.getItem("vplay_exp_cache") === "true");
   const [expAmbientGlow, setExpAmbientGlow] = useState<boolean>(() => localStorage.getItem("vplay_exp_glow") === "true");
   const [expVIntelligence, setExpVIntelligence] = useState<boolean>(() => localStorage.getItem("vplay_exp_vintel") !== "false");
+  
+  const [dockToSidebar, setDockToSidebar] = useState<boolean>(() => {
+    return localStorage.getItem("vplay_dock_to_sidebar") === "true";
+  });
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
+    return localStorage.getItem("vplay_sidebar_expanded") !== "false";
+  });
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_dock_to_sidebar", String(dockToSidebar));
+  }, [dockToSidebar]);
+
+  useEffect(() => {
+    localStorage.setItem("vplay_sidebar_expanded", String(sidebarExpanded));
+  }, [sidebarExpanded]);
   const [testStreamUrl, setTestStreamUrl] = useState<string>("");
   const [directStreamUrl, setDirectStreamUrl] = useState<string>("");
   
@@ -998,6 +1034,8 @@ export default function App() {
   const [showPlayUrlModal, setShowPlayUrlModal] = useState<boolean>(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
   const [feedbackText, setFeedbackText] = useState<string>("");
+  const [feedbackRating, setFeedbackRating] = useState<number>(5);
+  const [showThankYouModal, setShowThankYouModal] = useState<boolean>(false);
   const [showTestVplayConfirmModal, setShowTestVplayConfirmModal] = useState<boolean>(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [showPowerDropdown, setShowPowerDropdown] = useState<boolean>(false);
@@ -1295,6 +1333,7 @@ export default function App() {
 
   // Switch channel trigger
   const handleSelectChannel = (channel: Channel, bypassVtv5Check = false) => {
+    setShowMobileSidebar(false);
     if (channel.id === "vtv5" && !bypassVtv5Check) {
       setShowVtv5Popup(true);
       return;
@@ -1877,6 +1916,30 @@ export default function App() {
   if (showResetSplash) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[99999] overflow-hidden select-none font-google">
+        {/* Ambient Orange/Red Glow in the corners */}
+        <motion.div 
+          animate={{
+            scale: [0.8, 1.4, 0.8],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-red-600/15 rounded-full blur-[80px] sm:blur-[110px] -top-20 -left-20 pointer-events-none" 
+        />
+        <motion.div 
+          animate={{
+            scale: [0.8, 1.4, 0.8],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-orange-600/15 rounded-full blur-[80px] sm:blur-[110px] -bottom-20 -right-20 pointer-events-none" 
+        />
+
         {/* Ambient Orange/Red Glow in the center of splash screen */}
         <motion.div 
           animate={{
@@ -1911,11 +1974,14 @@ export default function App() {
             Resetting your app to default values
           </span>
           <div className="flex flex-col items-center gap-1 mt-2">
-            <span className="text-white/40 text-[10px] sm:text-xs font-medium uppercase tracking-widest font-google">
-              Thời gian còn lại
+            <span className="text-white/45 text-[11px] sm:text-xs font-bold uppercase tracking-widest font-google">
+              THỜI GIAN CÒN LẠI
             </span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-red-400 tracking-tighter font-google">
-              {formatResetCountdown(resetCountdown)}
+            <span className="text-3xl sm:text-4xl font-extrabold text-red-400 tracking-tighter font-google">
+              {Math.round((resetCountdown / 60) * 100)}%
+            </span>
+            <span className="text-white/40 text-[10px] sm:text-xs font-normal mt-1 font-google italic">
+              Do not close your app
             </span>
           </div>
         </div>
@@ -1926,6 +1992,30 @@ export default function App() {
   if (showSplash) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[99999] overflow-hidden select-none font-google">
+        {/* Ambient Purple/Indigo Glow in the corners */}
+        <motion.div 
+          animate={{
+            scale: [0.8, 1.4, 0.8],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-purple-600/15 rounded-full blur-[80px] sm:blur-[110px] -top-20 -left-20 pointer-events-none" 
+        />
+        <motion.div 
+          animate={{
+            scale: [0.8, 1.4, 0.8],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[110px] -bottom-20 -right-20 pointer-events-none" 
+        />
+
         {/* Ambient Purple Glow in the center of splash screen */}
         <motion.div 
           animate={{
@@ -1965,8 +2055,670 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen text-white/95 pb-32 transition-colors duration-1000 overflow-x-clip ${getBgGradient()}`}>
+    <div className={`min-h-screen text-white/95 pb-32 transition-all duration-300 overflow-x-clip ${getBgGradient()} ${
+      dockToSidebar ? (sidebarExpanded ? "pl-0 md:pl-72" : "pl-0 md:pl-20") : ""
+    }`}>
       
+      {/* High-Fidelity Sidebar Left Navigation (Inspired by the design) */}
+      {dockToSidebar && (
+        <>
+          {/* Backdrop for mobile sidebar drawer */}
+          {isMobile && showMobileSidebar && (
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
+              onClick={() => setShowMobileSidebar(false)}
+            />
+          )}
+
+          <aside 
+            className={`fixed top-0 left-0 h-screen z-[70] bg-[#0c0a0f]/95 md:bg-[#0c0a0f]/80 backdrop-blur-[20px] border-r border-white/5 transition-all duration-300 flex flex-col ${
+              isMobile 
+                ? (showMobileSidebar ? "translate-x-0 w-20" : "-translate-x-full w-20") 
+                : (sidebarExpanded ? "w-72" : "w-20")
+            }`}
+          >
+          {/* Header section with brand logo & collapse button */}
+          <div className="h-20 flex items-center justify-between px-4 border-b border-white/5 select-none shrink-0">
+            {sidebarExpanded ? (
+              <div className="flex items-center gap-3 pl-2">
+                <img
+                  src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
+                  alt="Vplay Brand Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-6 w-auto object-contain brightness-0 invert"
+                />
+              </div>
+            ) : (
+              <div className="mx-auto">
+                <img
+                  src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
+                  alt="Vplay Brand Logo"
+                  referrerPolicy="no-referrer"
+                  className="h-6 w-6 object-contain brightness-0 invert animate-pulse"
+                />
+              </div>
+            )}
+
+            {sidebarExpanded && (
+              <button
+                type="button"
+                onClick={() => setSidebarExpanded(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all cursor-pointer shrink-0"
+                title="Thu nhỏ Sidebar"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* If collapsed, show an expand button at the top */}
+          {!sidebarExpanded && (
+            <div className="flex justify-center py-4 border-b border-white/5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setSidebarExpanded(true)}
+                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all cursor-pointer"
+                title="Mở rộng Sidebar"
+              >
+                <ChevronRight className="w-4.5 h-4.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Menu Items list */}
+          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-2.5 custom-scrollbar">
+            {dockItems
+              .filter((item) => item.enabled)
+              .map((tab) => {
+                const isActive = isDockItemActive(tab.id);
+                const config = getDockItemConfig(tab.id);
+
+                return (
+                  <div key={tab.id} className="space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => handleDockItemClick(tab.id)}
+                      className={`w-full relative flex items-center ${
+                        sidebarExpanded ? "justify-start px-4" : "justify-center"
+                      } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                        isActive
+                          ? "bg-[#cc1827] text-white font-bold"
+                          : "text-white/75 hover:text-white hover:bg-[#cc1827]"
+                      }`}
+                    >
+                      {/* Tooltip when collapsed */}
+                      {!sidebarExpanded && (
+                        <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                          {config.label}
+                        </div>
+                      )}
+
+                      {/* Icon */}
+                      {config.isImg ? (
+                        <img
+                          src={config.icon}
+                          className={`w-4.5 h-4.5 object-contain transition-transform duration-200 ${
+                            isActive ? "scale-105" : "group-hover/sidebar:scale-105"
+                          }`}
+                          style={config.isImg && tab.id === "search" && expVIntelligence ? {} : { filter: "brightness(0) invert(1)" }}
+                          alt={config.label}
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        (() => {
+                          const IconComponent = config.icon;
+                          return (
+                            <IconComponent
+                              className={`w-4.5 h-4.5 text-white transition-transform duration-200 ${
+                                isActive ? "scale-105 stroke-[2.2]" : "group-hover/sidebar:scale-105 stroke-[1.8]"
+                              }`}
+                            />
+                          );
+                        })()
+                      )}
+
+                      {/* Text */}
+                      {sidebarExpanded && (
+                        <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                          {config.label}
+                        </span>
+                      )}
+
+                      {/* Show Chevron for expandable states in Sidebar */}
+                      {sidebarExpanded && (tab.id === "live" || tab.id === "settings") && (
+                        <ChevronDown 
+                          className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
+                            isActive ? "rotate-180" : ""
+                          }`} 
+                        />
+                      )}
+                    </button>
+
+                    {/* Submenu details when sidebar is expanded & active/open */}
+                    {sidebarExpanded && isActive && tab.id === "live" && (
+                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory("all");
+                            triggerToast("Lọc: Tất cả kênh");
+                          }}
+                          className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none ${
+                            selectedCategory === "all"
+                              ? "bg-[#cc1827] text-white font-semibold"
+                              : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
+                          }`}
+                        >
+                          Tất cả kênh
+                        </button>
+                        {allAvailableCategoryList.map((cat) => (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(cat.id);
+                              triggerToast(`Kênh: ${cat.name}`);
+                            }}
+                            className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none truncate ${
+                              selectedCategory === cat.id
+                                ? "bg-[#cc1827] text-white font-semibold"
+                                : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
+                            }`}
+                          >
+                            {cat.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {sidebarExpanded && isActive && tab.id === "search" && (
+                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2 mt-2">
+                        <div className="relative flex items-center mb-1 pr-2">
+                          <input
+                            type="text"
+                            autoFocus
+                            placeholder="Spotlight Search..."
+                            value={menubarSearchQuery}
+                            onChange={(e) => setMenubarSearchQuery(e.target.value)}
+                            className="w-full pl-8 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white placeholder-white/30 focus:outline-none focus:bg-white/10 transition-all font-sans text-left"
+                          />
+                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                            <Search className="w-3.5 h-3.5 text-white/50" />
+                          </div>
+                          {menubarSearchQuery && (
+                            <button
+                              onClick={() => setMenubarSearchQuery("")}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 text-white/40 hover:text-white"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="max-h-56 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-2">
+                          {menubarSearchResults.length > 0 ? (
+                            menubarSearchResults.slice(0, 15).map((ch) => (
+                              <button
+                                key={ch.id}
+                                onClick={() => {
+                                  handleSelectChannel(ch);
+                                  setActiveTab("live");
+                                }}
+                                className="relative pl-3 pr-2 py-1.5 rounded-xl text-left text-[11px] hover:bg-white/10 text-white/90 hover:text-white font-sans font-medium transition-none flex items-center justify-between group gap-1.5 cursor-pointer"
+                              >
+                                <span className="truncate">{ch.name}</span>
+                                <span className="text-[8px] bg-red-600/20 text-red-400 group-hover:bg-red-600 group-hover:text-white px-1.5 py-0.5 rounded font-bold transition-all shrink-0">PHÁT</span>
+                              </button>
+                            ))
+                          ) : menubarSearchQuery.trim() ? (
+                            <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
+                              Không tìm thấy kênh nào
+                            </div>
+                          ) : (
+                            <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
+                              Nhập từ khóa để tìm nhanh
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {sidebarExpanded && isActive && tab.id === "settings" && (
+                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                        {[
+                          { id: "appearance", name: "Giao diện" },
+                        ].map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveSettingSection(item.id);
+                              setShowDropdownMenu(false);
+                            }}
+                            className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none truncate ${
+                              activeSettingSection === item.id
+                                ? "bg-[#cc1827] text-white font-semibold"
+                                : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
+                            }`}
+                          >
+                            {item.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+            {/* Visual separator for extra utility menus */}
+            <div className="border-t border-white/5 my-4" />
+
+            {/* COLLAPSIBLE SIDEBAR MENU: FAVORITES */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sidebarExpanded) {
+                    setSidebarExpanded(true);
+                    setSidebarFavoritesOpen(true);
+                  } else {
+                    setSidebarFavoritesOpen(!sidebarFavoritesOpen);
+                  }
+                }}
+                className={`w-full relative flex items-center ${
+                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  sidebarFavoritesOpen && sidebarExpanded
+                    ? "bg-white/5 text-white font-semibold"
+                    : "text-white/75 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {!sidebarExpanded && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                    Favorites
+                  </div>
+                )}
+                <Heart className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                {sidebarExpanded && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                    Favorites
+                  </span>
+                )}
+                {sidebarExpanded && (
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
+                      sidebarFavoritesOpen ? "rotate-180" : ""
+                    }`} 
+                  />
+                )}
+              </button>
+
+              {sidebarExpanded && sidebarFavoritesOpen && (
+                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                  {favoriteChannelsList.length > 0 ? (
+                    favoriteChannelsList.map((ch) => (
+                      <button
+                        key={ch.id}
+                        type="button"
+                        onClick={() => {
+                          handleSelectChannel(ch);
+                          setActiveTab("live");
+                          triggerToast(`Phát kênh yêu thích: ${ch.name}`);
+                        }}
+                        className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center justify-between gap-1"
+                      >
+                        <span className="truncate">{ch.name}</span>
+                        <span className="text-[8px] bg-white/15 text-white px-1 py-0.5 rounded font-bold shrink-0">Phát</span>
+                      </button>
+                    ))
+                  ) : (
+                    <span className="text-[11px] text-white/40 italic">Chưa có kênh yêu thích</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* COLLAPSIBLE SIDEBAR MENU: FILE */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sidebarExpanded) {
+                    setSidebarExpanded(true);
+                    setSidebarFileOpen(true);
+                  } else {
+                    setSidebarFileOpen(!sidebarFileOpen);
+                  }
+                }}
+                className={`w-full relative flex items-center ${
+                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  sidebarFileOpen && sidebarExpanded
+                    ? "bg-white/5 text-white font-semibold"
+                    : "text-white/75 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {!sidebarExpanded && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                    File
+                  </div>
+                )}
+                <FolderOpen className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                {sidebarExpanded && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                    File
+                  </span>
+                )}
+                {sidebarExpanded && (
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
+                      sidebarFileOpen ? "rotate-180" : ""
+                    }`} 
+                  />
+                )}
+              </button>
+
+              {sidebarExpanded && sidebarFileOpen && (
+                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPlayUrlModal(true);
+                      triggerToast("Mở: Xem luồng kênh qua URL");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Play className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Xem luồng qua URL</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomModal(true);
+                      triggerToast("Mở: Thêm luồng kênh");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Thêm luồng kênh</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      triggerToast("Mở: Chọn file M3U");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Nhập file m3u/m3u8</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleM3uExport();
+                      triggerToast("Xuất: Xuất file M3U");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Download className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Xuất file m3u/m3u8</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* COLLAPSIBLE SIDEBAR MENU: PLUGINS */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sidebarExpanded) {
+                    setSidebarExpanded(true);
+                    setSidebarPluginsOpen(true);
+                  } else {
+                    setSidebarPluginsOpen(!sidebarPluginsOpen);
+                  }
+                }}
+                className={`w-full relative flex items-center ${
+                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                } py-1.5 rounded-xl transition-all duration-300 cursor-pointer group/sidebar select-none ${
+                  sidebarPluginsOpen && sidebarExpanded
+                    ? "bg-white/5 text-white font-semibold"
+                    : "text-white/75 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {!sidebarExpanded && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                    Plugins
+                  </div>
+                )}
+                <Puzzle className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                {sidebarExpanded && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                    Plugins
+                  </span>
+                )}
+                {sidebarExpanded && (
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
+                      sidebarPluginsOpen ? "rotate-180" : ""
+                    }`} 
+                  />
+                )}
+              </button>
+
+              {sidebarExpanded && sidebarPluginsOpen && (
+                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("settings");
+                      setActiveSettingSection("plugin_store");
+                      triggerToast("Mở: Cửa hàng tiện ích");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-all flex items-center gap-2"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Mở cửa hàng tiện ích</span>
+                  </button>
+
+                  <div className="border-t border-white/5 my-1" />
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest pl-2">Tiện ích đã cài đặt</div>
+                  {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").map(([id]) => (
+                    <div key={id} className="text-left text-[11px] py-1 px-2 text-white/70 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="w-3 h-3 text-white shrink-0" />
+                        <span className="truncate">{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
+                      </div>
+                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    </div>
+                  ))}
+                  {Object.entries(installedPlugins).filter(([_, status]) => status === "installed").length === 0 && (
+                    <span className="text-[10px] text-white/40 italic pl-2">Chưa cài đặt tiện ích nào</span>
+                  )}
+
+                  <div className="border-t border-white/5 my-1" />
+                  <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest pl-2">Tiện ích có sẵn</div>
+                  {["export_stream", "multiview", "open_native", "quick_switch", "add_custom"].map((id) => (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        setActiveTab("settings");
+                        setActiveSettingSection("plugin_store");
+                        triggerToast("Mở: Cửa hàng tiện ích");
+                      }}
+                      className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="w-3 h-3 text-white shrink-0" />
+                        <span className="truncate">{id === "export_stream" ? "Xuất luồng" : id === "multiview" ? "Multiview" : id === "open_native" ? "Mở luồng gốc" : id === "quick_switch" ? "Chuyển nhanh" : id === "add_custom" ? "Thêm kênh mới" : id}</span>
+                      </div>
+                      <span className="text-[8px] bg-indigo-500/20 text-indigo-300 px-1 rounded-full font-bold">Store</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* COLLAPSIBLE SIDEBAR MENU: HELP */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sidebarExpanded) {
+                    setSidebarExpanded(true);
+                    setSidebarHelpOpen(true);
+                  } else {
+                    setSidebarHelpOpen(!sidebarHelpOpen);
+                  }
+                }}
+                className={`w-full relative flex items-center ${
+                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  sidebarHelpOpen && sidebarExpanded
+                    ? "bg-white/5 text-white font-semibold"
+                    : "text-white/75 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {!sidebarExpanded && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                    Help
+                  </div>
+                )}
+                <HelpCircle className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                {sidebarExpanded && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                    Help
+                  </span>
+                )}
+                {sidebarExpanded && (
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
+                      sidebarHelpOpen ? "rotate-180" : ""
+                    }`} 
+                  />
+                )}
+              </button>
+
+              {sidebarExpanded && sidebarHelpOpen && (
+                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAboutModal(true);
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Info className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>About Vplay</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFeedbackModal(true);
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Submit Feedback</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("settings");
+                      setActiveSettingSection("design_system");
+                      triggerToast("Mở: Design Components");
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Design Components</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTestVplayConfirmModal(true);
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Beaker className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Test Vplay</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* COLLAPSIBLE SIDEBAR MENU: POWER */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!sidebarExpanded) {
+                    setSidebarExpanded(true);
+                    setSidebarPowerOpen(true);
+                  } else {
+                    setSidebarPowerOpen(!sidebarPowerOpen);
+                  }
+                }}
+                className={`w-full relative flex items-center ${
+                  sidebarExpanded ? "justify-start px-4" : "justify-center"
+                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  sidebarPowerOpen && sidebarExpanded
+                    ? "bg-white/5 text-white font-semibold"
+                    : "text-white/75 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {!sidebarExpanded && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                    Power
+                  </div>
+                )}
+                <Power className="w-4.5 h-4.5 text-rose-400 transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                {sidebarExpanded && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left text-rose-400">
+                    Power
+                  </span>
+                )}
+                {sidebarExpanded && (
+                  <ChevronDown 
+                    className={`w-3.5 h-3.5 text-rose-400 group-hover/sidebar:text-rose-300 transition-transform ${
+                      sidebarPowerOpen ? "rotate-180" : ""
+                    }`} 
+                  />
+                )}
+              </button>
+
+              {sidebarExpanded && sidebarPowerOpen && (
+                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.reload();
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-white shrink-0" />
+                    <span>Reload App</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowFactoryResetConfirmModal(true);
+                    }}
+                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+                  >
+                    <Power className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span>Factory Reset</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
+        </>
+      )}
+
       {/* Hidden file input for importing M3U playlists */}
       <input
         type="file"
@@ -2426,8 +3178,17 @@ export default function App() {
               </div>
             ) : (
               <>
+                {isMobile && dockToSidebar && (
+                  <button
+                    onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                    className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white/20 active:scale-95 transition-all cursor-pointer shrink-0 mr-1.5"
+                    title="Menu"
+                  >
+                    <Menu className="w-4 h-4" />
+                  </button>
+                )}
                 {/* Brand Logo on the Left */}
-                <div onClick={() => setActiveTab("home")} className="flex items-center gap-1.5 cursor-pointer group shrink-0">
+                <div onClick={() => { setActiveTab("home"); setShowMobileSidebar(false); }} className="flex items-center gap-1.5 cursor-pointer group shrink-0">
                   <img 
                     src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi" 
                     alt="Vplay Brand Logo"
@@ -2438,8 +3199,9 @@ export default function App() {
                 </div>
 
                 {/* Merged Navigation/Menus from macOS-style bar */}
-                <div className="flex items-center gap-1">
-                  {/* File Menu */}
+                {!dockToSidebar && (
+                  <div className="flex items-center gap-1">
+                    {/* File Menu */}
                   <div className="relative group" onMouseEnter={() => activeMenu !== null && setActiveMenu('file')}>
                     <button 
                       onClick={() => setActiveMenu(activeMenu === 'file' ? null : 'file')}
@@ -2656,7 +3418,8 @@ export default function App() {
                     </AnimatePresence>
                   </div>
                 </div>
-              </>
+              )}
+            </>
             )}
           </div>
 
@@ -2685,252 +3448,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            {/* Quick Search Button in Menubar */}
-            <div className="relative group">
-              <button
-                onClick={() => {
-                  setShowSearchDropdown(!showSearchDropdown);
-                  setShowPowerDropdown(false);
-                  setMenubarSearchQuery("");
-                }}
-                className={`relative flex items-center h-7 px-2.5 hover:text-[#38bdf8] rounded-lg text-[11px] font-google text-white/90 font-normal transition-all active:scale-95 cursor-pointer ${showSearchDropdown ? 'text-[#38bdf8]' : ''}`}
-              >
-                <img 
-                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain brightness-0 invert opacity-80" 
-                  alt="Search" 
-                  referrerPolicy="no-referrer"
-                />
-                <span className={`absolute bottom-0 inset-x-2.5 h-0.5 bg-[#38bdf8] rounded-full transition-transform duration-200 origin-center ${showSearchDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
-              </button>
-              {/* Custom tooltip */}
-              <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-[#161421]/95 backdrop-blur-md border border-white/10 rounded-xl px-2.5 py-1 shadow-2xl text-[10px] text-white/95 whitespace-nowrap z-[100] font-google font-medium">
-                Tìm kiếm kênh
-              </div>
-
-              <AnimatePresence>
-                {showSearchDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowSearchDropdown(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute right-0 top-full mt-2 w-72 rounded-[28px] bg-[#211f26] border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 p-4 text-white flex flex-col gap-3.5"
-                    >
-                      <div className="relative flex items-center">
-                        <input
-                          type="text"
-                          autoFocus
-                          placeholder="Spotlight Search"
-                          value={menubarSearchQuery}
-                          onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-18 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.15)] focus:outline-none focus:bg-white/15 focus:border-[2.5px] focus:border-[#38bdf8] focus:ring-[3px] focus:ring-[#38bdf8]/30 transition-none text-left font-sans"
-                        />
-                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                          <img 
-                            src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                            className="w-4 h-4 brightness-0 invert opacity-60" 
-                            referrerPolicy="no-referrer"
-                            alt="Search"
-                          />
-                        </div>
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10">
-                          {/* Filter Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowSpotlightFilter(!showSpotlightFilter);
-                            }}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer bouncy-btn ${
-                              showSpotlightFilter || spotlightCategoryFilter !== "all"
-                                ? "bg-[#38bdf8] text-[#111]"
-                                : "text-white/80 hover:text-white hover:bg-white/10"
-                            }`}
-                            title="Bộ lọc"
-                          >
-                            <SlidersHorizontal className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Voice Search (Microphone) Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                              if (SpeechRecognition) {
-                                const recognition = new SpeechRecognition();
-                                recognition.lang = 'vi-VN';
-                                recognition.interimResults = false;
-                                recognition.maxAlternatives = 1;
-                                triggerToast("Đang lắng nghe...");
-                                recognition.start();
-                                recognition.onresult = (event: any) => {
-                                  const speechResult = event.results[0][0].transcript;
-                                  setMenubarSearchQuery(prev => {
-                                    const prefix = prev.trim() ? prev + " " : "";
-                                    return prefix + speechResult;
-                                  });
-                                  triggerToast("Đã nhập: " + speechResult);
-                                };
-                                recognition.onerror = (event: any) => {
-                                  triggerToast("Lỗi: " + event.error);
-                                };
-                              } else {
-                                triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
-                              }
-                            }}
-                            className="w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
-                            title="Tìm kiếm bằng giọng nói"
-                          >
-                            <Mic className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Filter Category selector list */}
-                      {showSpotlightFilter && (
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 px-1 custom-scrollbar shrink-0 select-none">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSpotlightCategoryFilter("all");
-                              triggerToast("Lọc: Tất cả kênh");
-                            }}
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer whitespace-nowrap bouncy-btn ${
-                              spotlightCategoryFilter === "all"
-                                ? "bg-[#38bdf8] text-[#111]"
-                                : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            Tất cả
-                          </button>
-                          {allAvailableCategoryList.map((cat) => (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                setSpotlightCategoryFilter(cat.id);
-                                triggerToast(`Lọc: Kênh ${cat.name}`);
-                              }}
-                              className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer whitespace-nowrap bouncy-btn ${
-                                spotlightCategoryFilter === cat.id
-                                  ? "bg-[#38bdf8] text-[#111]"
-                                  : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
-                              }`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="max-h-60 overflow-y-auto flex flex-col gap-1 custom-scrollbar">
-                        {menubarSearchResults.length > 0 ? (
-                          menubarSearchResults.map((ch) => (
-                            <button
-                              key={ch.id}
-                              onClick={() => {
-                                handleSelectChannel(ch);
-                                setActiveTab("live");
-                                setShowSearchDropdown(false);
-                              }}
-                              className="relative pl-8 pr-4 py-2.5 rounded-2xl text-left text-[13px] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/90 hover:text-white font-sans font-medium transition-all duration-150 flex items-center justify-between group gap-2.5"
-                            >
-                              <div className="menu-vertical-pill" />
-                              <div className="flex items-center gap-2.5 truncate">
-                                <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-white/5 rounded-md overflow-hidden">
-                                  {ch.logoImg ? (
-                                    <img
-                                      src={ch.logoImg}
-                                      alt={ch.name}
-                                      referrerPolicy="no-referrer"
-                                      className="w-full h-full object-contain"
-                                    />
-                                  ) : (
-                                    <div className={`w-full h-full flex items-center justify-center rounded-md ${ch.logoBg || "bg-gradient-to-br from-indigo-600 to-fuchsia-700"} text-[8px] font-bold text-white text-center`}>
-                                      {ch.logoText || ch.name.slice(0, 3).toUpperCase()}
-                                    </div>
-                                  )}
-                                </div>
-                                <span className="truncate">{ch.name}</span>
-                              </div>
-                              <span className="text-[9.5px] bg-[#007aff]/20 text-[#007aff] group-hover:bg-[#007aff] group-hover:text-white px-2 py-0.5 rounded-full font-bold transition-all shrink-0">Phát</span>
-                            </button>
-                          ))
-                        ) : menubarSearchQuery.trim() ? (
-                          <div className="px-3 py-4 text-center text-xs text-white/50 font-sans">
-                            Không tìm thấy kênh nào
-                          </div>
-                        ) : (
-                          <div className="px-3 py-4 text-center text-xs text-white/50 font-sans">
-                            Nhập từ khóa để tìm kiếm nhanh
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Power Menu Button in Menubar */}
-            <div className="relative group">
-              <button
-                onClick={() => {
-                  setShowPowerDropdown(!showPowerDropdown);
-                  setShowSearchDropdown(false);
-                }}
-                className={`relative flex items-center h-7 px-2.5 hover:text-[#38bdf8] rounded-lg text-[11px] font-google text-white/90 font-normal transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'text-[#38bdf8]' : ''}`}
-              >
-                <Power className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors group-hover:text-[#38bdf8]" />
-                <span className={`absolute bottom-0 inset-x-2.5 h-0.5 bg-[#38bdf8] rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
-              </button>
-              {/* Custom tooltip */}
-              <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-[#161421]/95 backdrop-blur-md border border-white/10 rounded-xl px-2.5 py-1 shadow-2xl text-[10px] text-white/95 whitespace-nowrap z-[100] font-google font-medium">
-                Tùy chọn
-              </div>
-
-              <AnimatePresence>
-                {showPowerDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowPowerDropdown(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute right-0 top-full mt-2 w-56 rounded-[28px] bg-[#211f26] border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 py-2.5 text-white flex flex-col gap-1 font-google"
-                    >
-                      <button
-                        onClick={() => {
-                          setShowPowerDropdown(false);
-                          window.location.reload();
-                        }}
-                        className="relative mx-1.5 pl-7 pr-4 py-2.5 rounded-2xl text-left text-[13px] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/90 hover:text-white font-google font-medium flex items-center gap-2.5 group transition-all duration-150 cursor-pointer"
-                      >
-                        <div className="menu-vertical-pill" />
-                        <RefreshCw className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
-                        <span>Reload App</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setShowPowerDropdown(false);
-                          setShowFactoryResetConfirmModal(true);
-                        }}
-                        className="relative mx-1.5 pl-7 pr-4 py-2.5 rounded-2xl text-left text-[13px] hover:bg-white/[0.08] active:bg-white/[0.12] text-white/90 hover:text-white font-google font-medium flex items-center gap-2.5 group transition-all duration-150 cursor-pointer"
-                      >
-                        <div className="menu-vertical-pill-red" />
-                        <Power className="w-4 h-4 text-rose-400 group-hover:text-rose-300 transition-colors" />
-                        <span className="text-rose-400 group-hover:text-rose-300">Factory Reset</span>
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
 
             {/* Real-time Ticking Digital Clock on the far right (replacing User Profile) */}
             {showClock && (
@@ -3149,7 +3666,7 @@ export default function App() {
                       <button
                         onClick={() => setActiveTab("home")}
                         className="sm:hidden w-8 h-8 rounded-full bg-[#d0bcff] hover:bg-[#bba3f0] active:bg-[#a88ee6] text-[#381e72] border-none flex items-center justify-center shrink-0 shadow-lg cursor-default bouncy-btn"
-                        title="Về Trang chủ"
+                        title="Về Home"
                       >
                         <Home className="w-4 h-4 text-[#381e72]" />
                       </button>
@@ -4507,13 +5024,6 @@ export default function App() {
                   {(() => {
                     const normalSecs = [
                       {
-                        id: "profile",
-                        title: "Hồ sơ",
-                        subtitle: "Quản lý hồ sơ và tài khoản cá nhân Vplay",
-                        icon: User,
-                        keywords: ["profile", "hồ sơ", "tài khoản", "yêu thích", "cá nhân", "đồng bộ", "dữ liệu", "xóa", "vấn đề"]
-                      },
-                      {
                         id: "appearance",
                         title: "Giao diện",
                         subtitle: "Tùy biến giao diện và trải nghiệm người dùng theo ý thích",
@@ -4526,24 +5036,10 @@ export default function App() {
                         subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
                         icon: Sliders,
                         keywords: ["trợ năng", "slide", "trượt hình", "tự động", "tiếp cận"]
-                      },
-                      {
-                        id: "broadcast",
-                        title: "Phát sóng",
-                        subtitle: "Tùy chỉnh các luồng phát sóng, âm thanh và chất lượng video",
-                        icon: Tv,
-                        keywords: ["phát sóng", "luồng", "âm thanh", "chất lượng", "video", "coming soon"]
                       }
                     ];
 
                     const devSecs = [
-                      {
-                        id: "experimental",
-                        title: "Thử nghiệm",
-                        subtitle: "Trải nghiệm sớm các tính năng mới sắp ra mắt của Vplay",
-                        icon: Beaker,
-                        keywords: ["thử nghiệm", "tính năng mới", "độ trễ", "low latency", "bộ đệm", "cache", "ram", "ambient glow", "viền động", "playground", "m3u8", "mp4"]
-                      },
                       {
                         id: "design_system",
                         title: "Design components",
@@ -4659,9 +5155,10 @@ export default function App() {
 
                     const matchGlow = isMatched("Màu Sắc Ánh Sáng Nền") || isMatched("Backdrop Glow") || isMatched("cosmic") || isMatched("sunset") || isMatched("aurora") || isMatched("tối giản") || isMatched("chủ đề") || isMatched("màu");
                     const matchAmoled = isMatched("AMOLED Dark") || isMatched("siêu tối") || isMatched("bảo vệ mắt") || isMatched("tối");
+                    const matchDockToSidebar = isMatched("Dock to Sidebar") || isMatched("sidebar") || isMatched("thanh dock thành sidebar") || isMatched("thanh bên") || isMatched("giao diện sidebar") || isMatched("expand") || isMatched("collapse");
                     const matchDock = isMatched("Tùy biến thanh điều hướng Dock") || isMatched("thanh Dock") || isMatched("Dock Customizer") || isMatched("rearrange") || isMatched("trang chủ") || isMatched("trực tiếp") || isMatched("cài đặt") || isMatched("tìm kiếm") || isMatched("tải lại") || isMatched("ghim") || isMatched("hồ sơ") || isMatched("cửa hàng") || isMatched("về ứng dụng");
 
-                    const hasResults = matchGlow || matchAmoled || matchDock;
+                    const hasResults = matchGlow || matchAmoled || matchDockToSidebar || matchDock;
 
                     return (
                       <div className="space-y-6">
@@ -4779,6 +5276,34 @@ export default function App() {
                                 >
                                   <motion.div
                                     animate={{ x: amoledDark ? 20 : 0 }}
+                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    className="relative w-6 h-5 flex items-center justify-center group"
+                                  >
+                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                    <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                  </motion.div>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Dock to Sidebar Toggle */}
+                            {matchDockToSidebar && (
+                              <div className="pt-4 border-t border-white/10 flex items-center justify-between text-left">
+                                <div className="flex-1 pr-4">
+                                  <h4 className="text-sm font-semibold text-white">Dock to Sidebar</h4>
+                                  <p className="text-xs text-white/60 mt-0.5">Chuyển đổi thanh điều hướng phía dưới thành thanh Sidebar dọc ở cạnh trái màn hình</p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setDockToSidebar(!dockToSidebar);
+                                    triggerToast(!dockToSidebar ? "Đã chuyển đổi sang Giao diện Sidebar" : "Đã chuyển đổi sang Giao diện Dock");
+                                  }}
+                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                    dockToSidebar ? "bg-[#34c759]" : "bg-white/20"
+                                  }`}
+                                >
+                                  <motion.div
+                                    animate={{ x: dockToSidebar ? 20 : 0 }}
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                     className="relative w-6 h-5 flex items-center justify-center group"
                                   >
@@ -5942,7 +6467,7 @@ export default function App() {
                                       <div className="h-14 rounded-full bg-white/[0.12] backdrop-blur-[25px] saturate-[185%] border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.3)] flex items-center justify-around px-2 py-1 relative w-full max-w-[200px]">
                                         {[
                                           { id: "home", icon: Home, label: "Home" },
-                                          { id: "live", icon: Compass, label: "Trực tiếp" }
+                                          { id: "live", icon: Compass, label: "Live TV" }
                                         ].map((tab) => {
                                           const isActive = activeDockDemoTab === tab.id;
                                           const Icon = tab.icon;
@@ -6078,11 +6603,11 @@ export default function App() {
                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
                                    {/* Style 1: Live badge */}
                                    <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
-                                     <span className="text-[11px] font-semibold text-white/50">Trực tiếp (Live)</span>
+                                     <span className="text-[11px] font-semibold text-white/50">Live TV</span>
                                      <div className="flex items-center justify-center h-full">
                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-[10px] font-bold text-red-400 select-none uppercase tracking-wider">
                                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                         Trực tiếp
+                                         Live TV
                                        </span>
                                      </div>
                                    </div>
@@ -6819,11 +7344,11 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""}`}>
+      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "md:hidden" : ""}`}>
         <div className="progressive-blur-dock" />
       </div>
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""}`}>
+      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "md:hidden" : ""}`}>
           <AnimatePresence mode="wait">
             {activeTab === "search" ? (
               <motion.div
@@ -7582,6 +8107,34 @@ export default function App() {
               </p>
 
               <div className="space-y-4">
+                {/* 1-5 Star Rating */}
+                <div>
+                  <label className="block text-[11px] font-medium text-white/50 uppercase tracking-wider mb-2">
+                    Đánh giá ứng dụng
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFeedbackRating(star)}
+                        className="p-1 -m-1 transition-transform duration-100 hover:scale-125 focus:outline-none"
+                      >
+                        <Star
+                          className={`w-6 h-6 transition-colors ${
+                            star <= feedbackRating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-white/20 hover:text-white/40"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs font-semibold text-yellow-400 pl-2">
+                      {feedbackRating === 5 ? "Tuyệt vời (5/5)" : feedbackRating === 4 ? "Tốt (4/5)" : feedbackRating === 3 ? "Bình thường (3/5)" : feedbackRating === 2 ? "Kém (2/5)" : "Rất kém (1/5)"}
+                    </span>
+                  </div>
+                </div>
+
                 <textarea
                   placeholder="Nhập nội dung góp ý hoặc phản hồi lỗi tại đây..."
                   value={feedbackText}
@@ -7592,14 +8145,59 @@ export default function App() {
                 <button
                   onClick={() => {
                     if (feedbackText.trim()) {
-                      triggerVIntelToast("Cảm ơn phản hồi của bạn! Phản hồi đã được gửi đến nhà phát triển.");
                       setFeedbackText("");
+                      setFeedbackRating(5);
                       setShowFeedbackModal(false);
+                      setShowThankYouModal(true);
+                    } else {
+                      triggerVIntelToast("Vui lòng nhập nội dung phản hồi");
                     }
                   }}
                   className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-xs text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
                 >
                   Gửi phản hồi
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* THANK YOU MODAL */}
+      <AnimatePresence>
+        {showThankYouModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[110] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 1.15 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.15 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-center transform-gpu border border-white/10"
+            >
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mb-4">
+                  <Star className="w-6 h-6 fill-green-400 text-green-400" />
+                </div>
+                
+                <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
+                  Cảm ơn đã phản hồi
+                </h3>
+                
+                <p className="text-[12px] text-white/70 leading-relaxed mt-3 mb-6 px-1">
+                  Những ý kiến đóng góp của bạn góp phần lớn để chúng tôi cải thiện sản phẩm của mình
+                </p>
+
+                <button
+                  onClick={() => setShowThankYouModal(false)}
+                  className="w-full py-2.5 px-4 rounded-full bg-white/10 hover:bg-white/15 active:scale-95 transition-all text-white font-semibold text-xs text-center cursor-default"
+                >
+                  Đóng
                 </button>
               </div>
             </motion.div>
