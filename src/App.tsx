@@ -561,10 +561,10 @@ export default function App() {
       { id: "home", label: "Home", enabled: true },
       { id: "search", label: "Spotlight Search", enabled: true },
       { id: "live", label: "Live TV", enabled: true },
-      { id: "settings", label: "Cài đặt", enabled: true },
       { id: "remote", label: "Chuyển kênh", enabled: true },
       { id: "profile", label: "Hồ sơ", enabled: false },
       { id: "plugin_store", label: "Cửa hàng tiện ích", enabled: false },
+      { id: "settings", label: "Cài đặt", enabled: true },
       { id: "about", label: "Về ứng dụng này", enabled: false },
       { id: "reload", label: "Tải lại ứng dụng", enabled: false },
       { id: "pin", label: "Ghim kênh bất kỳ", enabled: false },
@@ -573,16 +573,47 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const filtered = parsed.filter((it: any) => it.id !== "search" && it.id !== "home");
+        const filtered = parsed.filter((it: any) => it.id !== "search" && it.id !== "home" && it.id !== "settings");
         const homeItem = parsed.find((it: any) => it.id === "home") || { id: "home", label: "Home", enabled: true };
         const searchItem = parsed.find((it: any) => it.id === "search") || { id: "search", label: "Spotlight Search", enabled: true };
+        const settingsItem = parsed.find((it: any) => it.id === "settings") || { id: "settings", label: "Cài đặt", enabled: true };
         searchItem.label = "Spotlight Search";
         searchItem.enabled = true;
         
-        const merged = [homeItem, searchItem, ...filtered];
+        // Put settings right before about/reload/pin
+        const aboutIndex = filtered.findIndex((it: any) => it.id === "about");
+        const merged = [homeItem, searchItem];
+        if (aboutIndex !== -1) {
+          const beforeAbout = filtered.slice(0, aboutIndex);
+          const afterAbout = filtered.slice(aboutIndex);
+          merged.push(...beforeAbout, settingsItem, ...afterAbout);
+        } else {
+          const reloadIndex = filtered.findIndex((it: any) => it.id === "reload" || it.id === "pin");
+          if (reloadIndex !== -1) {
+            const before = filtered.slice(0, reloadIndex);
+            const after = filtered.slice(reloadIndex);
+            merged.push(...before, settingsItem, ...after);
+          } else {
+            merged.push(...filtered, settingsItem);
+          }
+        }
+        
         DEFAULT_DOCK_ITEMS.forEach(defItem => {
           if (!merged.find(item => item.id === defItem.id)) {
-            merged.push(defItem);
+            if (defItem.id === "settings") {
+              // already there, but let's be safe
+            } else {
+              const sIndex = merged.findIndex(item => item.id === "settings");
+              if (defItem.id === "about" || defItem.id === "reload" || defItem.id === "pin") {
+                merged.push(defItem);
+              } else {
+                if (sIndex !== -1) {
+                  merged.splice(sIndex, 0, defItem);
+                } else {
+                  merged.push(defItem);
+                }
+              }
+            }
           }
         });
         return merged;
@@ -2123,7 +2154,7 @@ export default function App() {
           )}
 
           {/* Menu Items list */}
-          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-2.5 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-4 custom-scrollbar">
             {dockItems
               .filter((item) => item.enabled)
               .map((tab) => {
@@ -2137,7 +2168,7 @@ export default function App() {
                       onClick={() => handleDockItemClick(tab.id)}
                       className={`w-full relative flex items-center ${
                         (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
-                      } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                      } ${isActive ? "py-2.5" : "py-1.5 hover:py-2"} rounded-xl transition-all duration-200 cursor-pointer group/sidebar select-none ${
                         isActive
                           ? "bg-[#cc1827] text-white font-bold"
                           : "text-white/75 hover:text-white hover:bg-[#cc1827]"
@@ -2154,7 +2185,7 @@ export default function App() {
                       {config.isImg ? (
                         <img
                           src={config.icon}
-                          className={`w-4.5 h-4.5 object-contain transition-transform duration-200 ${
+                          className={`${tab.id === "search" ? "w-3.5 h-3.5" : "w-4.5 h-4.5"} object-contain transition-transform duration-200 ${
                             isActive ? "scale-105" : "group-hover/sidebar:scale-105"
                           }`}
                           style={{ filter: "brightness(0) invert(1)" }}
@@ -2230,31 +2261,69 @@ export default function App() {
 
                     {sidebarExpanded && isActive && tab.id === "search" && (
                       <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2 mt-2">
-                        <div className="relative flex items-center mb-1 pr-2">
+                        <div className="relative flex items-center mb-1 pr-2 w-full">
                           <input
                             type="text"
                             autoFocus
                             placeholder="Spotlight Search..."
                             value={menubarSearchQuery}
                             onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                            className="w-full pl-8 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white placeholder-white/30 focus:outline-none focus:bg-white/10 transition-all font-sans text-left"
+                            className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-[11px] font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
                           />
-                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                            <Search className="w-3.5 h-3.5 text-white/50" />
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                            <img 
+                              src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                              className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
+                              referrerPolicy="no-referrer"
+                              alt="Search"
+                            />
                           </div>
-                          {menubarSearchQuery && (
+                          {menubarSearchQuery ? (
                             <button
+                              type="button"
                               onClick={() => setMenubarSearchQuery("")}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 p-0.5 text-white/40 hover:text-white"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all cursor-pointer bouncy-btn"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                                if (SpeechRecognition) {
+                                  const recognition = new SpeechRecognition();
+                                  recognition.lang = 'vi-VN';
+                                  recognition.interimResults = false;
+                                  recognition.maxAlternatives = 1;
+                                  triggerToast("Đang lắng nghe...");
+                                  recognition.start();
+                                  recognition.onresult = (event: any) => {
+                                    const speechResult = event.results[0][0].transcript;
+                                    setMenubarSearchQuery(prev => {
+                                      const prefix = prev.trim() ? prev + " " : "";
+                                      return prefix + speechResult;
+                                    });
+                                    triggerToast("Đã nhập: " + speechResult);
+                                  };
+                                  recognition.onerror = (event: any) => {
+                                    triggerToast("Lỗi: " + event.error);
+                                  };
+                                } else {
+                                  triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
+                                }
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
+                              title="Tìm kiếm bằng giọng nói"
+                            >
+                              <Mic className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
 
                         <div className="max-h-56 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-2">
                           {menubarSearchResults.length > 0 ? (
-                            menubarSearchResults.slice(0, 15).map((ch) => (
+                            menubarSearchResults.map((ch) => (
                               <button
                                 key={ch.id}
                                 onClick={() => {
@@ -2326,8 +2395,8 @@ export default function App() {
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarFavoritesOpen && (sidebarExpanded || isMobile)
-                    ? "bg-white/5 text-white font-semibold"
-                    : "text-white/75 hover:text-white hover:bg-white/5"
+                    ? "text-white font-semibold"
+                    : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
@@ -2391,8 +2460,8 @@ export default function App() {
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarFileOpen && (sidebarExpanded || isMobile)
-                    ? "bg-white/5 text-white font-semibold"
-                    : "text-white/75 hover:text-white hover:bg-white/5"
+                    ? "text-white font-semibold"
+                    : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
@@ -2481,8 +2550,8 @@ export default function App() {
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarHelpOpen && (sidebarExpanded || isMobile)
-                    ? "bg-white/5 text-white font-semibold"
-                    : "text-white/75 hover:text-white hover:bg-white/5"
+                    ? "text-white font-semibold"
+                    : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
@@ -2569,8 +2638,8 @@ export default function App() {
                   sidebarExpanded ? "justify-start px-4" : "justify-center"
                 } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarPowerOpen && sidebarExpanded
-                    ? "bg-white/5 text-white font-semibold"
-                    : "text-white/75 hover:text-white hover:bg-white/5"
+                    ? "text-white font-semibold"
+                    : "text-white/75 hover:text-white"
                 }`}
               >
                 {!sidebarExpanded && (
@@ -3343,7 +3412,13 @@ export default function App() {
                 className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all active:scale-95 cursor-pointer ${showSearchDropdown ? 'bg-white/10 text-[#38bdf8]' : ''}`}
                 title="Spotlight Search"
               >
-                <Search className="w-4 h-4" />
+                <img
+                  src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751"
+                  className="w-4 h-4 object-contain transition-transform duration-200"
+                  style={{ filter: "brightness(0) invert(1)" }}
+                  alt="Spotlight Search"
+                  referrerPolicy="no-referrer"
+                />
                 <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-[#38bdf8] rounded-full transition-transform duration-200 origin-center ${showSearchDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
               </button>
               
@@ -3358,31 +3433,69 @@ export default function App() {
                       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                       className="absolute right-0 top-full mt-2 w-72 rounded-[28px] bg-[#1d1b24]/95 backdrop-blur-md border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 p-3 flex flex-col gap-2 font-sans"
                     >
-                      <div className="relative flex items-center">
+                      <div className="relative flex items-center w-full">
                         <input
                           type="text"
                           autoFocus
                           placeholder="Tìm nhanh kênh..."
                           value={menubarSearchQuery}
                           onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                          className="w-full pl-8 pr-8 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 focus:outline-none focus:bg-white/10 transition-all text-left"
+                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
                         />
-                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                          <Search className="w-3.5 h-3.5 text-white/40" />
+                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                          <img 
+                            src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                            className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
+                            referrerPolicy="no-referrer"
+                            alt="Search"
+                          />
                         </div>
-                        {menubarSearchQuery && (
+                        {menubarSearchQuery ? (
                           <button
+                            type="button"
                             onClick={() => setMenubarSearchQuery("")}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-white/40 hover:text-white"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all cursor-pointer bouncy-btn"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                              if (SpeechRecognition) {
+                                const recognition = new SpeechRecognition();
+                                recognition.lang = 'vi-VN';
+                                recognition.interimResults = false;
+                                recognition.maxAlternatives = 1;
+                                triggerToast("Đang lắng nghe...");
+                                recognition.start();
+                                recognition.onresult = (event: any) => {
+                                  const speechResult = event.results[0][0].transcript;
+                                  setMenubarSearchQuery(prev => {
+                                    const prefix = prev.trim() ? prev + " " : "";
+                                    return prefix + speechResult;
+                                  });
+                                  triggerToast("Đã nhập: " + speechResult);
+                                };
+                                recognition.onerror = (event: any) => {
+                                  triggerToast("Lỗi: " + event.error);
+                                };
+                              } else {
+                                triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
+                              }
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
+                            title="Tìm kiếm bằng giọng nói"
+                          >
+                            <Mic className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
 
                       <div className="max-h-64 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-1">
                         {menubarSearchResults.length > 0 ? (
-                          menubarSearchResults.slice(0, 8).map((ch) => (
+                          menubarSearchResults.map((ch) => (
                             <button
                               key={ch.id}
                               onClick={() => {
@@ -5058,7 +5171,7 @@ export default function App() {
                             triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
                           }
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
                         title="Tìm kiếm bằng giọng nói"
                       >
                         <Mic className="w-3.5 h-3.5" />
@@ -7452,7 +7565,7 @@ export default function App() {
                       triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
                     }
                   }}
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer shrink-0 bouncy-btn"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer shrink-0 bouncy-btn"
                   title="Tìm kiếm bằng giọng nói"
                 >
                   <Mic className="w-4 h-4" />
@@ -7516,7 +7629,7 @@ export default function App() {
                                 <motion.div
                                   layoutId="activeTabPill"
                                   transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                                  className="absolute inset-y-1 inset-x-1 bg-white/30 rounded-full shadow-none -z-10"
+                                  className="absolute inset-y-0 inset-x-1 bg-white/30 rounded-full shadow-none -z-10"
                                 />
                               )}
                               {config.isImg ? (
@@ -7564,7 +7677,7 @@ export default function App() {
                         <motion.div
                           layoutId="activeTabPill"
                           transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                          className="absolute inset-y-1 inset-x-1 bg-white/30 rounded-full shadow-none -z-10"
+                          className="absolute inset-y-0 inset-x-1 bg-white/30 rounded-full shadow-none -z-10"
                         />
                       )}
                       {config.isImg ? (
@@ -9643,7 +9756,7 @@ export default function App() {
                           triggerVIntelToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
                         }
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
                       title="Tìm kiếm bằng giọng nói"
                     >
                       <Mic className="w-3.5 h-3.5" />
@@ -10020,7 +10133,7 @@ export default function App() {
                     className="w-8 h-8 rounded-full hover:bg-white/10 active:scale-90 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer shrink-0 bouncy-btn"
                     title="Chat bằng giọng nói"
                   >
-                    <Mic className="w-4 h-4 text-teal-400" />
+                    <Mic className="w-4 h-4 text-white" />
                   </button>
 
                   <button
