@@ -26,6 +26,7 @@ import {
   Compass, 
   Shuffle, 
   Radio, 
+  Signal,
   Star,
   Bookmark,
   ChevronRight,
@@ -58,7 +59,6 @@ import {
   Share2,
   Send,
   MessageSquare,
-  Mic,
   Paintbrush,
   File,
   Volume,
@@ -68,11 +68,24 @@ import {
   FolderOpen,
   BookOpen,
   ArrowUpDown,
-  SlidersHorizontal
+  SlidersHorizontal,
+  HardDrive
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { CATEGORIES, Category, Channel, processedChannels } from "./data/channels";
 import ChannelPlayer from "./components/ChannelPlayer";
+
+const Mic = ({ className = "" }: { className?: string }) => {
+  return (
+    <img
+      src="https://github.com/andrewtavis/sf-symbols-online/blob/master/glyphs/mic.fill.png?raw=true"
+      alt="Mic"
+      className={`${className} object-contain shrink-0`}
+      style={{ filter: "brightness(0) invert(1)" }}
+      referrerPolicy="no-referrer"
+    />
+  );
+};
 
 const homeSlides = [
   {
@@ -408,8 +421,9 @@ export default function App() {
   const [sidebarFileOpen, setSidebarFileOpen] = useState<boolean>(true);
   const [sidebarPluginsOpen, setSidebarPluginsOpen] = useState<boolean>(true);
   const [sidebarFavoritesOpen, setSidebarFavoritesOpen] = useState<boolean>(true);
-  const [sidebarHelpOpen, setSidebarHelpOpen] = useState<boolean>(true);
-  const [sidebarPowerOpen, setSidebarPowerOpen] = useState<boolean>(true);
+  const [sidebarHelpOpen, setSidebarHelpOpen] = useState<boolean>(false);
+  const [sidebarPowerOpen, setSidebarPowerOpen] = useState<boolean>(false);
+  const [sidebarSettingsOpen, setSidebarSettingsOpen] = useState<boolean>(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [showFactoryResetConfirmModal, setShowFactoryResetConfirmModal] = useState<boolean>(false);
   const [showResetSplash, setShowResetSplash] = useState<boolean>(false);
@@ -1060,6 +1074,7 @@ export default function App() {
   const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
   const [isSleepMode, setIsSleepMode] = useState<boolean>(false);
   const [menubarSearchQuery, setMenubarSearchQuery] = useState<string>( "");
+  const [isSpotlightFocused, setIsSpotlightFocused] = useState<boolean>(false);
   const [spotlightCategoryFilter, setSpotlightCategoryFilter] = useState<string>("all");
   const [showSpotlightFilter, setShowSpotlightFilter] = useState<boolean>(false);
   const [quickChatInput, setQuickChatInput] = useState<string>("");
@@ -1738,6 +1753,7 @@ export default function App() {
 
   // Ref and handlers for M3U playlist importing/exporting
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sidebarSearchRef = useRef<HTMLInputElement>(null);
 
   const handleM3uImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2106,6 +2122,12 @@ export default function App() {
                   referrerPolicy="no-referrer"
                   className="h-6 w-auto object-contain brightness-0 invert"
                 />
+                {showClock && (
+                  <div className="flex flex-col pl-3 border-l border-white/15 select-none shrink-0 leading-tight">
+                    <span className="font-bold text-white tracking-tight text-[18px] sm:text-[20px] font-google">{formatTime(time)}</span>
+                    <span className="text-[11px] text-white/50 whitespace-nowrap font-medium font-google">{formatDateVietnamese(time)}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mx-auto">
@@ -2131,7 +2153,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSidebarExpanded(false)}
-                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all cursor-pointer shrink-0"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] flex items-center justify-center cursor-pointer transition-all bouncy-btn shrink-0"
                 title="Thu nhỏ Sidebar"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -2145,7 +2167,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSidebarExpanded(true)}
-                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] flex items-center justify-center cursor-pointer transition-all bouncy-btn"
                 title="Mở rộng Sidebar"
               >
                 <ChevronRight className="w-4.5 h-4.5" />
@@ -2154,9 +2176,143 @@ export default function App() {
           )}
 
           {/* Menu Items list */}
-          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-5 custom-scrollbar">
+            {/* Spotlight Search at the absolute top of sidebar (above Home) */}
+            {dockItems.find(it => it.id === "search")?.enabled && (
+              (sidebarExpanded || isMobile) ? (
+                <div key="sidebar-search-spotlight" className="space-y-1">
+                  <div className="relative flex flex-col gap-2 w-full">
+                    <div className="relative flex items-center w-full">
+                      <input
+                        ref={sidebarSearchRef}
+                        type="text"
+                        placeholder="Spotlight Search..."
+                        value={menubarSearchQuery}
+                        onChange={(e) => {
+                          setMenubarSearchQuery(e.target.value);
+                        }}
+                        onFocus={() => {
+                          setIsSpotlightFocused(true);
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setIsSpotlightFocused(false);
+                          }, 250);
+                        }}
+                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                      />
+                      <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                        <img 
+                          src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                          className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
+                          referrerPolicy="no-referrer"
+                          alt="Search"
+                        />
+                      </div>
+                      {menubarSearchQuery ? (
+                        <button
+                          type="button"
+                          onClick={() => setMenubarSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-none cursor-pointer bouncy-btn"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                            if (SpeechRecognition) {
+                              const recognition = new SpeechRecognition();
+                              recognition.lang = 'vi-VN';
+                              recognition.interimResults = false;
+                              recognition.maxAlternatives = 1;
+                              triggerToast("Đang lắng nghe...");
+                              recognition.start();
+                              recognition.onresult = (event: any) => {
+                                const speechResult = event.results[0][0].transcript;
+                                setMenubarSearchQuery(prev => {
+                                  const prefix = prev.trim() ? prev + " " : "";
+                                  return prefix + speechResult;
+                                });
+                                triggerToast("Đã nhập: " + speechResult);
+                              };
+                              recognition.onerror = (event: any) => {
+                                triggerToast("Lỗi: " + event.error);
+                              };
+                            } else {
+                              triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
+                            }
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-none cursor-pointer bouncy-btn"
+                          title="Tìm kiếm bằng giọng nói"
+                        >
+                          <Mic className="w-3.5 h-3.5 text-white shrink-0" />
+                        </button>
+                      )}
+                    </div>
+                    {(isSpotlightFocused || menubarSearchQuery.trim() !== "") && (
+                      <div className="max-h-56 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-2 mt-1">
+                        {menubarSearchResults.length > 0 ? (
+                          menubarSearchResults.map((ch) => (
+                            <button
+                              key={ch.id}
+                              onClick={() => {
+                                handleSelectChannel(ch);
+                                setActiveTab("live");
+                              }}
+                              className="relative pl-3 pr-2 py-1.5 rounded-xl text-left text-[11px] hover:bg-white/10 text-white/90 hover:text-white font-sans font-medium transition-none flex items-center justify-between group gap-1.5 cursor-pointer"
+                            >
+                              <span className="truncate">{ch.name}</span>
+                              <span className="text-[8px] bg-red-600/20 text-red-400 group-hover:bg-red-600 group-hover:text-white px-1.5 py-0.5 rounded font-bold transition-none shrink-0">PHÁT</span>
+                            </button>
+                          ))
+                        ) : menubarSearchQuery.trim() ? (
+                          <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
+                            Không tìm thấy kênh nào
+                          </div>
+                        ) : (
+                          <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
+                            Nhập từ khóa để tìm nhanh
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div key="sidebar-search-spotlight-collapsed" className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSidebarExpanded(true);
+                      setIsSpotlightFocused(true);
+                      setTimeout(() => {
+                        sidebarSearchRef.current?.focus();
+                      }, 150);
+                    }}
+                    className={`w-full relative flex items-center justify-center py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                      isSpotlightFocused || menubarSearchQuery.trim() !== ""
+                        ? "bg-[#cc1827] text-white font-bold"
+                        : "text-white/75 hover:text-white hover:bg-[#cc1827]"
+                    }`}
+                  >
+                    <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
+                      Spotlight Search
+                    </div>
+                    <img 
+                      src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                      className="w-3.5 h-3.5 brightness-0 invert" 
+                      referrerPolicy="no-referrer"
+                      alt="Search"
+                    />
+                  </button>
+                </div>
+              )
+            )}
+
             {dockItems
-              .filter((item) => item.enabled)
+              .filter((item) => item.enabled && item.id !== "settings" && item.id !== "search")
               .map((tab) => {
                 const isActive = isDockItemActive(tab.id);
                 const config = getDockItemConfig(tab.id);
@@ -2168,7 +2324,7 @@ export default function App() {
                       onClick={() => handleDockItemClick(tab.id)}
                       className={`w-full relative flex items-center ${
                         (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
-                      } ${isActive ? "py-2.5" : "py-1.5 hover:py-2"} rounded-xl transition-all duration-200 cursor-pointer group/sidebar select-none ${
+                      } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                         isActive
                           ? "bg-[#cc1827] text-white font-bold"
                           : "text-white/75 hover:text-white hover:bg-[#cc1827]"
@@ -2176,7 +2332,7 @@ export default function App() {
                     >
                       {/* Tooltip when collapsed */}
                       {!(sidebarExpanded || isMobile) && (
-                        <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                        <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
                           {config.label}
                         </div>
                       )}
@@ -2185,7 +2341,7 @@ export default function App() {
                       {config.isImg ? (
                         <img
                           src={config.icon}
-                          className={`${tab.id === "search" ? "w-3.5 h-3.5" : "w-4.5 h-4.5"} object-contain transition-transform duration-200 ${
+                          className={`${tab.id === "search" ? "w-3.5 h-3.5" : "w-4.5 h-4.5"} object-contain transition-none ${
                             isActive ? "scale-105" : "group-hover/sidebar:scale-105"
                           }`}
                           style={{ filter: "brightness(0) invert(1)" }}
@@ -2197,7 +2353,7 @@ export default function App() {
                           const IconComponent = config.icon;
                           return (
                             <IconComponent
-                              className={`w-4.5 h-4.5 text-white transition-transform duration-200 ${
+                              className={`w-4.5 h-4.5 text-white transition-none ${
                                 isActive ? "scale-105 stroke-[2.2]" : "group-hover/sidebar:scale-105 stroke-[1.8]"
                               }`}
                             />
@@ -2213,7 +2369,7 @@ export default function App() {
                       )}
 
                       {/* Show Chevron for expandable states in Sidebar */}
-                      {(sidebarExpanded || isMobile) && (tab.id === "live" || tab.id === "settings") && (
+                      {(sidebarExpanded || isMobile) && (tab.id === "live") && (
                         <ChevronDown 
                           className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                             isActive ? "rotate-180" : ""
@@ -2224,17 +2380,17 @@ export default function App() {
 
                     {/* Submenu details when sidebar is expanded & active/open */}
                     {(sidebarExpanded || isMobile) && isActive && tab.id === "live" && (
-                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
+                      <div className="border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2">
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedCategory("all");
                             triggerToast("Lọc: Tất cả kênh");
                           }}
-                          className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none ${
+                          className={`w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all ${
                             selectedCategory === "all"
-                              ? "bg-[#cc1827] text-white font-semibold"
-                              : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
+                              ? "border-[#ff3b30] text-[#ff3b30] font-bold"
+                              : "border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30]"
                           }`}
                         >
                           Tất cả kênh
@@ -2247,127 +2403,13 @@ export default function App() {
                               setSelectedCategory(cat.id);
                               triggerToast(`Kênh: ${cat.name}`);
                             }}
-                            className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none truncate ${
+                            className={`w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all truncate ${
                               selectedCategory === cat.id
-                                ? "bg-[#cc1827] text-white font-semibold"
-                                : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
+                                ? "border-[#ff3b30] text-[#ff3b30] font-bold"
+                                : "border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30]"
                             }`}
                           >
                             {cat.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {sidebarExpanded && isActive && tab.id === "search" && (
-                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2 mt-2">
-                        <div className="relative flex items-center mb-1 pr-2 w-full">
-                          <input
-                            type="text"
-                            autoFocus
-                            placeholder="Spotlight Search..."
-                            value={menubarSearchQuery}
-                            onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-[11px] font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
-                          />
-                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                            <img 
-                              src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                              className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
-                              referrerPolicy="no-referrer"
-                              alt="Search"
-                            />
-                          </div>
-                          {menubarSearchQuery ? (
-                            <button
-                              type="button"
-                              onClick={() => setMenubarSearchQuery("")}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all cursor-pointer bouncy-btn"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                                if (SpeechRecognition) {
-                                  const recognition = new SpeechRecognition();
-                                  recognition.lang = 'vi-VN';
-                                  recognition.interimResults = false;
-                                  recognition.maxAlternatives = 1;
-                                  triggerToast("Đang lắng nghe...");
-                                  recognition.start();
-                                  recognition.onresult = (event: any) => {
-                                    const speechResult = event.results[0][0].transcript;
-                                    setMenubarSearchQuery(prev => {
-                                      const prefix = prev.trim() ? prev + " " : "";
-                                      return prefix + speechResult;
-                                    });
-                                    triggerToast("Đã nhập: " + speechResult);
-                                  };
-                                  recognition.onerror = (event: any) => {
-                                    triggerToast("Lỗi: " + event.error);
-                                  };
-                                } else {
-                                  triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
-                                }
-                              }}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
-                              title="Tìm kiếm bằng giọng nói"
-                            >
-                              <Mic className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="max-h-56 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-2">
-                          {menubarSearchResults.length > 0 ? (
-                            menubarSearchResults.map((ch) => (
-                              <button
-                                key={ch.id}
-                                onClick={() => {
-                                  handleSelectChannel(ch);
-                                  setActiveTab("live");
-                                }}
-                                className="relative pl-3 pr-2 py-1.5 rounded-xl text-left text-[11px] hover:bg-white/10 text-white/90 hover:text-white font-sans font-medium transition-none flex items-center justify-between group gap-1.5 cursor-pointer"
-                              >
-                                <span className="truncate">{ch.name}</span>
-                                <span className="text-[8px] bg-red-600/20 text-red-400 group-hover:bg-red-600 group-hover:text-white px-1.5 py-0.5 rounded font-bold transition-all shrink-0">PHÁT</span>
-                              </button>
-                            ))
-                          ) : menubarSearchQuery.trim() ? (
-                            <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
-                              Không tìm thấy kênh nào
-                            </div>
-                          ) : (
-                            <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
-                              Nhập từ khóa để tìm nhanh
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {sidebarExpanded && isActive && tab.id === "settings" && (
-                      <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                        {[
-                          { id: "appearance", name: "Giao diện" },
-                        ].map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              setActiveSettingSection(item.id);
-                              setShowDropdownMenu(false);
-                            }}
-                            className={`w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg transition-none truncate ${
-                              activeSettingSection === item.id
-                                ? "bg-[#cc1827] text-white font-semibold"
-                                : "text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d]"
-                            }`}
-                          >
-                            {item.name}
                           </button>
                         ))}
                       </div>
@@ -2393,18 +2435,18 @@ export default function App() {
                 }}
                 className={`w-full relative flex items-center ${
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
-                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarFavoritesOpen && (sidebarExpanded || isMobile)
                     ? "text-white font-semibold"
                     : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
                     Favorites
                   </div>
                 )}
-                <Heart className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                <Heart className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
                 {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     Favorites
@@ -2419,32 +2461,44 @@ export default function App() {
                 )}
               </button>
 
-              {(sidebarExpanded || isMobile) && sidebarFavoritesOpen && (
-                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                  {favoriteChannelsList.length > 0 ? (
-                    favoriteChannelsList.map((ch) => (
-                      <button
-                        key={ch.id}
-                        type="button"
-                        onClick={() => {
-                          handleSelectChannel(ch);
-                          setActiveTab("live");
-                          triggerToast(`Phát kênh yêu thích: ${ch.name}`);
-                        }}
-                        className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center justify-between gap-1"
-                      >
-                        <span className="truncate">{ch.name}</span>
-                        <span className="text-[8px] bg-white/15 text-white px-1 py-0.5 rounded font-bold shrink-0">Phát</span>
-                      </button>
-                    ))
-                  ) : (
-                    <span className="text-[11px] text-white/40 italic">Chưa có kênh yêu thích</span>
-                  )}
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {(sidebarExpanded || isMobile) && sidebarFavoritesOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    className="overflow-hidden border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2"
+                  >
+                    {favoriteChannelsList.length > 0 ? (
+                      favoriteChannelsList.map((ch) => (
+                        <button
+                          key={ch.id}
+                          type="button"
+                          onClick={() => {
+                            handleSelectChannel(ch);
+                            setActiveTab("live");
+                            triggerToast(`Phát kênh yêu thích: ${ch.name}`);
+                          }}
+                          className={`w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center justify-between gap-1 ${
+                            selectedChannel?.id === ch.id && activeTab === "live"
+                              ? "border-[#ff3b30] text-[#ff3b30] font-bold"
+                              : "border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30]"
+                          }`}
+                        >
+                          <span className="truncate">{ch.name}</span>
+                          <span className={`text-[8px] px-1 py-0.5 rounded font-bold shrink-0 ${selectedChannel?.id === ch.id && activeTab === "live" ? "bg-[#ff3b30]/10 text-[#ff3b30]" : "bg-white/15 text-white"}`}>Phát</span>
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-white/40 italic pl-5">Chưa có kênh yêu thích</span>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            {/* COLLAPSIBLE SIDEBAR MENU: FILE */}
+            {/* COLLAPSIBLE SIDEBAR MENU: TOOLBOX */}
             <div className="space-y-1">
               <button
                 type="button"
@@ -2458,21 +2512,21 @@ export default function App() {
                 }}
                 className={`w-full relative flex items-center ${
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
-                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarFileOpen && (sidebarExpanded || isMobile)
                     ? "text-white font-semibold"
                     : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
-                    File
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
+                    Toolbox
                   </div>
                 )}
-                <FolderOpen className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                <Package className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
                 {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
-                    File
+                    Toolbox
                   </span>
                 )}
                 {(sidebarExpanded || isMobile) && (
@@ -2484,54 +2538,62 @@ export default function App() {
                 )}
               </button>
 
-              {(sidebarExpanded || isMobile) && sidebarFileOpen && (
-                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPlayUrlModal(true);
-                      triggerToast("Mở: Xem luồng kênh qua URL");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+              <AnimatePresence initial={false}>
+                {(sidebarExpanded || isMobile) && sidebarFileOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    className="overflow-hidden border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2"
                   >
-                    <Play className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Xem luồng qua URL</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCustomModal(true);
-                      triggerToast("Mở: Thêm luồng kênh");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Plus className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Thêm luồng kênh</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      fileInputRef.current?.click();
-                      triggerToast("Mở: Chọn file M3U");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Upload className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Nhập file m3u/m3u8</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleM3uExport();
-                      triggerToast("Xuất: Xuất file M3U");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Download className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Xuất file m3u/m3u8</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPlayUrlModal(true);
+                        triggerToast("Mở: Xem luồng kênh qua URL");
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <Play className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Xem luồng qua URL</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomModal(true);
+                        triggerToast("Mở: Thêm luồng kênh");
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Thêm luồng kênh</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                        triggerToast("Mở: Chọn file M3U");
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Nhập file m3u/m3u8</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleM3uExport();
+                        triggerToast("Xuất: Xuất file M3U");
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <Download className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Xuất file m3u/m3u8</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* COLLAPSIBLE SIDEBAR MENU: HELP */}
@@ -2548,18 +2610,18 @@ export default function App() {
                 }}
                 className={`w-full relative flex items-center ${
                   (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
-                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
                   sidebarHelpOpen && (sidebarExpanded || isMobile)
                     ? "text-white font-semibold"
                     : "text-white/75 hover:text-white"
                 }`}
               >
                 {!(sidebarExpanded || isMobile) && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
                     Help
                   </div>
                 )}
-                <HelpCircle className="w-4.5 h-4.5 text-white transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
+                <BookOpen className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
                 {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     Help
@@ -2574,52 +2636,48 @@ export default function App() {
                 )}
               </button>
 
-              {(sidebarExpanded || isMobile) && sidebarHelpOpen && (
-                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAboutModal(true);
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+              <AnimatePresence initial={false}>
+                {(sidebarExpanded || isMobile) && sidebarHelpOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    className="overflow-hidden border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2"
                   >
-                    <Info className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>About Vplay</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowFeedbackModal(true);
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Submit Feedback</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("settings");
-                      setActiveSettingSection("design_system");
-                      triggerToast("Mở: Design Components");
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Layers className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Design Components</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowTestVplayConfirmModal(true);
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Beaker className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Test Vplay</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAboutModal(true);
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <Info className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>About Vplay</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFeedbackModal(true);
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Submit Feedback</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowTestVplayConfirmModal(true);
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Test Vplay</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* COLLAPSIBLE SIDEBAR MENU: POWER */}
@@ -2627,7 +2685,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!sidebarExpanded) {
+                  if (!sidebarExpanded && !isMobile) {
                     setSidebarExpanded(true);
                     setSidebarPowerOpen(true);
                   } else {
@@ -2635,57 +2693,96 @@ export default function App() {
                   }
                 }}
                 className={`w-full relative flex items-center ${
-                  sidebarExpanded ? "justify-start px-4" : "justify-center"
-                } py-1.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
-                  sidebarPowerOpen && sidebarExpanded
+                  (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
+                } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  sidebarPowerOpen && (sidebarExpanded || isMobile)
                     ? "text-white font-semibold"
                     : "text-white/75 hover:text-white"
                 }`}
               >
-                {!sidebarExpanded && (
-                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-all duration-200 shadow-xl whitespace-nowrap z-50">
+                {!(sidebarExpanded || isMobile) && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
                     Power
                   </div>
                 )}
-                <Power className="w-4.5 h-4.5 text-rose-400 transition-transform duration-200 group-hover/sidebar:scale-105 stroke-[1.8]" />
-                {sidebarExpanded && (
-                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left text-rose-400">
+                <Power className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
+                {(sidebarExpanded || isMobile) && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left text-white">
                     Power
                   </span>
                 )}
-                {sidebarExpanded && (
+                {(sidebarExpanded || isMobile) && (
                   <ChevronDown 
-                    className={`w-3.5 h-3.5 text-rose-400 group-hover/sidebar:text-rose-300 transition-transform ${
+                    className={`w-3.5 h-3.5 text-white group-hover/sidebar:text-white transition-transform ${
                       sidebarPowerOpen ? "rotate-180" : ""
                     }`} 
                   />
                 )}
               </button>
 
-              {sidebarExpanded && sidebarPowerOpen && (
-                <div className="border-l border-white/10 ml-7 pl-4 flex flex-col gap-2.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.location.reload();
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-white/70 hover:text-white hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
+              <AnimatePresence initial={false}>
+                {(sidebarExpanded || isMobile) && sidebarPowerOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.15, ease: "easeInOut" }}
+                    className="overflow-hidden border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span>Reload App</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowFactoryResetConfirmModal(true);
-                    }}
-                    className="w-full text-left text-xs font-medium px-2.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-[#cc1827] active:bg-[#a0121d] transition-none flex items-center gap-2"
-                  >
-                    <Power className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                    <span>Factory Reset</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.location.reload();
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Reload App</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowFactoryResetConfirmModal(true);
+                      }}
+                      className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white hover:text-[#ff3b30] hover:border-[#ff3b30] group"
+                    >
+                      <HardDrive className="w-3.5 h-3.5 text-white group-hover:text-[#ff3b30] shrink-0" />
+                      <span>Factory Reset</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* SIDEBAR MENU: SETTINGS (NO SUB-ITEMS, PLACED BELOW POWER) */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("settings");
+                  setActiveSettingSection(null);
+                  triggerToast("Mở: Cài đặt");
+                }}
+                className={`w-full relative flex items-center ${
+                  (sidebarExpanded || isMobile) ? "justify-start px-4" : "justify-center"
+                } py-2.5 rounded-xl transition-none cursor-pointer group/sidebar select-none ${
+                  activeTab === "settings"
+                    ? "bg-[#cc1827] text-white font-bold"
+                    : "text-white/75 hover:text-white hover:bg-[#cc1827]"
+                }`}
+              >
+                {!(sidebarExpanded || isMobile) && (
+                  <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#121116] border border-white/10 text-white text-xs font-sans font-medium rounded-lg opacity-0 scale-95 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 transition-none shadow-xl whitespace-nowrap z-50">
+                    Cài đặt
+                  </div>
+                )}
+                <Settings className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
+                {(sidebarExpanded || isMobile) && (
+                  <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
+                    Cài đặt
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </aside>
@@ -3401,6 +3498,27 @@ export default function App() {
           {/* Right Side: compact clock and profile card */}
           <div className="relative z-10 flex items-center gap-2 sm:gap-3 md:gap-4">
 
+            {/* Firesteel AI Button in Menubar */}
+            {expVIntelligence && (
+              <div className="relative group">
+                <button
+                  onClick={() => {
+                    setShowVIntel(!showVIntel);
+                    setShowSearchDropdown(false);
+                    setShowPowerDropdown(false);
+                  }}
+                  className={`relative flex items-center h-7 px-2.5 hover:text-[#ff5e00] rounded-lg text-[11px] font-google text-white/90 font-normal transition-all active:scale-95 cursor-pointer ${showVIntel ? 'text-[#ff5e00]' : ''}`}
+                >
+                  <Flame className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ff5e00] drop-shadow-[0_0_8px_rgba(255,94,0,0.5)] ${showVIntel ? 'animate-pulse' : ''}`} />
+                  <span className={`absolute bottom-0 inset-x-2.5 h-0.5 bg-[#ff5e00] rounded-full transition-transform duration-200 origin-center ${showVIntel ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                </button>
+                {/* Custom tooltip */}
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-[#161421]/95 backdrop-blur-md border border-white/10 rounded-xl px-2.5 py-1 shadow-2xl text-[10px] text-white/95 whitespace-nowrap z-[100] font-google font-medium">
+                  Firesteel
+                </div>
+              </div>
+            )}
+
             {/* Spotlight Search Button in Menubar */}
             <div className="relative group">
               <button
@@ -3419,7 +3537,7 @@ export default function App() {
                   alt="Spotlight Search"
                   referrerPolicy="no-referrer"
                 />
-                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-[#38bdf8] rounded-full transition-transform duration-200 origin-center ${showSearchDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-white rounded-full transition-transform duration-200 origin-center ${showSearchDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
               </button>
               
               <AnimatePresence>
@@ -3440,7 +3558,7 @@ export default function App() {
                           placeholder="Tìm nhanh kênh..."
                           value={menubarSearchQuery}
                           onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                         />
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                           <img 
@@ -3488,7 +3606,7 @@ export default function App() {
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
                             title="Tìm kiếm bằng giọng nói"
                           >
-                            <Mic className="w-3.5 h-3.5" />
+                            <Mic className="w-3.5 h-3.5 text-white shrink-0" />
                           </button>
                         )}
                       </div>
@@ -3525,27 +3643,6 @@ export default function App() {
               </AnimatePresence>
             </div>
 
-            {/* Firesteel AI Button in Menubar */}
-            {expVIntelligence && (
-              <div className="relative group">
-                <button
-                  onClick={() => {
-                    setShowVIntel(!showVIntel);
-                    setShowSearchDropdown(false);
-                    setShowPowerDropdown(false);
-                  }}
-                  className={`relative flex items-center h-7 px-2.5 hover:text-[#ff5e00] rounded-lg text-[11px] font-google text-white/90 font-normal transition-all active:scale-95 cursor-pointer ${showVIntel ? 'text-[#ff5e00]' : ''}`}
-                >
-                  <Flame className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ff5e00] drop-shadow-[0_0_8px_rgba(255,94,0,0.5)] ${showVIntel ? 'animate-pulse' : ''}`} />
-                  <span className={`absolute bottom-0 inset-x-2.5 h-0.5 bg-[#ff5e00] rounded-full transition-transform duration-200 origin-center ${showVIntel ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
-                </button>
-                {/* Custom tooltip */}
-                <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 bg-[#161421]/95 backdrop-blur-md border border-white/10 rounded-xl px-2.5 py-1 shadow-2xl text-[10px] text-white/95 whitespace-nowrap z-[100] font-google font-medium">
-                  Firesteel
-                </div>
-              </div>
-            )}
-
             {/* Power Button in Menubar */}
             <div className="relative group">
               <button
@@ -3554,11 +3651,11 @@ export default function App() {
                   setShowSearchDropdown(false);
                   setShowVIntel(false);
                 }}
-                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'bg-rose-500/15 text-rose-300' : ''}`}
+                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'bg-white/10 text-white' : ''}`}
                 title="Hệ thống"
               >
                 <Power className="w-4 h-4" />
-                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-rose-500 rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-white rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
               </button>
               
               <AnimatePresence>
@@ -3612,7 +3709,7 @@ export default function App() {
             </div>
 
             {/* Real-time Ticking Digital Clock on the far right (replacing User Profile) */}
-            {showClock && (
+            {showClock && !(sidebarExpanded || isMobile) && (
               <div className="flex flex-col items-end text-right select-none font-google leading-normal ml-2 shrink-0">
                 <span className="text-xs font-bold text-white tracking-wide">
                   {formatTime(time)}
@@ -5048,7 +5145,7 @@ export default function App() {
                 { label: "Kênh Quốc Gia", value: "13 VTV HD", color: "text-cyan-400" },
                 { label: "Tin Tức & Giải Trí", value: "19 VTVCab", color: "text-fuchsia-400" },
                 { label: "Kênh TP.HCM & Độc Quyền", value: "15 HTV HD", color: "text-orange-400" },
-                { label: "Kênh Địa Phương & Radio", value: "Gần 70+", color: "text-teal-400" },
+                { label: "Kênh địa phương & Radio", value: "Gần 70+", color: "text-teal-400" },
               ].map((stat, i) => (
                 <div key={i} className="p-4 rounded-2xl glass-panel border border-white/10 flex flex-col justify-center">
                   <span className="text-xs text-white/50">{stat.label}</span>
@@ -5135,7 +5232,7 @@ export default function App() {
                         value={settingsSearchQuery}
                         onChange={(e) => setSettingsSearchQuery(e.target.value)}
                         placeholder="Tìm kiếm cài đặt..."
-                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                       />
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                         <img 
@@ -5337,7 +5434,7 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
@@ -5637,7 +5734,7 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
@@ -5779,7 +5876,7 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
@@ -5896,7 +5993,7 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
@@ -6161,7 +6258,7 @@ export default function App() {
                                 value={settingDetailSearchQuery}
                                 onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                                 placeholder="Tìm kiếm cài đặt..."
-                                className="w-full pl-10 pr-10 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left h-8.5"
+                                className="w-full pl-10 pr-10 py-1.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left h-8.5"
                               />
                               <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                                 <img 
@@ -7150,7 +7247,7 @@ export default function App() {
                             value={pluginSearchQuery}
                             onChange={(e) => setPluginSearchQuery(e.target.value)}
                             placeholder="Tìm kiếm tiện ích..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 transition-none text-left"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                           />
                           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                             <img 
@@ -7502,11 +7599,14 @@ export default function App() {
       </main>
 
       {/* High-fidelity progressive vintage blur backplate for Bottom Navigation Dock */}
-      <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "hidden" : ""}`}>
-        <div className="progressive-blur-dock" />
-      </div>
+      {!dockToSidebar && (
+        <div className={`fixed bottom-0 inset-x-0 h-28 pointer-events-none z-40 ${activeTab === "live" ? "hidden sm:block" : ""}`}>
+          <div className="progressive-blur-dock" />
+        </div>
+      )}
 
-      <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""} ${dockToSidebar ? "hidden" : ""}`}>
+      {!dockToSidebar && (
+        <nav id="bottom-dock-container" className={`fixed bottom-6 inset-x-0 mx-auto w-11/12 ${!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled ? "max-w-[480px]" : "max-w-[420px]"} z-50 h-16 transform-gpu ${activeTab === "live" ? "hidden sm:block" : ""}`}>
           <AnimatePresence mode="wait">
             {activeTab === "search" ? (
               <motion.div
@@ -7556,7 +7656,7 @@ export default function App() {
                           const prefix = prev.trim() ? prev + " " : "";
                           return prefix + speechResult;
                         });
-                        triggerToast("Đã nhập: " + speechResult);
+                        triggerToast("Đang nhập: " + speechResult);
                       };
                       recognition.onerror = (event: any) => {
                         triggerToast("Lỗi: " + event.error);
@@ -7609,7 +7709,7 @@ export default function App() {
                           const filterStyle = config.isImg 
                             ? { filter: "brightness(0) invert(1)" } 
                             : {};
-  
+   
                           return (
                             <button 
                               key={tab.id}
@@ -7637,7 +7737,7 @@ export default function App() {
                                   animate={tab.id === "search" && vIntelIconSpinning ? { rotate: 360 } : { rotate: 0 }}
                                   transition={{ duration: 0.3, ease: "easeInOut" }}
                                   src={config.icon} 
-                                  className={`w-6.5 h-6.5 sm:w-7 sm:h-7 object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
+                                  className={`${tab.id === "remote" ? "w-8 h-8 sm:w-8.5 sm:h-8.5" : "w-6.5 h-6.5 sm:w-7 sm:h-7"} object-contain transition-all duration-300 ${isActive ? "scale-105" : "hover:scale-105 hover:opacity-100"}`}
                                   style={filterStyle}
                                   alt={config.label}
                                   referrerPolicy="no-referrer"
@@ -7654,7 +7754,7 @@ export default function App() {
                     </div>
                   )}
                 </div>
-  
+   
                 {/* Separate Search Button */}
                 {!mergeSearchToDock && dockItems.find(it => it.id === "search")?.enabled && (() => {
                   const searchTab = dockItems.find(it => it.id === "search")!;
@@ -7702,7 +7802,7 @@ export default function App() {
               </motion.div>
             )}
           </AnimatePresence>
-  
+   
           {/* Playback Error Toast Alert */}
           <AnimatePresence>
             {playbackError && (
@@ -7721,6 +7821,7 @@ export default function App() {
             )}
           </AnimatePresence>
         </nav>
+      )}
 
       {/* Channel Change Toast Notification */}
       <AnimatePresence>
@@ -7803,10 +7904,9 @@ export default function App() {
                     <option value="VTVcab" className="bg-[#211f26]">Kênh VTVcab</option>
                     <option value="HTV" className="bg-[#211f26]">Kênh HTV</option>
                     <option value="SCTV" className="bg-[#211f26]">Kênh SCTV</option>
-                    <option value="Địa phương" className="bg-[#211f26]">Kênh địa phương & Thiết yếu</option>
-                    <option value="Quốc tế" className="bg-[#211f26]">Kênh Quốc Tế & Đặc Sắc</option>
-                    <option value="Radio" className="bg-[#211f26]">Kênh Phát Thanh (Radio)</option>
-                    <option value="Thử nghiệm" className="bg-[#211f26]">Kênh Thử Nghiệm</option>
+                    <option value="Địa phương" className="bg-[#211f26]">Kênh địa phương & thiết yếu</option>
+                    <option value="Quốc tế" className="bg-[#211f26]">Kênh quốc tế</option>
+                    <option value="Radio" className="bg-[#211f26]">Kênh phát thanh</option>
                     <option value="NEW_GROUP" className="bg-[#211f26] font-semibold text-purple-300">+ Tự tạo nhóm mới...</option>
                   </select>
                 </div>
@@ -9067,7 +9167,7 @@ export default function App() {
                   placeholder="Tìm kiếm kênh muốn thêm..."
                   value={pickerSearchQuery}
                   onChange={(e) => setPickerSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                  className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                 />
               </div>
 
@@ -9548,7 +9648,7 @@ export default function App() {
                     placeholder="Tìm kiếm lịch sử trò chuyện..."
                     value={vIntelHistorySearchQuery}
                     onChange={(e) => setVIntelHistorySearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                   />
                   {vIntelHistorySearchQuery && (
                     <button
@@ -9719,7 +9819,7 @@ export default function App() {
                     placeholder="Tìm kiếm kênh truyền hình..."
                     value={vIntelSearchTabQuery}
                     onChange={(e) => setVIntelSearchTabQuery(e.target.value)}
-                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/30 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                   />
                   {vIntelSearchTabQuery ? (
                     <button
