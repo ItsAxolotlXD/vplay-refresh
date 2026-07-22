@@ -5,6 +5,7 @@ import {
   Heart, 
   ThumbsUp,
   Sliders, 
+  Key,
   Sparkles, 
   Info, 
   Tv, 
@@ -78,9 +79,9 @@ import ChannelPlayer from "./components/ChannelPlayer";
 const Mic = ({ className = "" }: { className?: string }) => {
   return (
     <img
-      src="https://github.com/andrewtavis/sf-symbols-online/blob/master/glyphs/mic.fill.png?raw=true"
+      src="https://raw.githubusercontent.com/andrewtavis/sf-symbols-online/refs/heads/master/glyphs/mic.png"
       alt="Mic"
-      className={`${className} object-contain shrink-0`}
+      className={`${className} object-contain shrink-0 scale-125`}
       style={{ filter: "brightness(0) invert(1)" }}
       referrerPolicy="no-referrer"
     />
@@ -209,6 +210,17 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("glass_tv_auto_slide", autoSlide ? "true" : "false");
   }, [autoSlide]);
+
+  const [autoHideSidebar, setAutoHideSidebar] = useState<boolean>(() => {
+    const saved = localStorage.getItem("vplay_auto_hide_sidebar");
+    return saved !== null ? saved === "true" : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("vplay_auto_hide_sidebar", autoHideSidebar ? "true" : "false");
+  }, [autoHideSidebar]);
+
+  const [isSidebarHovered, setIsSidebarHovered] = useState<boolean>(false);
   
   // Favorite channel list horizontal scroll reference
   const favScrollRef = useRef<HTMLDivElement>(null);
@@ -697,7 +709,11 @@ export default function App() {
   const getDockItemConfig = (id: string) => {
     switch (id) {
       case "home":
-        return { icon: Home, label: "Home", isImg: false };
+        return { 
+          icon: "https://static.wikia.nocookie.net/ep-deo/images/6/6e/New_hom.png/revision/latest?cb=20260722124341", 
+          label: "Home", 
+          isImg: true 
+        };
       case "live":
         return { icon: Tv, label: "Live TV", isImg: false };
       case "settings":
@@ -2091,12 +2107,26 @@ export default function App() {
 
   return (
     <div className={`min-h-screen text-white/95 pb-32 transition-all duration-300 overflow-x-clip ${getBgGradient()} ${
-      dockToSidebar ? (sidebarExpanded ? "pl-0 md:pl-72" : "pl-0 md:pl-20") : ""
+      dockToSidebar
+        ? autoHideSidebar
+          ? "pl-0"
+          : sidebarExpanded
+          ? "pl-0 md:pl-72"
+          : "pl-0 md:pl-20"
+        : ""
     }`}>
       
       {/* High-Fidelity Sidebar Left Navigation (Inspired by the design) */}
       {dockToSidebar && (
         <>
+          {/* Auto-hide hover trigger zone on left screen edge for desktop */}
+          {autoHideSidebar && !isMobile && (
+            <div 
+              onMouseEnter={() => setIsSidebarHovered(true)}
+              className="fixed top-0 left-0 bottom-0 w-4 z-[65] pointer-events-auto"
+            />
+          )}
+
           {/* Backdrop for mobile sidebar drawer */}
           {isMobile && showMobileSidebar && (
             <div 
@@ -2106,15 +2136,19 @@ export default function App() {
           )}
 
           <aside 
+            onMouseEnter={() => setIsSidebarHovered(true)}
+            onMouseLeave={() => setIsSidebarHovered(false)}
             className={`fixed top-0 left-0 h-screen z-[70] bg-[#0c0a0f]/95 md:bg-[#0c0a0f]/80 backdrop-blur-[20px] border-r border-white/5 transition-all duration-300 flex flex-col ${
               isMobile 
                 ? (showMobileSidebar ? "translate-x-0 w-full" : "-translate-x-full w-full") 
+                : autoHideSidebar
+                ? (isSidebarHovered ? "translate-x-0 w-72 shadow-2xl" : "-translate-x-full w-72")
                 : (sidebarExpanded ? "w-72" : "w-20")
             }`}
           >
           {/* Header section with brand logo & collapse button */}
           <div className="h-20 flex items-center justify-between px-4 border-b border-white/5 select-none shrink-0">
-            {(sidebarExpanded || isMobile) ? (
+            {(sidebarExpanded || isMobile || autoHideSidebar) ? (
               <div className="flex items-center gap-3 pl-2">
                 <img
                   src="https://static.wikia.nocookie.net/ftv/images/a/ab/Imagexvxvz.png/revision/latest/scale-to-width-down/1000?cb=20260429082350&path-prefix=vi"
@@ -2149,7 +2183,7 @@ export default function App() {
               >
                 <X className="w-5 h-5" />
               </button>
-            ) : sidebarExpanded && (
+            ) : (!autoHideSidebar && sidebarExpanded) && (
               <button
                 type="button"
                 onClick={() => setSidebarExpanded(false)}
@@ -2162,7 +2196,7 @@ export default function App() {
           </div>
 
           {/* If collapsed, show an expand button at the top */}
-          {!sidebarExpanded && !isMobile && (
+          {!autoHideSidebar && !sidebarExpanded && !isMobile && (
             <div className="flex justify-center py-4 border-b border-white/5 shrink-0">
               <button
                 type="button"
@@ -2176,7 +2210,7 @@ export default function App() {
           )}
 
           {/* Menu Items list */}
-          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-5 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto py-6 px-3 space-y-5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* Spotlight Search at the absolute top of sidebar (above Home) */}
             {dockItems.find(it => it.id === "search")?.enabled && (
               (sidebarExpanded || isMobile) ? (
@@ -2199,12 +2233,12 @@ export default function App() {
                             setIsSpotlightFocused(false);
                           }, 250);
                         }}
-                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                        className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                       />
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                         <img 
                           src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                          className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
+                          className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                           referrerPolicy="no-referrer"
                           alt="Search"
                         />
@@ -2302,7 +2336,7 @@ export default function App() {
                     </div>
                     <img 
                       src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                      className="w-3.5 h-3.5 brightness-0 invert" 
+                      className="w-4.5 h-4.5 brightness-0 invert" 
                       referrerPolicy="no-referrer"
                       alt="Search"
                     />
@@ -2341,7 +2375,7 @@ export default function App() {
                       {config.isImg ? (
                         <img
                           src={config.icon}
-                          className={`${tab.id === "search" ? "w-3.5 h-3.5" : "w-4.5 h-4.5"} object-contain transition-none ${
+                          className={`${tab.id === "search" ? "w-4.5 h-4.5" : tab.id === "remote" ? "w-6 h-6" : "w-4.5 h-4.5"} object-contain transition-none ${
                             isActive ? "scale-105" : "group-hover/sidebar:scale-105"
                           }`}
                           style={{ filter: "brightness(0) invert(1)" }}
@@ -3096,7 +3130,7 @@ export default function App() {
                         className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer shrink-0 bouncy-btn"
                         title="Nhập bằng giọng nói"
                       >
-                        <Mic className="w-3.5 h-3.5" />
+                        <Mic className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleQuickChatSend()}
@@ -3519,6 +3553,71 @@ export default function App() {
               </div>
             )}
 
+            {/* Power Button in Menubar */}
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  setShowPowerDropdown(!showPowerDropdown);
+                  setShowSearchDropdown(false);
+                  setShowVIntel(false);
+                }}
+                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'bg-white/10 text-white' : ''}`}
+                title="Hệ thống"
+              >
+                <Power className="w-4 h-4" />
+                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-white rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+              </button>
+              
+              <AnimatePresence>
+                {showPowerDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowPowerDropdown(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-2 w-56 rounded-[28px] bg-[#1d1b24]/95 backdrop-blur-md border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 py-2 text-white flex flex-col gap-1 font-sans text-left"
+                    >
+                      <button
+                        onClick={() => {
+                          setIsSleepMode(true);
+                          setShowPowerDropdown(false);
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Power className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span>Chế độ ngủ (Sleep)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          window.location.reload();
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className="w-4 h-4 text-teal-400 shrink-0" />
+                        <span>Khởi động lại (Reload)</span>
+                      </button>
+
+                      <div className="border-t border-white/10 mx-1.5 my-1" />
+
+                      <button
+                        onClick={() => {
+                          setShowPowerDropdown(false);
+                          setShowFactoryResetConfirmModal(true);
+                        }}
+                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-red-500/10 active:bg-red-500/20 text-red-400 hover:text-red-300 font-bold flex items-center gap-2.5 transition-colors cursor-pointer animate-pulse"
+                      >
+                        <Beaker className="w-4 h-4 text-rose-500 shrink-0" />
+                        <span>Khôi phục cài đặt gốc</span>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Spotlight Search Button in Menubar */}
             <div className="relative group">
               <button
@@ -3532,7 +3631,7 @@ export default function App() {
               >
                 <img
                   src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751"
-                  className="w-4 h-4 object-contain transition-transform duration-200"
+                  className="w-4.5 h-4.5 object-contain transition-transform duration-200"
                   style={{ filter: "brightness(0) invert(1)" }}
                   alt="Spotlight Search"
                   referrerPolicy="no-referrer"
@@ -3558,12 +3657,12 @@ export default function App() {
                           placeholder="Tìm nhanh kênh..."
                           value={menubarSearchQuery}
                           onChange={(e) => setMenubarSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                          className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                         />
                         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                           <img 
                             src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                            className="w-3.5 h-3.5 brightness-0 invert opacity-60" 
+                            className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                             referrerPolicy="no-referrer"
                             alt="Search"
                           />
@@ -3637,71 +3736,6 @@ export default function App() {
                           </div>
                         )}
                       </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Power Button in Menubar */}
-            <div className="relative group">
-              <button
-                onClick={() => {
-                  setShowPowerDropdown(!showPowerDropdown);
-                  setShowSearchDropdown(false);
-                  setShowVIntel(false);
-                }}
-                className={`relative flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/10 text-white/90 hover:text-white transition-all active:scale-95 cursor-pointer ${showPowerDropdown ? 'bg-white/10 text-white' : ''}`}
-                title="Hệ thống"
-              >
-                <Power className="w-4 h-4" />
-                <span className={`absolute bottom-0 inset-x-1.5 h-0.5 bg-white rounded-full transition-transform duration-200 origin-center ${showPowerDropdown ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
-              </button>
-              
-              <AnimatePresence>
-                {showPowerDropdown && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowPowerDropdown(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: -16, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -16, scale: 0.95 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="absolute right-0 top-full mt-2 w-56 rounded-[28px] bg-[#1d1b24]/95 backdrop-blur-md border border-white/10 shadow-[0_16px_36px_rgba(0,0,0,0.5)] z-50 py-2 text-white flex flex-col gap-1 font-sans text-left"
-                    >
-                      <button
-                        onClick={() => {
-                          setIsSleepMode(true);
-                          setShowPowerDropdown(false);
-                        }}
-                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
-                      >
-                        <Power className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>Chế độ ngủ (Sleep)</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          window.location.reload();
-                        }}
-                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-white/10 active:bg-white/15 text-white/90 hover:text-white font-medium flex items-center gap-2.5 transition-colors cursor-pointer"
-                      >
-                        <RefreshCw className="w-4 h-4 text-teal-400 shrink-0" />
-                        <span>Khởi động lại (Reload)</span>
-                      </button>
-
-                      <div className="border-t border-white/10 mx-1.5 my-1" />
-
-                      <button
-                        onClick={() => {
-                          setShowPowerDropdown(false);
-                          setShowFactoryResetConfirmModal(true);
-                        }}
-                        className="mx-1.5 px-4 py-2.5 rounded-2xl text-xs hover:bg-red-500/10 active:bg-red-500/20 text-red-400 hover:text-red-300 font-bold flex items-center gap-2.5 transition-colors cursor-pointer animate-pulse"
-                      >
-                        <Beaker className="w-4 h-4 text-rose-500 shrink-0" />
-                        <span>Khôi phục cài đặt gốc</span>
-                      </button>
                     </motion.div>
                   </>
                 )}
@@ -4268,7 +4302,7 @@ export default function App() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
             transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
-            className="w-full pt-8"
+            className="w-full"
           >
             <div className="w-full space-y-0 bg-[#211f26]/60 min-h-screen relative pt-0">
             
@@ -5185,9 +5219,9 @@ export default function App() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
             transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
-            className="w-full max-w-7xl mx-auto px-4 pt-32 lg:pt-36 pb-8"
+            className="w-full max-w-7xl mx-auto px-4 pt-14 pb-8"
           >
-            <div className="max-w-5xl mx-auto py-4 font-sans">
+            <div className="max-w-5xl mx-auto font-sans">
             <AnimatePresence mode="wait">
               {!activeSettingSection ? (
                 <motion.div
@@ -5232,12 +5266,12 @@ export default function App() {
                         value={settingsSearchQuery}
                         onChange={(e) => setSettingsSearchQuery(e.target.value)}
                         placeholder="Tìm kiếm cài đặt..."
-                        className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                        className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                       />
                       <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                         <img 
                           src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                          className="w-4 h-4 brightness-0 invert opacity-60" 
+                          className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                           referrerPolicy="no-referrer"
                           alt="Search"
                         />
@@ -5289,8 +5323,8 @@ export default function App() {
                         id: "accessibility",
                         title: "Trợ năng",
                         subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
-                        icon: Sliders,
-                        keywords: ["trợ năng", "slide", "trượt hình", "tự động", "tiếp cận"]
+                        icon: Key,
+                        keywords: ["trợ năng", "slide", "trượt hình", "tự động", "tiếp cận", "sidebar", "ẩn sidebar", "auto-hide", "menu", "thanh bên"]
                       }
                     ];
 
@@ -5473,7 +5507,7 @@ export default function App() {
                               className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
                               title="Tìm kiếm bằng giọng nói"
                             >
-                              <Mic className="w-3.5 h-3.5" />
+                              <Mic className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -5773,7 +5807,7 @@ export default function App() {
                               className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
                               title="Tìm kiếm bằng giọng nói"
                             >
-                              <Mic className="w-3.5 h-3.5" />
+                              <Mic className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -5856,6 +5890,9 @@ export default function App() {
                     };
 
                     const matchAutoSlide = isMatched("Tự động trượt hình") || isMatched("trượt hình") || isMatched("slide") || isMatched("5 giây") || isMatched("thumbnail");
+                    const matchAutoHideSidebar = isMatched("Tự động ẩn Sidebar") || isMatched("ẩn sidebar") || isMatched("auto-hide") || isMatched("sidebar") || isMatched("menu") || isMatched("thanh bên");
+
+                    const hasResults = matchAutoSlide || matchAutoHideSidebar;
 
                     return (
                       <div className="space-y-6">
@@ -5863,7 +5900,7 @@ export default function App() {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
                           <div className="flex items-center gap-3 text-left">
                             <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                              <Sliders className="w-6 h-6" />
+                              <Key className="w-6 h-6" />
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold text-white">Trợ năng</h3>
@@ -5876,12 +5913,12 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                              className="w-full pl-9.5 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
                                 src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
                               />
@@ -5920,7 +5957,7 @@ export default function App() {
                           </div>
                         </div>
 
-                        {!matchAutoSlide ? (
+                        {!hasResults ? (
                           <div className="py-12 text-center text-white/50 space-y-2">
                             <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
                             <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
@@ -5929,30 +5966,60 @@ export default function App() {
                         ) : (
                           <div className="space-y-4 text-left">
                             {/* Option: Tự động trượt hình */}
-                            <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
-                              <div className="space-y-1">
-                                <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
-                                <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
-                              </div>
-                              
-                              <div className="flex items-center">
-                                <button
-                                  onClick={() => setAutoSlide(!autoSlide)}
-                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                                    autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                  }`}
-                                >
-                                  <motion.div
-                                    animate={{ x: autoSlide ? 20 : 0 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className="relative w-6 h-5 flex items-center justify-center group"
+                            {matchAutoSlide && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  <button
+                                    onClick={() => setAutoSlide(!autoSlide)}
+                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                      autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                    }`}
                                   >
-                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                    <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                                  </motion.div>
-                                </button>
+                                    <motion.div
+                                      animate={{ x: autoSlide ? 20 : 0 }}
+                                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                      className="relative w-6 h-5 flex items-center justify-center group"
+                                    >
+                                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                      <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                    </motion.div>
+                                  </button>
+                                </div>
                               </div>
-                            </div>
+                            )}
+
+                            {/* Option: Tự động ẩn Sidebar */}
+                            {matchAutoHideSidebar && (
+                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
+                                <div className="space-y-1">
+                                  <h4 className="text-sm font-semibold text-white">Tự động ẩn Sidebar</h4>
+                                  <p className="text-xs text-white/60 leading-relaxed">Tự động thu gọn và ẩn thanh menu bên trái khi không di chuột vào, giúp tối ưu diện tích hiển thị.</p>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  <button
+                                    onClick={() => setAutoHideSidebar(!autoHideSidebar)}
+                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
+                                      autoHideSidebar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                    }`}
+                                  >
+                                    <motion.div
+                                      animate={{ x: autoHideSidebar ? 20 : 0 }}
+                                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                      className="relative w-6 h-5 flex items-center justify-center group"
+                                    >
+                                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
+                                      <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
+                                    </motion.div>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -5993,12 +6060,12 @@ export default function App() {
                               value={settingDetailSearchQuery}
                               onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
                               placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-10 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                              className="w-full pl-9.5 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                             />
                             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                               <img 
                                 src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                                className="w-4 h-4 brightness-0 invert opacity-60" 
+                                className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                                 referrerPolicy="no-referrer"
                                 alt="Search"
                               />
@@ -6297,7 +6364,7 @@ export default function App() {
                                 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
                                 title="Tìm kiếm bằng giọng nói"
                               >
-                                <Mic className="w-3.5 h-3.5" />
+                                <Mic className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -7247,12 +7314,12 @@ export default function App() {
                             value={pluginSearchQuery}
                             onChange={(e) => setPluginSearchQuery(e.target.value)}
                             placeholder="Tìm kiếm tiện ích..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                            className="w-full pl-9.5 pr-4 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
                           />
                           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                             <img 
                               src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                              className="w-4 h-4 brightness-0 invert opacity-60" 
+                              className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
                               referrerPolicy="no-referrer"
                               alt="Search"
                             />
@@ -7458,9 +7525,9 @@ export default function App() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
             transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
-            className="w-full max-w-7xl mx-auto px-4 pt-32 lg:pt-36 pb-8"
+            className="w-full max-w-7xl mx-auto px-4 pt-14 pb-8"
           >
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 font-sans pb-32">
+            <div className="max-w-7xl mx-auto font-sans pb-32">
             {/* Header section with back button */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div className="flex items-center gap-4">
@@ -7619,7 +7686,7 @@ export default function App() {
               >
                 <img 
                   src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                  className="w-5.5 h-5.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
+                  className="w-6.5 h-6.5 brightness-0 invert opacity-95 z-20 pointer-events-none object-contain ml-1" 
                   referrerPolicy="no-referrer"
                   alt="Search"
                 />
@@ -7668,7 +7735,7 @@ export default function App() {
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer shrink-0 bouncy-btn"
                   title="Tìm kiếm bằng giọng nói"
                 >
-                  <Mic className="w-4 h-4" />
+                  <Mic className="w-4.5 h-4.5" />
                 </button>
                 <button
                   onClick={() => {
@@ -9158,7 +9225,7 @@ export default function App() {
               <div className="mb-4 relative shrink-0">
                 <img 
                   src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-60 object-contain" 
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 brightness-0 invert opacity-70 object-contain" 
                   alt="Search" 
                   referrerPolicy="no-referrer"
                 />
@@ -9167,7 +9234,7 @@ export default function App() {
                   placeholder="Tìm kiếm kênh muốn thêm..."
                   value={pickerSearchQuery}
                   onChange={(e) => setPickerSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                  className="w-full pl-9.5 pr-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                 />
               </div>
 
@@ -9639,7 +9706,7 @@ export default function App() {
                 <div className="relative shrink-0 mb-1">
                   <img
                     src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-60 object-contain"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 brightness-0 invert opacity-70 object-contain"
                     alt="Search"
                     referrerPolicy="no-referrer"
                   />
@@ -9648,7 +9715,7 @@ export default function App() {
                     placeholder="Tìm kiếm lịch sử trò chuyện..."
                     value={vIntelHistorySearchQuery}
                     onChange={(e) => setVIntelHistorySearchQuery(e.target.value)}
-                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                    className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                   />
                   {vIntelHistorySearchQuery && (
                     <button
@@ -9810,7 +9877,7 @@ export default function App() {
                 <div className="relative shrink-0 mb-3">
                   <img
                     src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 brightness-0 invert opacity-60 object-contain"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 brightness-0 invert opacity-70 object-contain"
                     alt="Search icon"
                     referrerPolicy="no-referrer"
                   />
@@ -9819,7 +9886,7 @@ export default function App() {
                     placeholder="Tìm kiếm kênh truyền hình..."
                     value={vIntelSearchTabQuery}
                     onChange={(e) => setVIntelSearchTabQuery(e.target.value)}
-                    className="w-full pl-11 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
+                    className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/20 focus:outline-none text-white text-xs transition-none placeholder:text-gray-400"
                   />
                   {vIntelSearchTabQuery ? (
                     <button
@@ -9859,7 +9926,7 @@ export default function App() {
                       className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-all cursor-pointer bouncy-btn"
                       title="Tìm kiếm bằng giọng nói"
                     >
-                      <Mic className="w-3.5 h-3.5" />
+                      <Mic className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -10233,7 +10300,7 @@ export default function App() {
                     className="w-8 h-8 rounded-full hover:bg-white/10 active:scale-90 flex items-center justify-center text-white/70 hover:text-white transition-all cursor-pointer shrink-0 bouncy-btn"
                     title="Chat bằng giọng nói"
                   >
-                    <Mic className="w-4 h-4 text-white" />
+                    <Mic className="w-4.5 h-4.5 text-white" />
                   </button>
 
                   <button
