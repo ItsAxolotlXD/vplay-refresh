@@ -540,6 +540,50 @@ export default function App() {
   const [showCopiedNotify, setShowCopiedNotify] = useState<boolean>(false);
   const [activeSettingSection, setActiveSettingSection] = useState<string | null>(null);
 
+  // Tab Loading State (2 seconds inline page loading on tab switch)
+  const [isTabLoading, setIsTabLoading] = useState<boolean>(false);
+  const isFirstTabMount = useRef(true);
+
+  useEffect(() => {
+    if (isFirstTabMount.current) {
+      isFirstTabMount.current = false;
+      return;
+    }
+    setIsTabLoading(true);
+    const timer = setTimeout(() => {
+      setIsTabLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [activeTab, activeSettingSection]);
+
+  // Sidebar Loading State (2 seconds AFTER splash screen finishes)
+  const [isSidebarLoading, setIsSidebarLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!showSplash) {
+      setIsSidebarLoading(true);
+      const timer = setTimeout(() => {
+        setIsSidebarLoading(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSplash]);
+
+  // Lock scrolling when page is loading
+  useEffect(() => {
+    if (isTabLoading) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isTabLoading]);
+
   // Header Bar state (Always On Top header bar)
   const [showHeaderBar, setShowHeaderBar] = useState<boolean>(() => {
     const saved = localStorage.getItem("vplay360_show_header_bar");
@@ -577,12 +621,26 @@ export default function App() {
     }
   };
 
+  const getShortChannelName = (channel: Channel | null): string => {
+    if (!channel || !channel.name) return "";
+    let name = channel.name;
+    if (name.includes(" - ")) {
+      const parts = name.split(" - ");
+      name = parts[parts.length - 1].trim();
+    } else {
+      name = name.replace(/^Truyền hình\s+/i, "").trim();
+    }
+    return name;
+  };
+
   const getHeaderTitle = () => {
     switch (activeTab) {
       case "home":
         return "HOME";
-      case "live":
-        return "LIVE TV";
+      case "live": {
+        const channelShort = selectedChannel ? getShortChannelName(selectedChannel) : "";
+        return channelShort ? `LIVE TV - ${channelShort}` : "LIVE TV";
+      }
       case "notifications":
         return "THÔNG BÁO";
       case "settings":
@@ -2394,6 +2452,22 @@ export default function App() {
                 : (sidebarExpanded ? "w-72" : "w-20")
             }`}
           >
+            {isSidebarLoading ? (
+              <div className="w-full h-full flex items-center justify-center p-4 select-none">
+                <img 
+                  src="https://i.ibb.co/YF4Q2tmz/animation-074ed0ba8c16bb30e36c.gif" 
+                  alt="Loading..." 
+                  className="w-7 h-7 object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="flex flex-col h-full w-full overflow-hidden"
+              >
           {/* Header section with brand logo & collapse button */}
           <div className="h-20 flex items-center justify-between px-4 border-b border-white/5 select-none shrink-0">
             {(sidebarExpanded || isMobile || autoHideSidebar) ? (
@@ -3113,6 +3187,8 @@ export default function App() {
               </button>
             </div>
           </div>
+              </motion.div>
+            )}
         </aside>
         </>
       )}
@@ -4080,14 +4156,31 @@ export default function App() {
 
       {/* Main Container */}
       <main id="player-anchor" className="w-full z-10 relative overflow-x-hidden min-h-screen">
-        <AnimatePresence mode="wait">
+        {isTabLoading ? (
+          <div className="w-full min-h-[65vh] flex flex-col items-center justify-center py-24 px-4 select-none">
+            <img 
+              src="https://i.ibb.co/YF4Q2tmz/animation-074ed0ba8c16bb30e36c.gif" 
+              alt="Loading..." 
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <motion.div
+            key={`tab-content-${activeTab}-${activeSettingSection || 'main'}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="w-full"
+          >
+            <AnimatePresence mode="wait">
           {activeTab === "live" || activeTab === "search" ? (
             <motion.div
               key={activeTab}
-              initial={{ x: slideDirection === 'forward' ? "100%" : "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
-              transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               className="w-full max-w-7xl mx-auto px-4 pt-12 sm:pt-14 lg:pt-16 pb-8"
             >
             {/* Sticky Player, Action Buttons & Category Filters on Mobile */}
@@ -4592,10 +4685,10 @@ export default function App() {
         ) : activeTab === "home" ? (
           <motion.div
             key="home"
-            initial={{ x: slideDirection === 'forward' ? "100%" : "-100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
-            transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="w-full"
           >
             <div className="w-full space-y-0 bg-[#211f26]/60 min-h-screen relative pt-0">
@@ -5509,10 +5602,10 @@ export default function App() {
         ) : activeTab === "settings" ? (
           <motion.div
             key="settings"
-            initial={{ x: slideDirection === 'forward' ? "100%" : "-100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
-            transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="w-full max-w-7xl mx-auto px-4 pt-14 pb-8"
           >
             <div className="max-w-5xl mx-auto font-sans">
@@ -7731,7 +7824,7 @@ export default function App() {
                                    <div className="rounded-[12px] bg-white/[0.03] border border-white/10 flex flex-col justify-between min-h-28 p-4">
                                      <span className="text-[11px] font-semibold text-teal-400">Spinning Animation</span>
                                      <div className="flex items-center justify-center h-full">
-                                       <Loader2 className="w-6 h-6 text-[#d0bcff] animate-spin" />
+                                       <img src="https://i.ibb.co/YF4Q2tmz/animation-074ed0ba8c16bb30e36c.gif" alt="Loading" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
                                      </div>
                                    </div>
 
@@ -8144,10 +8237,10 @@ export default function App() {
         ) : activeTab === "fandom_logos" && fandomData ? (
           <motion.div
             key="fandom_logos"
-            initial={{ x: slideDirection === 'forward' ? "100%" : "-100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? "-100%" : "100%", opacity: 0 }}
-            transition={{ type: "tween", ease: "easeInOut", duration: 0.35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
             className="w-full max-w-7xl mx-auto px-4 pt-14 pb-8"
           >
             <div className="max-w-7xl mx-auto font-sans pb-32">
@@ -8285,6 +8378,8 @@ export default function App() {
           </motion.div>
         ) : null}
         </AnimatePresence>
+          </motion.div>
+        )}
 
       </main>
 
@@ -9060,7 +9155,12 @@ export default function App() {
                 >
                   {fandomLoading ? (
                     <>
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <img 
+                        src="https://i.ibb.co/YF4Q2tmz/animation-074ed0ba8c16bb30e36c.gif" 
+                        alt="Loading" 
+                        className="w-4 h-4 object-contain"
+                        referrerPolicy="no-referrer"
+                      />
                       <span>Đang trích xuất dữ liệu...</span>
                     </>
                   ) : (
@@ -10736,7 +10836,12 @@ export default function App() {
                       />
                     </div>
                     <div className="bg-white/5 border border-white/10 text-white/80 rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-2 max-w-[78%] animate-pulse">
-                      <Loader2 className="w-4 h-4 text-[#ffaa00] animate-spin" />
+                      <img 
+                        src="https://i.ibb.co/YF4Q2tmz/animation-074ed0ba8c16bb30e36c.gif" 
+                        alt="Loading" 
+                        className="w-5 h-5 object-contain"
+                        referrerPolicy="no-referrer"
+                      />
                       <span className="text-xs text-white/50 font-sans">Firesteel đang suy nghĩ...</span>
                     </div>
                   </div>
