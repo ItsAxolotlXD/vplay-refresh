@@ -396,6 +396,10 @@ export default function App() {
     return saved ? JSON.parse(saved) : ["vtv1", "vtv3", "vl1", "cartoon-network"];
   });
 
+  const isFavorite = (channelId: string) => {
+    return favorites.includes(channelId);
+  };
+
   // Player configurations
   const [volume, setVolume] = useState<number>(() => {
     const saved = localStorage.getItem("glass_tv_volume");
@@ -535,6 +539,66 @@ export default function App() {
   const [remoteInputValue, setRemoteInputValue] = useState<string>("");
   const [showCopiedNotify, setShowCopiedNotify] = useState<boolean>(false);
   const [activeSettingSection, setActiveSettingSection] = useState<string | null>(null);
+
+  // Header Bar state (Always On Top header bar)
+  const [showHeaderBar, setShowHeaderBar] = useState<boolean>(() => {
+    const saved = localStorage.getItem("vplay360_show_header_bar");
+    return saved !== null ? saved === "true" : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("vplay360_show_header_bar", String(showHeaderBar));
+  }, [showHeaderBar]);
+
+  // Audio Pop Sound Synthesizer (Medium-High pitch pop tone)
+  const playPopSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1300, ctx.currentTime + 0.03);
+      osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.07);
+
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.07);
+    } catch (e) {
+      // Ignore audio context autoplay restriction
+    }
+  };
+
+  const getHeaderTitle = () => {
+    switch (activeTab) {
+      case "home":
+        return "HOME";
+      case "live":
+        return "LIVE TV";
+      case "notifications":
+        return "THÔNG BÁO";
+      case "settings":
+        if (activeSettingSection === "design_system") return "DESIGN COMPONENTS";
+        if (activeSettingSection === "about") return "VỀ VPLAY";
+        return "CÀI ĐẶT";
+      case "search":
+        return "SPOTLIGHT SEARCH";
+      case "plugin_store":
+        return "CỬA HÀNG TIỆN ÍCH";
+      case "profile":
+        return "TÀI KHOẢN & DỮ LIỆU";
+      default:
+        return activeTab ? activeTab.toUpperCase() : "VPLAY";
+    }
+  };
   const [playbackError, setPlaybackError] = useState<boolean>(false);
   const [playbackErrorType, setPlaybackErrorType] = useState<"standard" | "timeout" | null>(null);
   const notifyTimeoutRef = useRef<any>(null);
@@ -1373,11 +1437,16 @@ export default function App() {
   const toggleFavorite = (channelId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setFavorites(prev => {
+      let updated: string[];
       if (prev.includes(channelId)) {
-        return prev.filter(id => id !== channelId);
+        updated = prev.filter(id => id !== channelId);
+        triggerToast("Đã xóa khỏi danh sách yêu thích");
       } else {
-        return [...prev, channelId];
+        updated = [...prev, channelId];
+        triggerToast("Đã thêm vào danh sách yêu thích");
       }
+      localStorage.setItem("glass_tv_favorites", JSON.stringify(updated));
+      return updated;
     });
   };
 
@@ -2107,6 +2176,8 @@ export default function App() {
 
   return (
     <div className={`min-h-screen text-white/95 pb-32 transition-all duration-300 overflow-x-clip ${getBgGradient()} ${
+      showHeaderBar ? "pt-11" : ""
+    } ${
       dockToSidebar
         ? autoHideSidebar
           ? "pl-0"
@@ -2116,6 +2187,183 @@ export default function App() {
         : ""
     }`}>
       
+      {/* Header Bar Always On Top (when showHeaderBar is true) */}
+      {showHeaderBar && (
+        <header className="fixed top-0 left-0 right-0 z-[100] h-11 bg-[#e3e3e3] border-b-[2px] border-[#929292] shadow-[0_2px_0_0_#808080] flex items-center justify-between px-1 md:px-2 text-black select-none font-montserrat">
+          {/* Left: Back button & Menu toggle */}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound();
+                if (activeSettingSection === "design_system" || activeSettingSection === "about") {
+                  setActiveSettingSection(null);
+                } else if (activeTab !== "home") {
+                  setActiveTab("home");
+                } else {
+                  window.history.back();
+                }
+              }}
+              className="w-8 h-8 rounded-md hover:bg-black/10 flex items-center justify-center text-black active:scale-95 transition-all cursor-pointer"
+              title="Quay lại"
+            >
+              <ChevronLeft className="w-5.5 h-5.5 stroke-[3]" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound();
+                if (dockToSidebar) {
+                  if (isMobile) {
+                    setShowMobileSidebar(!showMobileSidebar);
+                  } else {
+                    setSidebarExpanded(!sidebarExpanded);
+                  }
+                } else {
+                  setDockToSidebar(true);
+                  setSidebarExpanded(true);
+                }
+              }}
+              className="w-8 h-8 rounded-md hover:bg-black/10 flex items-center justify-center text-black active:scale-95 transition-all cursor-pointer"
+              title="Mở / Thu gọn Menu"
+            >
+              <Menu className="w-5 h-5 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Center: Title in Montserrat bold font */}
+          <div className="font-extrabold text-[13px] sm:text-[14px] tracking-wider text-black uppercase font-montserrat text-center px-2 truncate">
+            {getHeaderTitle()}
+          </div>
+
+          {/* Right: Spotlight Search button & Dropdown */}
+          <div className="relative flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound();
+                setIsHeaderSearchExpanded(!isHeaderSearchExpanded);
+              }}
+              className="w-8 h-8 rounded-md hover:bg-black/10 flex items-center justify-center text-black active:scale-95 transition-all cursor-pointer"
+              title="Spotlight Search"
+            >
+              <img 
+                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                className="w-[17px] h-[17px] object-contain brightness-0" 
+                referrerPolicy="no-referrer"
+                alt="Search"
+              />
+            </button>
+
+            {/* Spotlight Search Dropdown Menu */}
+            {isHeaderSearchExpanded && (
+              <>
+                {/* Backdrop overlay */}
+                <div 
+                  className="fixed inset-0 z-[105]" 
+                  onClick={() => setIsHeaderSearchExpanded(false)} 
+                />
+
+                <div className="absolute right-0 top-10 z-[110] w-[300px] sm:w-[360px] rounded-2xl bg-[#141218]/95 backdrop-blur-2xl border border-white/15 p-3 shadow-[0_16px_40px_rgba(0,0,0,0.6)] text-white font-sans animate-fade-in space-y-2.5">
+                  {/* Search input field */}
+                  <div className="relative flex items-center w-full">
+                    <input
+                      ref={headerSearchInputRef}
+                      type="text"
+                      placeholder="Spotlight Search..."
+                      value={menubarSearchQuery}
+                      onChange={(e) => setMenubarSearchQuery(e.target.value)}
+                      className="w-full pl-9.5 pr-10 py-2.5 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
+                    />
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                      <img 
+                        src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
+                        className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
+                        referrerPolicy="no-referrer"
+                        alt="Search"
+                      />
+                    </div>
+                    {menubarSearchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => setMenubarSearchQuery("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-none cursor-pointer bouncy-btn"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+                          if (SpeechRecognition) {
+                            const recognition = new SpeechRecognition();
+                            recognition.lang = 'vi-VN';
+                            recognition.interimResults = false;
+                            recognition.maxAlternatives = 1;
+                            triggerToast("Đang lắng nghe...");
+                            recognition.start();
+                            recognition.onresult = (event: any) => {
+                              const speechResult = event.results[0][0].transcript;
+                              setMenubarSearchQuery(prev => {
+                                const prefix = prev.trim() ? prev + " " : "";
+                                return prefix + speechResult;
+                              });
+                              triggerToast("Đã nhập: " + speechResult);
+                            };
+                            recognition.onerror = (event: any) => {
+                              triggerToast("Lỗi: " + event.error);
+                            };
+                          } else {
+                            triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
+                          }
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-white hover:text-white/80 transition-none cursor-pointer bouncy-btn"
+                        title="Tìm kiếm bằng giọng nói"
+                      >
+                        <Mic className="w-3.5 h-3.5 text-white shrink-0" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search Results / Suggestions inside Dropdown Menu */}
+                  <div className="max-h-60 overflow-y-auto flex flex-col gap-1 custom-scrollbar pr-1">
+                    {menubarSearchResults.length > 0 ? (
+                      menubarSearchResults.map((ch) => (
+                        <button
+                          key={ch.id}
+                          onClick={() => {
+                            handleSelectChannel(ch);
+                            setActiveTab("live");
+                            setIsHeaderSearchExpanded(false);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl text-left text-xs hover:bg-white/10 text-white/90 hover:text-white font-sans font-medium transition-all flex items-center justify-between group gap-2 cursor-pointer border border-transparent hover:border-white/10"
+                        >
+                          <div className="flex items-center gap-2.5 truncate">
+                            <span className="truncate">{ch.name}</span>
+                          </div>
+                          <span className="text-[9px] bg-red-600/30 text-red-400 group-hover:bg-red-600 group-hover:text-white px-2 py-0.5 rounded font-bold transition-all shrink-0">
+                            PHÁT
+                          </span>
+                        </button>
+                      ))
+                    ) : menubarSearchQuery.trim() ? (
+                      <div className="px-3 py-4 text-center text-xs text-white/50 font-sans">
+                        Không tìm thấy kênh nào phù hợp
+                      </div>
+                    ) : (
+                      <div className="px-3 py-3 text-center text-xs text-white/40 font-sans">
+                        Nhập từ khóa để tìm kiếm nhanh
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </header>
+      )}
+      
       {/* High-Fidelity Sidebar Left Navigation (Inspired by the design) */}
       {dockToSidebar && (
         <>
@@ -2123,14 +2371,14 @@ export default function App() {
           {autoHideSidebar && !isMobile && (
             <div 
               onMouseEnter={() => setIsSidebarHovered(true)}
-              className="fixed top-0 left-0 bottom-0 w-4 z-[65] pointer-events-auto"
+              className={`fixed ${showHeaderBar ? "top-11" : "top-0"} left-0 bottom-0 w-4 z-[65] pointer-events-auto`}
             />
           )}
 
           {/* Backdrop for mobile sidebar drawer */}
           {isMobile && showMobileSidebar && (
             <div 
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden"
+              className={`fixed ${showHeaderBar ? "top-11" : "top-0"} inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden`}
               onClick={() => setShowMobileSidebar(false)}
             />
           )}
@@ -2138,7 +2386,7 @@ export default function App() {
           <aside 
             onMouseEnter={() => setIsSidebarHovered(true)}
             onMouseLeave={() => setIsSidebarHovered(false)}
-            className={`fixed top-0 left-0 h-screen z-[70] bg-[#0c0a0f]/95 md:bg-[#0c0a0f]/80 backdrop-blur-[20px] border-r border-white/5 transition-all duration-300 flex flex-col ${
+            className={`fixed ${showHeaderBar ? "top-11 h-[calc(100vh-44px)]" : "top-0 h-screen"} left-0 z-[70] bg-[#2c2c2c] border-r-2 border-[#505050] transition-all duration-300 flex flex-col ${
               isMobile 
                 ? (showMobileSidebar ? "translate-x-0 w-full" : "-translate-x-full w-full") 
                 : autoHideSidebar
@@ -2183,7 +2431,7 @@ export default function App() {
               >
                 <X className="w-5 h-5" />
               </button>
-            ) : (!autoHideSidebar && sidebarExpanded) && (
+            ) : (!autoHideSidebar && sidebarExpanded && !showHeaderBar) && (
               <button
                 type="button"
                 onClick={() => setSidebarExpanded(false)}
@@ -2195,8 +2443,8 @@ export default function App() {
             )}
           </div>
 
-          {/* If collapsed, show an expand button at the top */}
-          {!autoHideSidebar && !sidebarExpanded && !isMobile && (
+          {/* If collapsed, show an expand button at the top (only if header bar is not enabled) */}
+          {!autoHideSidebar && !sidebarExpanded && !isMobile && !showHeaderBar && (
             <div className="flex justify-center py-4 border-b border-white/5 shrink-0">
               <button
                 type="button"
@@ -2212,7 +2460,7 @@ export default function App() {
           {/* Menu Items list */}
           <div className="flex-1 overflow-y-auto py-6 px-3 space-y-5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* Spotlight Search at the absolute top of sidebar (above Home) */}
-            {dockItems.find(it => it.id === "search")?.enabled && (
+            {!showHeaderBar && dockItems.find(it => it.id === "search")?.enabled && (
               (sidebarExpanded || isMobile) ? (
                 <div key="sidebar-search-spotlight" className="space-y-1">
                   <div className="relative flex flex-col gap-2 w-full">
@@ -2307,7 +2555,7 @@ export default function App() {
                           </div>
                         ) : (
                           <div className="px-2 py-3 text-center text-[10px] text-white/40 font-sans">
-                            Nhập từ khóa để tìm nhanh
+                            Nhập từ khóa để tìm kiếm nhanh
                           </div>
                         )}
                       </div>
@@ -2414,38 +2662,82 @@ export default function App() {
 
                     {/* Submenu details when sidebar is expanded & active/open */}
                     {(sidebarExpanded || isMobile) && isActive && tab.id === "live" && (
-                      <div className="border-l border-white/10 ml-7 pl-0 flex flex-col gap-2.5 mt-2">
+                      <div className="border-l border-white/10 ml-7 pl-0 flex flex-col gap-1 mt-2 pr-2">
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedCategory("all");
-                            triggerToast("Lọc: Tất cả kênh");
+                            playPopSound();
+                            if (selectedChannel) {
+                              toggleFavorite(selectedChannel.id);
+                            } else {
+                              triggerToast("Vui lòng chọn 1 kênh");
+                            }
                           }}
-                          className={`w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all ${
-                            selectedCategory === "all"
-                              ? "border-[#ff3b30] text-[#ff3b30] font-bold"
-                              : "border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30]"
-                          }`}
+                          className="w-full text-left text-xs font-medium px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5 cursor-pointer"
                         >
-                          Tất cả kênh
+                          <ThumbsUp className={`w-3.5 h-3.5 ${selectedChannel && isFavorite(selectedChannel.id) ? "text-red-500 fill-red-500" : "text-white/70"}`} />
+                          <span>Thêm vào yêu thích</span>
                         </button>
-                        {allAvailableCategoryList.map((cat) => (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(cat.id);
-                              triggerToast(`Kênh: ${cat.name}`);
-                            }}
-                            className={`w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all truncate ${
-                              selectedCategory === cat.id
-                                ? "border-[#ff3b30] text-[#ff3b30] font-bold"
-                                : "border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30]"
-                            }`}
-                          >
-                            {cat.name}
-                          </button>
-                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            if (selectedChannel?.url) {
+                              window.open(selectedChannel.url, "_blank");
+                              triggerToast("Đã mở luồng gốc " + selectedChannel.name);
+                            } else {
+                              triggerToast("Vui lòng chọn 1 kênh");
+                            }
+                          }}
+                          className="w-full text-left text-xs font-medium px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-white/70" />
+                          <span>Mở luồng gốc</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            if (selectedChannel) {
+                              navigator.clipboard?.writeText(selectedChannel.url || window.location.href);
+                              triggerToast("Đã sao chép liên kết chia sẻ");
+                            } else {
+                              triggerToast("Vui lòng chọn 1 kênh");
+                            }
+                          }}
+                          className="w-full text-left text-xs font-medium px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-white/70" />
+                          <span>Chia sẻ</span>
+                        </button>
+
+                        <div className="my-1.5 border-t border-white/10 mx-2" />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            handleOpenMultiviewSelector();
+                          }}
+                          className="w-full text-left text-xs font-medium px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Grid className="w-3.5 h-3.5 text-white/70" />
+                          <span>Chế độ Multiview</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            handleTogglePictureInPicture();
+                          }}
+                          className="w-full text-left text-xs font-medium px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5 cursor-pointer"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5 text-white/70" />
+                          <span>Picture in Picture</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2480,7 +2772,7 @@ export default function App() {
                     Favorites
                   </div>
                 )}
-                <Heart className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
+                <ThumbsUp className="w-4.5 h-4.5 text-white transition-none stroke-[1.8]" />
                 {(sidebarExpanded || isMobile) && (
                   <span className="text-xs font-semibold tracking-wide font-sans pl-3.5 flex-1 text-left">
                     Favorites
@@ -2682,7 +2974,9 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => {
-                        setShowAboutModal(true);
+                        playPopSound();
+                        setActiveTab("settings");
+                        setActiveSettingSection("about");
                       }}
                       className="w-full text-left text-xs font-medium pl-5 pr-2.5 py-1.5 border-l-2 transition-all flex items-center gap-2 border-transparent text-white/70 hover:text-[#ff3b30] hover:border-[#ff3b30] group"
                     >
@@ -5311,115 +5605,269 @@ export default function App() {
                   </div>
 
                   {(() => {
-                    const normalSecs = [
-                      {
-                        id: "appearance",
-                        title: "Giao diện",
-                        subtitle: "Tùy biến giao diện và trải nghiệm người dùng theo ý thích",
-                        icon: Palette,
-                        keywords: ["giao diện", "màu sắc", "ánh sáng", "backdrop", "glow", "amoled", "tối", "dark", "chủ đề", "theme"]
-                      },
-                      {
-                        id: "accessibility",
-                        title: "Trợ năng",
-                        subtitle: "Điều chỉnh cài đặt trợ năng và khả năng tiếp cận",
-                        icon: Key,
-                        keywords: ["trợ năng", "slide", "trượt hình", "tự động", "tiếp cận", "sidebar", "ẩn sidebar", "auto-hide", "menu", "thanh bên"]
-                      }
-                    ];
-
-                    const devSecs = [
-                      {
-                        id: "design_system",
-                        title: "Design components",
-                        subtitle: "Hệ thống thành phần và ngôn ngữ thiết kế của Vplay",
-                        icon: Layers,
-                        keywords: ["design components", "design system", "thiết kế", "giao diện", "button", "slider", "checkbox", "thành phần"]
-                      },
-                      {
-                        id: "plugin_store",
-                        title: "Cửa hàng tiện ích",
-                        subtitle: "Cài đặt các gói tiện ích và tính năng mở rộng cao cấp của Vplay",
-                        icon: Puzzle,
-                        keywords: ["cửa hàng tiện ích", "plugin", "tiện ích", "xuất luồng", "multiview", "pip", "picture in picture", "mở luồng gốc", "chuyển kênh nhanh", "thêm kênh"]
-                      }
-                    ];
-
-                    const query = settingsSearchQuery.trim().toLowerCase();
-                    const filterFn = (sec: any) => {
-                      if (!query) return true;
-                      return sec.title.toLowerCase().includes(query) ||
-                             sec.subtitle.toLowerCase().includes(query) ||
-                             sec.keywords.some((k: string) => k.toLowerCase().includes(query));
-                    };
-
-                    const filteredNormal = normalSecs.filter(filterFn);
-                    const filteredDev = devSecs.filter(filterFn);
-
-                    if (filteredNormal.length === 0 && filteredDev.length === 0) {
-                      return (
-                        <div className="text-center py-12 text-white/40 text-sm">
-                          Không tìm thấy mục cài đặt phù hợp với từ khóa tìm kiếm.
-                        </div>
-                      );
-                    }
+                    const q = settingsSearchQuery.trim().toLowerCase();
+                    const matches = (text: string) => !q || text.toLowerCase().includes(q);
 
                     return (
-                      <>
-                        {filteredNormal.length > 0 && (
-                          <div className="space-y-3">
-                            {filteredNormal.map((sec) => {
-                              const IconComp = sec.icon;
-                              return (
-                                <button
-                                  key={sec.id}
-                                  onClick={() => setActiveSettingSection(sec.id)}
-                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-0 hover:bg-white/15 text-white cursor-default transition-all duration-200"
-                                >
-                                  <div className="w-9 h-9 flex items-center justify-center shrink-0 text-white bg-white/5 rounded-xl">
-                                    <IconComp className="w-5 h-5 stroke-[1.8]" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="text-[14px] sm:text-[15px] font-semibold text-white tracking-tight">{sec.title}</h3>
-                                    <p className="text-[10.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
-                                  </div>
-                                  <ChevronRight className="w-4.5 h-4.5 text-white/45 shrink-0" />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {filteredDev.length > 0 && (
-                          <div className="space-y-3 pt-2">
-                            {/* Developer Options Heading */}
-                            <div className="pt-2 pb-1.5 px-2 flex items-center gap-2 text-white/50 text-[11px] font-bold tracking-wider uppercase select-none font-sans">
-                              <Cpu className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span>Tùy chọn nhà phát triển</span>
+                      <div className="space-y-6 pt-2">
+                        {/* 1. GIAO DIỆN (APPEARANCE) */}
+                        {(matches("giao diện") || matches("header bar") || matches("backdrop") || matches("glow") || matches("amoled") || matches("dock") || matches("sidebar")) && (
+                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                              <Palette className="w-5 h-5 text-indigo-400 shrink-0" />
+                              <div>
+                                <h3 className="text-base font-bold text-white">Giao diện</h3>
+                                <p className="text-xs text-white/60">Tùy biến thanh Header bar, màu sắc nền và thanh điều hướng</p>
+                              </div>
                             </div>
 
-                            {filteredDev.map((sec) => {
-                              const IconComp = sec.icon;
-                              return (
-                                <button
-                                  key={sec.id}
-                                  onClick={() => setActiveSettingSection(sec.id)}
-                                  className="w-full text-left bg-white/10 backdrop-blur-[10px] rounded-[15px] py-2 px-4 sm:py-3 sm:px-5 flex items-center gap-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.2)] border-0 hover:bg-white/15 text-white cursor-default transition-all duration-200"
-                                >
-                                  <div className="w-9 h-9 flex items-center justify-center shrink-0 text-white bg-white/5 rounded-xl">
-                                    <IconComp className="w-5 h-5 stroke-[1.8]" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="text-[14px] sm:text-[15px] font-semibold text-white tracking-tight">{sec.title}</h3>
-                                    <p className="text-[10.5px] sm:text-xs text-white/60 mt-0.5 leading-relaxed truncate">{sec.subtitle}</p>
-                                  </div>
-                                  <ChevronRight className="w-4.5 h-4.5 text-white/45 shrink-0" />
-                                </button>
-                              );
-                            })}
+                            {/* TOGGLE: Header Bar */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                              <div className="space-y-1 pr-4">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-white">Header bar</h4>
+                                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">Mới</span>
+                                </div>
+                                <p className="text-xs text-white/60">Hiển thị thanh Header bar trắng cố định ở đỉnh màn hình (Always on top)</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setShowHeaderBar(!showHeaderBar);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  showHeaderBar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: showHeaderBar ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
+
+                            {/* Backdrop Glow Options */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                              <h4 className="text-sm font-semibold text-white">Màu sắc ánh sáng nền (Backdrop Glow)</h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                {[
+                                  { id: "cosmic", label: "Cosmic Glow" },
+                                  { id: "deep", label: "Tối giản" },
+                                  { id: "aurora", label: "Cực quang" },
+                                  { id: "sunset", label: "Sunset View" }
+                                ].map(preset => (
+                                  <button
+                                    key={preset.id}
+                                    onClick={() => {
+                                      playPopSound();
+                                      setBgColor(preset.id as any);
+                                    }}
+                                    className={`p-2.5 rounded-lg border text-xs font-semibold text-center transition-all cursor-pointer ${
+                                      bgColor === preset.id
+                                        ? "bg-indigo-500/30 border-indigo-400 text-white"
+                                        : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                                    }`}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* TOGGLE: AMOLED Dark */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                              <div className="space-y-1 pr-4">
+                                <h4 className="text-sm font-semibold text-white">Chế độ AMOLED Dark</h4>
+                                <p className="text-xs text-white/60">Sử dụng nền đen tuyệt đối giúp tiết kiệm pin cho màn hình OLED</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setAmoledDark(!amoledDark);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  amoledDark ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: amoledDark ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
+
+                            {/* TOGGLE: Dock to Sidebar */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                              <div className="space-y-1 pr-4">
+                                <h4 className="text-sm font-semibold text-white">Chuyển Dock thành Sidebar bên trái</h4>
+                                <p className="text-xs text-white/60">Chuyển thanh điều hướng dưới cùng sang thanh Sidebar bên trái</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setDockToSidebar(!dockToSidebar);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  dockToSidebar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: dockToSidebar ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
                           </div>
                         )}
-                      </>
+
+                        {/* 2. TRỢ NĂNG (ACCESSIBILITY) */}
+                        {(matches("trợ năng") || matches("slide") || matches("sidebar") || matches("auto")) && (
+                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                              <Key className="w-5 h-5 text-emerald-400 shrink-0" />
+                              <div>
+                                <h3 className="text-base font-bold text-white">Trợ năng</h3>
+                                <p className="text-xs text-white/60">Điều chỉnh tự động trượt banner và tương tác menu</p>
+                              </div>
+                            </div>
+
+                            {/* TOGGLE: Auto Slide */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                              <div className="space-y-1 pr-4">
+                                <h4 className="text-sm font-semibold text-white">Tự động trượt hình Banner</h4>
+                                <p className="text-xs text-white/60">Banner hình ảnh ở trang chủ tự động trượt sau mỗi 5 giây</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setAutoSlide(!autoSlide);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: autoSlide ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
+
+                            {/* TOGGLE: Auto Hide Sidebar */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                              <div className="space-y-1 pr-4">
+                                <h4 className="text-sm font-semibold text-white">Tự động ẩn Sidebar</h4>
+                                <p className="text-xs text-white/60">Tự động thu gọn thanh menu khi không di chuột vào</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setAutoHideSidebar(!autoHideSidebar);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  autoHideSidebar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: autoHideSidebar ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 3. CỬA HÀNG TIỆN ÍCH (PLUGIN STORE) */}
+                        {(matches("cửa hàng tiện ích") || matches("plugin") || matches("tiện ích")) && (
+                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                              <Puzzle className="w-5 h-5 text-amber-400 shrink-0" />
+                              <div>
+                                <h3 className="text-base font-bold text-white">Cửa hàng tiện ích</h3>
+                                <p className="text-xs text-white/60">Cài đặt và gỡ bỏ các gói tiện ích mở rộng của Vplay</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                              {[
+                                { id: "export_stream", name: "Xuất luồng", desc: "Xuất lưu danh sách kênh tệp .m3u8" },
+                                { id: "multiview", name: "Multiview Grid", desc: "Xem tối đa 4 kênh cùng lúc" },
+                                { id: "pip", name: "Picture in Picture", desc: "Cửa sổ nổi thu nhỏ tiện lợi" },
+                                { id: "open_native", name: "Mở luồng gốc", desc: "Mở trực tiếp luồng stream hls gốc" }
+                              ].map(p => {
+                                const status = installedPlugins[p.id] || "idle";
+                                return (
+                                  <div key={p.id} className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <h4 className="text-sm font-semibold text-white truncate">{p.name}</h4>
+                                      <p className="text-[11px] text-white/50 truncate mt-0.5">{p.desc}</p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        playPopSound();
+                                        if (status === "installed") {
+                                          setPluginToUninstall(p);
+                                        } else {
+                                          startInstallPlugin(p.id);
+                                        }
+                                      }}
+                                      className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                                        status === "installed"
+                                          ? "bg-red-500/10 text-red-300 border border-red-500/20 hover:bg-red-500/20"
+                                          : "bg-white/10 text-white border border-white/15 hover:bg-white/20"
+                                      }`}
+                                    >
+                                      {status === "installed" ? "Gỡ bỏ" : status === "installing" ? "Đang cài..." : "Cài đặt"}
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 4. TÙY CHỌN NHÀ PHÁT TRIỂN (DEVELOPER OPTIONS / DESIGN COMPONENTS) */}
+                        {(matches("design") || matches("components") || matches("nhà phát triển") || matches("thành phần")) && (
+                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
+                            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                              <Cpu className="w-5 h-5 text-purple-400 shrink-0" />
+                              <div>
+                                <h3 className="text-base font-bold text-white">Tùy chọn nhà phát triển</h3>
+                                <p className="text-xs text-white/60">Kiểm tra các thành phần giao diện và tài nguyên hệ thống</p>
+                              </div>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-4">
+                              <div className="space-y-1">
+                                <h4 className="text-sm font-semibold text-white">Vplay Design components</h4>
+                                <p className="text-xs text-white/60">Hệ thống ngôn ngữ thiết kế, tương tác nút bấm, hiệu ứng bám dính và xem thử thành phần UI</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setActiveSettingSection("design_system");
+                                }}
+                                className="px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold shrink-0 active:scale-95 transition-all cursor-pointer shadow-md bouncy-btn flex items-center gap-1.5"
+                              >
+                                <span>Khám phá UI</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })()}
                 </motion.div>
@@ -5520,6 +5968,33 @@ export default function App() {
                           </div>
                         ) : (
                           <>
+                            {/* Header bar toggle */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between mb-4">
+                              <div className="space-y-1 text-left">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-white">Header bar</h4>
+                                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">Mới</span>
+                                </div>
+                                <p className="text-xs text-white/60">Hiển thị thanh Header bar trắng cố định ở đỉnh màn hình (Always on top)</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playPopSound();
+                                  setShowHeaderBar(!showHeaderBar);
+                                }}
+                                className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 relative cursor-pointer flex items-center shrink-0 ${
+                                  showHeaderBar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
+                                }`}
+                              >
+                                <motion.div
+                                  animate={{ x: showHeaderBar ? 20 : 0 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  className="w-5 h-5 rounded-full bg-white shadow-md"
+                                />
+                              </button>
+                            </div>
+
                             {/* Backdrop Glow Toggle */}
                             {matchGlow && (
                               <div className="space-y-3">
@@ -6259,11 +6734,159 @@ export default function App() {
                                 </div>
                               </div>
                             )}
+
+                            {/* 5. VỀ VPLAY (ABOUT VPLAY) */}
+                            {(isMatched("về vplay") || isMatched("about") || isMatched("thông tin") || isMatched("phiên bản") || isMatched("version") || isMatched("tác giả")) && (
+                              <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
+                                <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+                                  <Info className="w-5 h-5 text-blue-400 shrink-0" />
+                                  <div>
+                                    <h3 className="text-base font-bold text-white">Về Vplay</h3>
+                                    <p className="text-xs text-white/60">Thông tin phiên bản, tác giả, người đóng góp và tính năng hệ thống</p>
+                                  </div>
+                                </div>
+
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-4">
+                                  <div className="space-y-1">
+                                    <h4 className="text-sm font-semibold text-white">Thông tin ứng dụng Vplay Refresh</h4>
+                                    <p className="text-xs text-white/60">Phiên bản 26.8.3 (Beta) • Tác giả: VNRT • Người đóng góp & Tính năng</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      playPopSound();
+                                      setActiveSettingSection("about");
+                                    }}
+                                    className="px-4 py-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold shrink-0 active:scale-95 transition-all cursor-pointer shadow-md bouncy-btn flex items-center gap-1.5"
+                                  >
+                                    <span>Xem trang Về Vplay</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                     );
                   })()}
+
+                  {activeSettingSection === "about" && (
+                    <div className="space-y-6 animate-fade-in pb-12 text-left">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                            <Tv className="w-6 h-6 stroke-[2.5]" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-white tracking-tight">Project Vplay Refresh</h3>
+                            <p className="text-xs text-white/60">Ứng dụng xem truyền hình số trực tuyến thế hệ mới</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            setActiveSettingSection(null);
+                          }}
+                          className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white text-xs font-semibold border border-white/10 transition-all cursor-pointer bouncy-btn flex items-center gap-1.5"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Quay lại Cài đặt</span>
+                        </button>
+                      </div>
+
+                      {/* Information Cards Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Version & Author */}
+                        <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
+                          <h4 className="text-sm font-bold text-indigo-300 flex items-center gap-2">
+                            <Info className="w-4 h-4" />
+                            <span>Thông tin phiên bản</span>
+                          </h4>
+                          <div className="space-y-2 text-xs text-white/80">
+                            <div className="flex justify-between border-b border-white/5 pb-2">
+                              <span className="text-white/60">Phiên bản hiện tại</span>
+                              <span className="font-semibold text-white">26.8.3 (Beta)</span>
+                            </div>
+                            <div className="flex justify-between border-b border-white/5 pb-2">
+                              <span className="text-white/60">Tác giả (Author)</span>
+                              <span className="font-semibold text-amber-400">VNRT</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-white/60">Trạng thái hệ thống</span>
+                              <span className="font-semibold text-emerald-400">Hoạt động bình thường</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Supporters */}
+                        <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
+                          <h4 className="text-sm font-bold text-rose-300 flex items-center gap-2">
+                            <Heart className="w-4 h-4 fill-rose-500/20" />
+                            <span>Người đóng góp (Supporters)</span>
+                          </h4>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {["FTV Official", "HMG", "DHA", "Bsod999", "Myyer", "Nquinanh", "TV Archive Official", "VNTV Official"].map((supporter, idx) => (
+                              <span key={idx} className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-medium text-white">
+                                {supporter}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Highlights & Features */}
+                      <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
+                        <h4 className="text-sm font-bold text-emerald-300 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          <span>Tính năng nổi bật</span>
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-white/70">
+                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                            <strong className="text-white block font-semibold">Trình phát HLS m3u8 Siêu Tốc</strong>
+                            <p>Tối ưu hóa độ trễ, tự động khôi phục luồng và lưu trữ bộ nhớ đệm thông minh.</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                            <strong className="text-white block font-semibold">Chế độ Multiview & PiP</strong>
+                            <p>Theo dõi tối đa 4 kênh cùng lúc hoặc thu nhỏ trình phát ở góc màn hình.</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                            <strong className="text-white block font-semibold">Spotlight Search & Firesteel AI</strong>
+                            <p>Tìm kiếm tức thì bằng giọng nói và trợ lý AI gợi ý nội dung giải trí thông minh.</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+                            <strong className="text-white block font-semibold">Giao diện Linh Hoạt Apple TV Style</strong>
+                            <p>Chuyển đổi giữa Dock dưới và Sidebar bên trái, tùy biến Header bar cố định.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer & Actions */}
+                      <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            setShowFactoryResetConfirmModal(true);
+                          }}
+                          className="flex-1 py-3 px-4 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-all cursor-pointer text-center bouncy-btn"
+                        >
+                          Khôi phục cài đặt gốc
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playPopSound();
+                            setShowFeedbackModal(true);
+                          }}
+                          className="flex-1 py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer text-center bouncy-btn"
+                        >
+                          Gửi phản hồi cho nhà phát triển
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {activeSettingSection === "design_system" && (() => {
                     const isMatched = (text: string) => {
@@ -8893,56 +9516,6 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* ABOUT VPLAY REFRESH MODAL */}
-      <AnimatePresence>
-        {showAboutModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 1.15 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.15 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu"
-            >
-              <h3 className="text-[18px] font-bold text-white tracking-tight leading-snug">
-                Vplay Refresh
-              </h3>
-              
-              <div className="space-y-3.5 my-4 text-[12.5px] text-white/75 font-sans leading-relaxed">
-                <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
-                  <span className="font-semibold text-white/80">Phiên bản</span>
-                  <span className="font-mono bg-white/5 px-2 py-0.5 rounded text-[11px] font-bold text-white">
-                    26.8.3 (Beta)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
-                  <span className="font-semibold text-white/80">Tác giả</span>
-                  <span className="font-medium text-white/90">VNRT</span>
-                </div>
-                <div className="space-y-1">
-                  <span className="font-semibold text-white/80 block">Đồng hành & Hỗ trợ</span>
-                  <div className="text-[11.5px] text-white/65 bg-white/5 rounded-2xl p-2.5 leading-normal max-h-[110px] overflow-y-auto scrollbar-thin">
-                    FTV Official, HMG, DHA, Bsod999, Myyer, Nquinanh, TV Archive Official, VNTV Official
-                  </div>
-                </div>
-              </div>
-              
-              <button
-                onClick={() => setShowAboutModal(false)}
-                className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] hover:scale-[1.03] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-[15px] text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)] transform-gpu"
-              >
-                Đóng
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* VTV5 VERSION SELECTION POPUP */}
       <AnimatePresence>
