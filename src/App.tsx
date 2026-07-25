@@ -2247,7 +2247,7 @@ export default function App() {
       
       {/* Header Bar Always On Top (when showHeaderBar is true) */}
       {showHeaderBar && (
-        <header className="fixed top-0 left-0 right-0 z-[100] h-11 bg-[#e3e3e3] border-b-[2px] border-[#929292] shadow-[0_2px_0_0_#808080] flex items-center justify-between px-1 md:px-2 text-black select-none font-montserrat">
+        <header className="fixed top-0 left-0 right-0 z-[100] h-11 bg-[#e3e3e3] border-b-[2px] border-[#929292] shadow-[0_2px_0_0_#808080] flex items-center justify-between px-1 md:px-2 text-black select-none font-sans">
           {/* Left: Back button & Menu toggle */}
           <div className="flex items-center gap-0.5">
             <button
@@ -3591,7 +3591,7 @@ export default function App() {
           </div>
 
           {/* Date Time */}
-          <span className="text-[10px] sm:text-[11px] font-montserrat font-normal tracking-wide text-white/80 bg-white/5 px-2 py-0.5 rounded-md">
+          <span className="text-[10px] sm:text-[11px] font-sans font-normal tracking-wide text-white/80 bg-white/5 px-2 py-0.5 rounded-md">
             {formatDateVietnamese(time)} {formatTime(time)}
           </span>
         </div>
@@ -4733,16 +4733,16 @@ export default function App() {
                     transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                     className="flex flex-col items-start gap-1 w-full"
                   >
-                    {/* Calligraphy logo and title text stylistics with Montserrat font */}
-                    <div className="flex flex-col select-none mb-3 font-montserrat gap-0">
-                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-normal text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-zinc-300 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-montserrat block pb-3 px-1">
+                    {/* Calligraphy logo and title text stylistics with Play font */}
+                    <div className="flex flex-col select-none mb-3 font-play gap-0">
+                      <div className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-normal text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-zinc-300 drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)] font-play block pb-3 px-1">
                         {homeSlides[currentSlide].titleTop}
                       </div>
-                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-400 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] block font-montserrat pb-4 px-1 -mt-4 xs:-mt-5 sm:-mt-6 md:-mt-8">
+                      <div className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-400 drop-shadow-[0_3px_12px_rgba(0,0,0,0.95)] block font-play pb-4 px-1 -mt-4 xs:-mt-5 sm:-mt-6 md:-mt-8">
                         {homeSlides[currentSlide].titleMain}
                       </div>
                       {homeSlides[currentSlide].titleSub && (
-                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-semibold text-white drop-shadow tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 font-montserrat pb-2 px-1 -mt-2 sm:-mt-3">
+                        <div className="text-base xs:text-lg sm:text-xl md:text-2xl font-semibold text-white drop-shadow tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[#00ffcc] to-teal-300 font-play pb-2 px-1 -mt-2 sm:-mt-3">
                           {homeSlides[currentSlide].titleSub}
                         </div>
                       )}
@@ -5196,8 +5196,8 @@ export default function App() {
                     </div>
 
                     {/* Bottom overlay text details */}
-                    <div className="absolute bottom-2.5 left-3 right-12 z-10 pointer-events-none select-none font-montserrat">
-                      <h4 className="text-xs sm:text-[13px] font-normal text-white truncate drop-shadow-md">
+                    <div className="absolute bottom-2.5 left-3 right-12 z-10 pointer-events-none select-none font-play">
+                      <h4 className="text-xs sm:text-[13px] font-bold text-white truncate drop-shadow-md">
                         {item.title}
                       </h4>
                       <p className="text-[10px] text-white/65 truncate drop-shadow text-pink-100/80 font-bold">
@@ -5293,8 +5293,8 @@ export default function App() {
                       </div>
                     </div>
                     {/* Content metadata details */}
-                    <div className="px-1 select-none font-montserrat">
-                      <h4 className="text-[11px] sm:text-xs font-normal text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
+                    <div className="px-1 select-none font-play">
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
                         {movie.title}
                       </h4>
                       <p className="text-[10px] text-white/45 truncate mt-0.5 font-bold">
@@ -5374,7 +5374,7 @@ export default function App() {
                       </div>
                     </div>
                     {/* Content metadata details */}
-                    <div className="p-3.5 select-none font-montserrat">
+                    <div className="p-3.5 select-none font-play">
                       <h4 className="text-xs sm:text-[13px] font-bold text-white group-hover:text-amber-300 transition-colors duration-200 truncate">
                         {movie.title}
                       </h4>
@@ -5462,7 +5462,7 @@ export default function App() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                       
                       {/* Inner Details */}
-                      <div className="relative p-3 select-none font-montserrat">
+                      <div className="relative p-3 select-none font-play">
                         <h4 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-pink-300 truncate">
                           {movie.title}
                         </h4>
@@ -5547,8 +5547,8 @@ export default function App() {
                       </div>
                     </div>
                     {/* Content metadata details */}
-                    <div className="px-1 select-none font-montserrat">
-                      <h4 className="text-[11px] sm:text-xs font-normal text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
+                    <div className="px-1 select-none font-play">
+                      <h4 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-teal-300 transition-colors duration-200 truncate">
                         {movie.title}
                       </h4>
                       <p className="text-[10px] text-white/45 truncate mt-0.5">
