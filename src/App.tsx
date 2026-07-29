@@ -441,6 +441,7 @@ export default function App() {
   const [sidebarPowerOpen, setSidebarPowerOpen] = useState<boolean>(false);
   const [sidebarSettingsOpen, setSidebarSettingsOpen] = useState<boolean>(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
+  const [showBrandNewDesignModal, setShowBrandNewDesignModal] = useState<boolean>(false);
   const [showFactoryResetConfirmModal, setShowFactoryResetConfirmModal] = useState<boolean>(false);
   const [showResetSplash, setShowResetSplash] = useState<boolean>(false);
   const [resetCountdown, setResetCountdown] = useState<number>(60);
@@ -1014,7 +1015,8 @@ export default function App() {
   };
 
   const handleOpenMultiviewSelector = () => {
-    setShowMultiviewSelectorPopup(true);
+    playPopSound();
+    setShowBrandNewDesignModal(true);
   };
 
   const handleSelectMultiviewCount = (count: number) => {
@@ -1054,7 +1056,8 @@ export default function App() {
   };
 
   const handleTogglePictureInPicture = () => {
-    setIsPiPActive(prev => !prev);
+    playPopSound();
+    setShowBrandNewDesignModal(true);
   };
 
   useEffect(() => {
@@ -1511,6 +1514,8 @@ export default function App() {
   // Switch channel trigger
   const handleSelectChannel = (channel: Channel, bypassVtv5Check = false) => {
     setShowMobileSidebar(false);
+    playPopSound();
+    setShowBrandNewDesignModal(true);
     if (channel.id === "vtv5" && !bypassVtv5Check) {
       setShowVtv5Popup(true);
       return;
@@ -1877,6 +1882,8 @@ export default function App() {
   };
 
   const handleNextChannel = () => {
+    playPopSound();
+    setShowBrandNewDesignModal(true);
     const currentIndex = flattenedChannels.findIndex(ch => ch.id === selectedChannel.id);
     if (currentIndex !== -1 && currentIndex < flattenedChannels.length - 1) {
       setSelectedChannel(flattenedChannels[currentIndex + 1]);
@@ -1886,6 +1893,8 @@ export default function App() {
   };
 
   const handlePrevChannel = () => {
+    playPopSound();
+    setShowBrandNewDesignModal(true);
     const currentIndex = flattenedChannels.findIndex(ch => ch.id === selectedChannel.id);
     if (currentIndex !== -1 && currentIndex > 0) {
       setSelectedChannel(flattenedChannels[currentIndex - 1]);
@@ -2021,6 +2030,8 @@ export default function App() {
 
   // Share stream link to clipboard
   const handleShareChannel = () => {
+    playPopSound();
+    setShowBrandNewDesignModal(true);
     if (!selectedChannel) return;
     
     navigator.clipboard.writeText(selectedChannel.url).then(() => {
@@ -2294,8 +2305,22 @@ export default function App() {
             {getHeaderTitle()}
           </div>
 
-          {/* Right: Spotlight Search button & Dropdown */}
-          <div className="relative flex items-center gap-1">
+          {/* Right: Try new design button & Spotlight Search button & Dropdown */}
+          <div className="relative flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                playPopSound();
+                setShowBrandNewDesignModal(true);
+              }}
+              className="px-2.5 py-1 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-xs tracking-wider border border-black hover:border-white transition-none cursor-default text-center font-jura active:translate-y-[1px] active:shadow-[inset_-1px_-1px_0px_#ffffff,inset_1px_1px_0px_#222222]"
+              style={{
+                boxShadow: "inset 1.5px 1.5px 0px #ffffff, inset -1.5px -1.5px 0px #555555"
+              }}
+            >
+              Try new design
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -4174,9 +4199,42 @@ export default function App() {
             className="w-full"
           >
             <AnimatePresence mode="wait">
-          {activeTab === "live" || activeTab === "search" ? (
+          {activeTab === "live" ? (
             <motion.div
-              key={activeTab}
+              key="live"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-4xl mx-auto px-4 pt-24 sm:pt-28 pb-16 select-none font-jura text-left"
+            >
+              {/* Title Header */}
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-wide">
+                Live TV is now available in the new experience
+              </h2>
+
+              {/* Subtitle Message */}
+              <p className="text-white/80 text-base sm:text-lg mb-8 font-medium leading-relaxed">
+                We have moved Live TV tab to the new user interface experience. Check it out here.
+              </p>
+
+              {/* Minecraft styled Button */}
+              <button
+                onClick={() => {
+                  playPopSound();
+                  setShowBrandNewDesignModal(true);
+                }}
+                className="relative py-3.5 px-8 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-base sm:text-lg tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                style={{
+                  boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                }}
+              >
+                Go to new tab experience
+              </button>
+            </motion.div>
+          ) : activeTab === "search" ? (
+            <motion.div
+              key="search"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -4693,8 +4751,40 @@ export default function App() {
           >
             <div className="w-full space-y-0 bg-[#211f26]/60 min-h-screen relative pt-0">
             
-            {/* TRULY IMMERSIVE HERO BIG BANNER (TV360 STYLE - 100% SCREEN-WIDE BLEED WITH NO ROUNDED CORNERS) */}
-            <div className="relative w-full overflow-hidden bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero">
+            {/* BRAND NEW DESIGN HERO BANNER */}
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 md:px-12 pt-16 sm:pt-20 pb-4 select-none font-jura text-left">
+              {/* Title Header */}
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-wide">
+                Try our brand new design
+              </h2>
+
+              {/* Subtitle Message */}
+              <div className="text-white/80 text-base sm:text-lg mb-6 font-medium leading-relaxed space-y-2">
+                <p>
+                  We are currently testing brand new design system for Vplay and we would love to hear your thoughts of this new design.
+                </p>
+                <p className="text-white/70 text-sm sm:text-base">
+                  Keep in mind that it's still work in progress and some functionality might be missing. Only available on some devices and scenarios.
+                </p>
+              </div>
+
+              {/* Single Button: Minecraft style Go to new experience button */}
+              <button
+                onClick={() => {
+                  playPopSound();
+                  setShowBrandNewDesignModal(true);
+                }}
+                className="relative py-3.5 px-8 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-base sm:text-lg tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                style={{
+                  boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                }}
+              >
+                Go to new experience
+              </button>
+            </div>
+
+            {/* TRULY IMMERSIVE HERO BIG BANNER THUMBNAIL (LOCATED UNDER TRY BRAND NEW DESIGN) */}
+            <div className="relative w-full overflow-hidden bg-black min-h-[520px] sm:min-h-[640px] md:min-h-[720px] lg:min-h-[820px] flex items-end pb-6 sm:pb-8 md:pb-10 lg:pb-12 group/hero mt-4">
               
               {/* Background cover image representing selected slide */}
               <div className="absolute inset-0 z-0 overflow-hidden">
@@ -4716,7 +4806,6 @@ export default function App() {
                     
                     {/* Advanced Multi-Layer Vignette Overlays that match the thumbnail color dynamically */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${homeSlides[currentSlide].vignetteLeft} z-10`} />
-                    {/* Removed vignetteBottom shadow to create seamless blending with the content below */}
                     <div className={`absolute inset-x-0 top-0 h-44 bg-gradient-to-b ${homeSlides[currentSlide].vignetteTop} z-10`} />
                   </motion.div>
                 </AnimatePresence>
@@ -4872,13 +4961,13 @@ export default function App() {
                   <div className="flex items-center gap-1.5 ml-2">
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev - 1 + homeSlides.length) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] mr-1 group/refresh-btn bouncy-btn"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => setCurrentSlide(prev => (prev + 1) % homeSlides.length)}
-                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] bouncy-btn"
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer flex items-center justify-center border border-white/20 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.65),inset_-0.5px_-0.5px_0px_rgba(255,255,255,0.3)] mr-1 group/refresh-btn bouncy-btn"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -5882,51 +5971,25 @@ export default function App() {
 
                         {/* 3. CỬA HÀNG TIỆN ÍCH (PLUGIN STORE) */}
                         {(matches("cửa hàng tiện ích") || matches("plugin") || matches("tiện ích")) && (
-                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
-                            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                              <Puzzle className="w-5 h-5 text-amber-400 shrink-0" />
-                              <div>
-                                <h3 className="text-base font-bold text-white">Cửa hàng tiện ích</h3>
-                                <p className="text-xs text-white/60">Cài đặt và gỡ bỏ các gói tiện ích mở rộng của Vplay</p>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-                              {[
-                                { id: "export_stream", name: "Xuất luồng", desc: "Xuất lưu danh sách kênh tệp .m3u8" },
-                                { id: "multiview", name: "Multiview Grid", desc: "Xem tối đa 4 kênh cùng lúc" },
-                                { id: "pip", name: "Picture in Picture", desc: "Cửa sổ nổi thu nhỏ tiện lợi" },
-                                { id: "open_native", name: "Mở luồng gốc", desc: "Mở trực tiếp luồng stream hls gốc" }
-                              ].map(p => {
-                                const status = installedPlugins[p.id] || "idle";
-                                return (
-                                  <div key={p.id} className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <h4 className="text-sm font-semibold text-white truncate">{p.name}</h4>
-                                      <p className="text-[11px] text-white/50 truncate mt-0.5">{p.desc}</p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        playPopSound();
-                                        if (status === "installed") {
-                                          setPluginToUninstall(p);
-                                        } else {
-                                          startInstallPlugin(p.id);
-                                        }
-                                      }}
-                                      className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
-                                        status === "installed"
-                                          ? "bg-red-500/10 text-red-300 border border-red-500/20 hover:bg-red-500/20"
-                                          : "bg-white/10 text-white border border-white/15 hover:bg-white/20"
-                                      }`}
-                                    >
-                                      {status === "installed" ? "Gỡ bỏ" : status === "installing" ? "Đang cài..." : "Cài đặt"}
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                          <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-6 border border-white/10 select-none font-jura text-left">
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-2 tracking-wide">
+                              Plugin store is now available in new experience
+                            </h2>
+                            <p className="text-white/80 text-sm sm:text-base mb-6 font-medium leading-relaxed">
+                              We have moved Plugin store to the new user interface experience. Check it out here.
+                            </p>
+                            <button
+                              onClick={() => {
+                                playPopSound();
+                                setShowBrandNewDesignModal(true);
+                              }}
+                              className="relative py-2.5 px-6 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-sm tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                              style={{
+                                boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                              }}
+                            >
+                              Go to new experience
+                            </button>
                           </div>
                         )}
 
@@ -6450,534 +6513,49 @@ export default function App() {
                     );
                   })()}
 
-                  {activeSettingSection === "accessibility" && (() => {
-                    const isMatched = (text: string) => {
-                      const q = settingDetailSearchQuery.trim().toLowerCase();
-                      if (!q) return true;
-                      return text.toLowerCase().includes(q);
-                    };
-
-                    const matchAutoSlide = isMatched("Tự động trượt hình") || isMatched("trượt hình") || isMatched("slide") || isMatched("5 giây") || isMatched("thumbnail");
-                    const matchAutoHideSidebar = isMatched("Tự động ẩn Sidebar") || isMatched("ẩn sidebar") || isMatched("auto-hide") || isMatched("sidebar") || isMatched("menu") || isMatched("thanh bên");
-
-                    const hasResults = matchAutoSlide || matchAutoHideSidebar;
-
-                    return (
-                      <div className="space-y-6">
-                        {/* Section Header with Search Bar */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                              <Key className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-white">Trợ năng</h3>
-                              <p className="text-xs text-white/60">Tùy chỉnh các cài đặt giúp tối ưu hóa khả năng tương tác và trải nghiệm nghe nhìn.</p>
-                            </div>
-                          </div>
-                          <div className="relative w-full md:max-w-[280px]">
-                            <input
-                              type="text"
-                              value={settingDetailSearchQuery}
-                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
-                              placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-9.5 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
-                            />
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                              <img 
-                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                                className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
-                                referrerPolicy="no-referrer"
-                                alt="Search"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                                if (SpeechRecognition) {
-                                  const recognition = new SpeechRecognition();
-                                  recognition.lang = 'vi-VN';
-                                  recognition.interimResults = false;
-                                  recognition.maxAlternatives = 1;
-                                  triggerToast("Đang lắng nghe...");
-                                  recognition.start();
-                                  recognition.onresult = (event: any) => {
-                                    const speechResult = event.results[0][0].transcript;
-                                    setSettingDetailSearchQuery(prev => {
-                                      const prefix = prev.trim() ? prev + " " : "";
-                                      return prefix + speechResult;
-                                    });
-                                    triggerToast("Đã nhập: " + speechResult);
-                                  };
-                                  recognition.onerror = (event: any) => {
-                                    triggerToast("Lỗi: " + event.error);
-                                  };
-                                } else {
-                                  triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
-                                }
-                              }}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
-                              title="Tìm kiếm bằng giọng nói"
-                            >
-                              <Mic className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {!hasResults ? (
-                          <div className="py-12 text-center text-white/50 space-y-2">
-                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
-                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
-                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-4 text-left">
-                            {/* Option: Tự động trượt hình */}
-                            {matchAutoSlide && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
-                                <div className="space-y-1">
-                                  <h4 className="text-sm font-semibold text-white">Tự động trượt hình</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Hình thumbnail ở trang chủ tự động trượt sau mỗi 5 giây</p>
-                                </div>
-                                
-                                <div className="flex items-center">
-                                  <button
-                                    onClick={() => setAutoSlide(!autoSlide)}
-                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                                      autoSlide ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                    }`}
-                                  >
-                                    <motion.div
-                                      animate={{ x: autoSlide ? 20 : 0 }}
-                                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                      className="relative w-6 h-5 flex items-center justify-center group"
-                                    >
-                                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                      <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                                    </motion.div>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Option: Tự động ẩn Sidebar */}
-                            {matchAutoHideSidebar && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4">
-                                <div className="space-y-1">
-                                  <h4 className="text-sm font-semibold text-white">Tự động ẩn Sidebar</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Tự động thu gọn và ẩn thanh menu bên trái khi không di chuột vào, giúp tối ưu diện tích hiển thị.</p>
-                                </div>
-                                
-                                <div className="flex items-center">
-                                  <button
-                                    onClick={() => setAutoHideSidebar(!autoHideSidebar)}
-                                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center ${
-                                      autoHideSidebar ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                    }`}
-                                  >
-                                    <motion.div
-                                      animate={{ x: autoHideSidebar ? 20 : 0 }}
-                                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                      className="relative w-6 h-5 flex items-center justify-center group"
-                                    >
-                                      <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                      <div className="w-full h-full rounded-full bg-white border border-transparent transition-all duration-300 shadow-md z-10 group-hover:scale-110 group-hover:bg-transparent group-hover:backdrop-blur-md group-hover:border-white/95" />
-                                    </motion.div>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {activeSettingSection === "experimental" && (() => {
-                    const isMatched = (text: string) => {
-                      const q = settingDetailSearchQuery.trim().toLowerCase();
-                      if (!q) return true;
-                      return text.toLowerCase().includes(q);
-                    };
-
-                    const matchLowLatency = isMatched("Mô phỏng độ trễ cực thấp") || isMatched("Ultra-Low Latency") || isMatched("độ trễ") || isMatched("latency") || isMatched("bộ đệm") || isMatched("hls");
-                    const matchCache = isMatched("Bộ đệm luồng thử nghiệm") || isMatched("Stream Caching") || isMatched("bộ đệm") || isMatched("cache") || isMatched("ram") || isMatched("gián đoạn");
-                    const matchAmbient = isMatched("Ánh sáng viền động") || isMatched("Dynamic Ambient Glow") || isMatched("ambient") || isMatched("glow") || isMatched("viền") || isMatched("video") || isMatched("thuật toán");
-                    const matchVIntelligence = isMatched("Trợ lý ảo Firesteel") || isMatched("Firesteel") || isMatched("trí tuệ nhân tạo") || isMatched("ai") || isMatched("gemini") || isMatched("chat") || isMatched("bot");
-                    const matchPlayground = isMatched("Bàn thử nghiệm luồng phát") || isMatched("HLS Stream Playground") || isMatched("bàn thử nghiệm") || isMatched("playground") || isMatched("m3u8") || isMatched("mp4") || isMatched("phát thử");
-
-                    const hasResults = matchLowLatency || matchCache || matchAmbient || matchVIntelligence || matchPlayground;
-
-                    return (
-                      <div className="space-y-6">
-                        {/* Section Header with Search Bar */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
-                          <div className="flex items-center gap-3 text-left">
-                            <div className="w-12 h-12 flex items-center justify-center shrink-0 text-white">
-                              <Beaker className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-semibold text-white">Thử nghiệm</h3>
-                              <p className="text-xs text-white/60">Kích hoạt các thuật toán kết xuất, truyền tải và tính năng đang phát triển của Vplay.</p>
-                            </div>
-                          </div>
-                          <div className="relative w-full md:max-w-[280px]">
-                            <input
-                              type="text"
-                              value={settingDetailSearchQuery}
-                              onChange={(e) => setSettingDetailSearchQuery(e.target.value)}
-                              placeholder="Tìm kiếm cài đặt..."
-                              className="w-full pl-9.5 pr-10 py-2 rounded-full bg-white/10 border border-white/10 text-xs font-semibold text-white placeholder-gray-400 shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.3)] focus:outline-none focus:bg-white/15 focus:border-white/20 transition-none text-left"
-                            />
-                            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                              <img 
-                                src="https://static.wikia.nocookie.net/ep-deo/images/2/21/Searchhh.png/revision/latest/scale-to-width-down/1000?cb=20260717131751" 
-                                className="w-3.5 h-3.5 brightness-0 invert opacity-70" 
-                                referrerPolicy="no-referrer"
-                                alt="Search"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-                                if (SpeechRecognition) {
-                                  const recognition = new SpeechRecognition();
-                                  recognition.lang = 'vi-VN';
-                                  recognition.interimResults = false;
-                                  recognition.maxAlternatives = 1;
-                                  triggerToast("Đang lắng nghe...");
-                                  recognition.start();
-                                  recognition.onresult = (event: any) => {
-                                    const speechResult = event.results[0][0].transcript;
-                                    setSettingDetailSearchQuery(prev => {
-                                      const prefix = prev.trim() ? prev + " " : "";
-                                      return prefix + speechResult;
-                                    });
-                                    triggerToast("Đã nhập: " + speechResult);
-                                  };
-                                  recognition.onerror = (event: any) => {
-                                    triggerToast("Lỗi: " + event.error);
-                                  };
-                                } else {
-                                  triggerToast("Trình duyệt không hỗ trợ nhận diện giọng nói");
-                                }
-                              }}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center text-teal-400 hover:text-teal-300 transition-all cursor-pointer bouncy-btn"
-                              title="Tìm kiếm bằng giọng nói"
-                            >
-                              <Mic className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {!hasResults ? (
-                          <div className="py-12 text-center text-white/50 space-y-2">
-                            <AlertCircle className="w-10 h-10 mx-auto opacity-40 text-rose-400" />
-                            <p className="text-sm font-semibold">Không tìm thấy kết quả phù hợp</p>
-                            <p className="text-xs opacity-60">Hãy thử nhập từ khóa khác để tìm kiếm lại.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {/* Option 1: Low Latency */}
-                            {matchLowLatency && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
-                                <div className="space-y-1 pr-4">
-                                  <h4 className="text-sm font-semibold text-white">Mô phỏng độ trễ cực thấp (Ultra-Low Latency)</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Giảm thiểu kích thước bộ đệm HLS để tối ưu hóa thời gian đồng bộ trực tiếp.</p>
-                                </div>
-                                <button
-                                  onClick={() => setExpLowLatency(!expLowLatency)}
-                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                                    expLowLatency ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                  }`}
-                                >
-                                  <motion.div
-                                    animate={{ x: expLowLatency ? 20 : 0 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className="relative w-6 h-5 flex items-center justify-center group"
-                                  >
-                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                                  </motion.div>
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Option 2: Stream Cache */}
-                            {matchCache && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
-                                <div className="space-y-1 pr-4">
-                                  <h4 className="text-sm font-semibold text-white">Bộ đệm luồng thử nghiệm (Stream Caching)</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Tăng cường dung lượng RAM đệm trước luồng phát sóng nhằm ngăn chặn gián đoạn.</p>
-                                </div>
-                                <button
-                                  onClick={() => setExpCache(!expCache)}
-                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                                    expCache ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                  }`}
-                                >
-                                  <motion.div
-                                    animate={{ x: expCache ? 20 : 0 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className="relative w-6 h-5 flex items-center justify-center group"
-                                  >
-                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                                  </motion.div>
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Option 3: Ambient Glow */}
-                            {matchAmbient && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
-                                <div className="space-y-1 pr-4">
-                                  <h4 className="text-sm font-semibold text-white">Ánh sáng viền động (Dynamic Ambient Glow)</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed font-sans">Sử dụng thuật toán phân tích màu video thời gian thực để chiếu sáng viền trình phát.</p>
-                                </div>
-                                <button
-                                  onClick={() => setExpAmbientGlow(!expAmbientGlow)}
-                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                                    expAmbientGlow ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                  }`}
-                                >
-                                  <motion.div
-                                    animate={{ x: expAmbientGlow ? 20 : 0 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className="relative w-6 h-5 flex items-center justify-center group"
-                                  >
-                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                                  </motion.div>
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Option Firesteel */}
-                            {matchVIntelligence && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 flex items-center justify-between text-left">
-                                <div className="space-y-1 pr-4">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-sm font-semibold text-white">Trợ lý ảo Firesteel</h4>
-                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 uppercase tracking-wider">Mới</span>
-                                  </div>
-                                  <p className="text-xs text-white/60 leading-relaxed font-sans">Firesteel là mô hình trí tuệ thông minh nhân tạo nhằm giúp trải nghiệm xem truyền hình của bạn trở nên sinh động và hấp dẫn hơn, là người bạn trợ lý đắc lực của người dùng Vplay.</p>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    const newVal = !expVIntelligence;
-                                    setExpVIntelligence(newVal);
-                                    if (!newVal) {
-                                      setShowVIntel(false);
-                                    }
-                                  }}
-                                  className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-300 focus:outline-none relative cursor-pointer flex items-center shrink-0 ${
-                                    expVIntelligence ? "bg-[#34c759]" : "bg-[#3a3a3c]"
-                                  }`}
-                                >
-                                  <motion.div
-                                    animate={{ x: expVIntelligence ? 20 : 0 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                    className="relative w-6 h-5 flex items-center justify-center group"
-                                  >
-                                    <div className="absolute -inset-2 rounded-full bg-white/15 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none" />
-                                    <div className="w-full h-full rounded-full bg-white shadow-md z-10" />
-                                  </motion.div>
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Custom Playground */}
-                            {matchPlayground && (
-                              <div className="p-5 rounded-[15px] bg-white/5 border border-white/10 space-y-4 text-left">
-                                <div className="space-y-1">
-                                  <h4 className="text-sm font-semibold text-white">Bàn thử nghiệm luồng phát (HLS Stream Playground)</h4>
-                                  <p className="text-xs text-white/60 leading-relaxed">Phát trực tiếp bất kỳ luồng video .m3u8 nào để kiểm tra hiệu năng trình phát.</p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={testStreamUrl}
-                                    onChange={(e) => setTestStreamUrl(e.target.value)}
-                                    placeholder="Nhập đường dẫn luồng phát .m3u8 hoặc .mp4..."
-                                    className="flex-1 px-4 py-2.5 rounded-[10px] bg-white/10 border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-left"
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      if (testStreamUrl) {
-                                        const tempChannel: Channel = {
-                                          id: "exp-test",
-                                          name: "Luồng Thử Nghiệm",
-                                          url: testStreamUrl,
-                                          group: "Thử nghiệm",
-                                          logoText: "TEST",
-                                          logoBg: "bg-gradient-to-br from-indigo-600 to-indigo-900"
-                                        };
-                                        setSelectedChannel(tempChannel);
-                                        setActiveTab("live");
-                                      }
-                                    }}
-                                    className="px-4 py-2.5 rounded-[10px] bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-xs transition-colors duration-200 active:scale-95 flex items-center gap-1 shrink-0"
-                                  >
-                                    <Play className="w-3.5 h-3.5 fill-white" />
-                                    Phát thử
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 5. VỀ VPLAY (ABOUT VPLAY) */}
-                            {(isMatched("về vplay") || isMatched("about") || isMatched("thông tin") || isMatched("phiên bản") || isMatched("version") || isMatched("tác giả")) && (
-                              <div className="bg-white/10 backdrop-blur-[15px] rounded-[20px] p-5 sm:p-6 border border-white/10 space-y-4 text-left">
-                                <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                                  <Info className="w-5 h-5 text-blue-400 shrink-0" />
-                                  <div>
-                                    <h3 className="text-base font-bold text-white">Về Vplay</h3>
-                                    <p className="text-xs text-white/60">Thông tin phiên bản, tác giả, người đóng góp và tính năng hệ thống</p>
-                                  </div>
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-4">
-                                  <div className="space-y-1">
-                                    <h4 className="text-sm font-semibold text-white">Thông tin ứng dụng Vplay Refresh</h4>
-                                    <p className="text-xs text-white/60">Phiên bản 26.8.3 (Beta) • Tác giả: VNRT • Người đóng góp & Tính năng</p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      playPopSound();
-                                      setActiveSettingSection("about");
-                                    }}
-                                    className="px-4 py-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold shrink-0 active:scale-95 transition-all cursor-pointer shadow-md bouncy-btn flex items-center gap-1.5"
-                                  >
-                                    <span>Xem trang Về Vplay</span>
-                                    <ChevronRight className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                  {activeSettingSection === "experimental" && (
+                    <div className="w-full max-w-4xl mx-auto px-4 py-12 select-none font-jura text-left">
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-wide">
+                        Developer tab is now available in new experience
+                      </h2>
+                      <p className="text-white/80 text-base sm:text-lg mb-8 font-medium leading-relaxed">
+                        We have moved Developer tab to the new user interface experience. Check it out here.
+                      </p>
+                      <button
+                        onClick={() => {
+                          playPopSound();
+                          setShowBrandNewDesignModal(true);
+                        }}
+                        className="relative py-3.5 px-8 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-base sm:text-lg tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                        style={{
+                          boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                        }}
+                      >
+                        Go to new experience
+                      </button>
+                    </div>
+                  )}
 
                   {activeSettingSection === "about" && (
-                    <div className="space-y-6 animate-fade-in pb-12 text-left">
-                      <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
-                            <Tv className="w-6 h-6 stroke-[2.5]" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-white tracking-tight">Project Vplay Refresh</h3>
-                            <p className="text-xs text-white/60">Ứng dụng xem truyền hình số trực tuyến thế hệ mới</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playPopSound();
-                            setActiveSettingSection(null);
-                          }}
-                          className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 text-white text-xs font-semibold border border-white/10 transition-all cursor-pointer bouncy-btn flex items-center gap-1.5"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>Quay lại Cài đặt</span>
-                        </button>
-                      </div>
-
-                      {/* Information Cards Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Version & Author */}
-                        <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
-                          <h4 className="text-sm font-bold text-indigo-300 flex items-center gap-2">
-                            <Info className="w-4 h-4" />
-                            <span>Thông tin phiên bản</span>
-                          </h4>
-                          <div className="space-y-2 text-xs text-white/80">
-                            <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-white/60">Phiên bản hiện tại</span>
-                              <span className="font-semibold text-white">26.8.3 (Beta)</span>
-                            </div>
-                            <div className="flex justify-between border-b border-white/5 pb-2">
-                              <span className="text-white/60">Tác giả (Author)</span>
-                              <span className="font-semibold text-amber-400">VNRT</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-white/60">Trạng thái hệ thống</span>
-                              <span className="font-semibold text-emerald-400">Hoạt động bình thường</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Supporters */}
-                        <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
-                          <h4 className="text-sm font-bold text-rose-300 flex items-center gap-2">
-                            <Heart className="w-4 h-4 fill-rose-500/20" />
-                            <span>Người đóng góp (Supporters)</span>
-                          </h4>
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {["FTV Official", "HMG", "DHA", "Bsod999", "Myyer", "Nquinanh", "TV Archive Official", "VNTV Official"].map((supporter, idx) => (
-                              <span key={idx} className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 text-[11px] font-medium text-white">
-                                {supporter}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Highlights & Features */}
-                      <div className="p-5 rounded-[20px] bg-white/5 border border-white/10 space-y-3">
-                        <h4 className="text-sm font-bold text-emerald-300 flex items-center gap-2">
-                          <Sparkles className="w-4 h-4" />
-                          <span>Tính năng nổi bật</span>
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-white/70">
-                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                            <strong className="text-white block font-semibold">Trình phát HLS m3u8 Siêu Tốc</strong>
-                            <p>Tối ưu hóa độ trễ, tự động khôi phục luồng và lưu trữ bộ nhớ đệm thông minh.</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                            <strong className="text-white block font-semibold">Chế độ Multiview & PiP</strong>
-                            <p>Theo dõi tối đa 4 kênh cùng lúc hoặc thu nhỏ trình phát ở góc màn hình.</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                            <strong className="text-white block font-semibold">Spotlight Search & Firesteel AI</strong>
-                            <p>Tìm kiếm tức thì bằng giọng nói và trợ lý AI gợi ý nội dung giải trí thông minh.</p>
-                          </div>
-                          <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                            <strong className="text-white block font-semibold">Giao diện Linh Hoạt Apple TV Style</strong>
-                            <p>Chuyển đổi giữa Dock dưới và Sidebar bên trái, tùy biến Header bar cố định.</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Footer & Actions */}
-                      <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playPopSound();
-                            setShowFactoryResetConfirmModal(true);
-                          }}
-                          className="flex-1 py-3 px-4 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-all cursor-pointer text-center bouncy-btn"
-                        >
-                          Khôi phục cài đặt gốc
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playPopSound();
-                            setShowFeedbackModal(true);
-                          }}
-                          className="flex-1 py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer text-center bouncy-btn"
-                        >
-                          Gửi phản hồi cho nhà phát triển
-                        </button>
-                      </div>
+                    <div className="w-full max-w-4xl mx-auto px-4 py-12 select-none font-jura text-left">
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-wide">
+                        About tab is now available in new experience
+                      </h2>
+                      <p className="text-white/80 text-base sm:text-lg mb-8 font-medium leading-relaxed">
+                        We have moved About tab to the new user interface experience. Check it out here.
+                      </p>
+                      <button
+                        onClick={() => {
+                          playPopSound();
+                          setShowBrandNewDesignModal(true);
+                        }}
+                        className="relative py-3.5 px-8 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-base sm:text-lg tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                        style={{
+                          boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                        }}
+                      >
+                        Go to new experience
+                      </button>
                     </div>
                   )}
 
@@ -8944,6 +8522,87 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* BRAND NEW DESIGN SYSTEM STARTUP POPUP (OreUI / Minecraft Dialog Style with Jura font & Slide-in animation) */}
+      <AnimatePresence>
+        {!showSplash && showBrandNewDesignModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[10000] flex items-center justify-center p-4 select-none"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowBrandNewDesignModal(false);
+              }
+            }}
+          >
+            <motion.div
+              initial={{ x: "100vw", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100vw", opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full max-w-[540px] bg-[#c6c6c6] p-4 sm:p-5 border-2 border-black font-jura text-left shadow-[0_12px_32px_rgba(0,0,0,0.85)]"
+              style={{
+                boxShadow: "inset 3px 3px 0px #ffffff, inset -3px -3px 0px #555555, 0 16px 40px rgba(0,0,0,0.85)"
+              }}
+            >
+              {/* Title Header Bar */}
+              <h2 
+                className="text-[19px] sm:text-[23px] font-extrabold text-[#1e1e1e] mb-3 px-1 tracking-wide font-jura"
+                style={{ textShadow: "1px 1px 0px #ffffff" }}
+              >
+                Try our brand new design
+              </h2>
+
+              {/* Recessed Black Message Box */}
+              <div 
+                className="bg-[#0a0a0a] text-white p-4 sm:p-5 mb-4 border-2 border-black text-[14px] sm:text-[15px] leading-relaxed tracking-wide space-y-3 font-jura font-semibold"
+                style={{
+                  boxShadow: "inset 3px 3px 0px #373737, inset -2px -2px 0px #8b8b8b"
+                }}
+              >
+                <p className="text-white/95">
+                  We are currently testing brand new design system for Vplay and we would love to hear your thoughts of this new design.
+                </p>
+                <p className="text-white/90">
+                  Keep in mind that it's still work in progress and some functionality might be missing. Only available on some devices and scenarios.
+                </p>
+              </div>
+
+              {/* Buttons Area */}
+              <div className="flex flex-col gap-2.5 w-full font-jura">
+                <button
+                  onClick={() => {
+                    playPopSound();
+                    window.open("https://oreui-pi.vercel.app", "_blank");
+                  }}
+                  className="relative w-full py-3 px-4 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-bold text-[15px] sm:text-[16px] tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                  style={{
+                    boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                  }}
+                >
+                  Switch to the new UI
+                </button>
+
+                <button
+                  onClick={() => {
+                    playPopSound();
+                    setShowBrandNewDesignModal(false);
+                  }}
+                  className="relative w-full py-3 px-4 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-bold text-[15px] sm:text-[16px] tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                  style={{
+                    boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                  }}
+                >
+                  Stay in current UI
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* IMMERSIVE SLEEP MODE OVERLAY */}
       <AnimatePresence>
         {isSleepMode && (
@@ -9184,14 +8843,14 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[20px] z-[100] flex items-center justify-center p-4 select-none font-jura"
           >
             <motion.div
               initial={{ opacity: 0, scale: 1.15 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.15 }}
               transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[350px] rounded-[30px] bg-[#211f26] p-6 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu border border-white/10"
+              className="w-full max-w-[400px] rounded-[30px] bg-[#211f26] p-6 sm:p-8 shadow-[0_24px_48px_rgba(0,0,0,0.5)] relative text-white text-left transform-gpu border border-white/10"
             >
               <div className="absolute top-5 right-5">
                 <button 
@@ -9202,65 +8861,26 @@ export default function App() {
                 </button>
               </div>
 
-              <h3 className="text-[18px] font-semibold text-white tracking-tight leading-snug">
-                Submit Feedback
+              <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-wide leading-snug mb-2">
+                Submit Feedback is now available in new experience
               </h3>
-              <p className="text-[12px] text-white/60 mb-4 leading-relaxed mt-1">
-                Gửi phản hồi của bạn để giúp nhà phát triển hoàn thiện Vplay tốt hơn
+              <p className="text-sm text-white/80 mb-6 font-medium leading-relaxed">
+                We have moved Submit Feedback to the new user interface experience. Check it out here.
               </p>
 
-              <div className="space-y-4">
-                {/* 1-5 Star Rating */}
-                <div>
-                  <label className="block text-[11px] font-medium text-white/50 uppercase tracking-wider mb-2">
-                    Đánh giá ứng dụng
-                  </label>
-                  <div className="flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setFeedbackRating(star)}
-                        className="p-1 -m-1 transition-transform duration-100 hover:scale-125 focus:outline-none"
-                      >
-                        <Star
-                          className={`w-6 h-6 transition-colors ${
-                            star <= feedbackRating
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-white/20 hover:text-white/40"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <span className="text-xs font-semibold text-yellow-400 pl-2">
-                      {feedbackRating === 5 ? "Tuyệt vời (5/5)" : feedbackRating === 4 ? "Tốt (4/5)" : feedbackRating === 3 ? "Bình thường (3/5)" : feedbackRating === 2 ? "Kém (2/5)" : "Rất kém (1/5)"}
-                    </span>
-                  </div>
-                </div>
-
-                <textarea
-                  placeholder="Nhập nội dung góp ý hoặc phản hồi lỗi tại đây..."
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  className="w-full h-28 px-4 py-3 rounded-2xl bg-white/5 text-white placeholder-white/30 border border-white/10 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-purple-500/20 text-xs font-normal resize-none text-left"
-                />
-
-                <button
-                  onClick={() => {
-                    if (feedbackText.trim()) {
-                      setFeedbackText("");
-                      setFeedbackRating(5);
-                      setShowFeedbackModal(false);
-                      setShowThankYouModal(true);
-                    } else {
-                      triggerVIntelToast("Vui lòng nhập nội dung phản hồi");
-                    }
-                  }}
-                  className="w-full py-3 px-4 rounded-full bg-[#d0bcff] hover:bg-[#c2a8f9] active:scale-95 transition-all duration-300 text-[#381e72] font-bold text-xs text-center cursor-default shadow-[inset_0.5px_0.5px_0px_rgba(255,255,255,0.45)]"
-                >
-                  Gửi phản hồi
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  playPopSound();
+                  setShowFeedbackModal(false);
+                  setShowBrandNewDesignModal(true);
+                }}
+                className="w-full relative py-3.5 px-6 bg-[#c6c6c6] hover:bg-[#36af30] active:bg-[#2b8c26] text-[#111111] hover:text-white font-extrabold text-sm sm:text-base tracking-wide border-2 border-black hover:border-white transition-none cursor-default text-center group active:translate-y-[2px] active:shadow-[inset_-2px_-2px_0px_#ffffff,inset_2px_2px_0px_#222222]"
+                style={{
+                  boxShadow: "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #555555"
+                }}
+              >
+                Go to new experience
+              </button>
             </motion.div>
           </motion.div>
         )}
