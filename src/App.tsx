@@ -527,11 +527,9 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Remove automatic 2-second hide timer so maintenance screen stays on startup
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
-    return () => clearTimeout(timer);
+    // Keep splash open until user chooses to proceed
   }, []);
   
   // Custom M3U8 Url link adder
@@ -2179,65 +2177,140 @@ export default function App() {
   }
 
   if (showSplash) {
+    const maintenanceMessages = [
+      {
+        lang: "English",
+        flags: [
+          { code: "gb", name: "United Kingdom", url: "https://flagcdn.com/48x36/gb.png" },
+          { code: "us", name: "United States", url: "https://flagcdn.com/48x36/us.png" }
+        ],
+        text: "The website is currently under maintenance for a major interface overhaul. Thank you for your understanding!"
+      },
+      {
+        lang: "Tiếng Việt",
+        flags: [
+          { code: "vn", name: "Việt Nam", url: "https://flagcdn.com/48x36/vn.png" }
+        ],
+        text: "Trang web đang được bảo trì cho một cuộc đại tu giao diện. Vui lòng thông cảm!"
+      },
+      {
+        lang: "Français (French)",
+        flags: [
+          { code: "fr", name: "France", url: "https://flagcdn.com/48x36/fr.png" }
+        ],
+        text: "Le site est actuellement en maintenance pour une refonte majeure de son interface. Merci de votre compréhension !"
+      },
+      {
+        lang: "Deutsch (German)",
+        flags: [
+          { code: "de", name: "Germany", url: "https://flagcdn.com/48x36/de.png" }
+        ],
+        text: "Die Website wird derzeit aufgrund einer umfassenden Überarbeitung der Benutzeroberfläche gewartet. Vielen Dank für Ihr Verständnis!"
+      },
+      {
+        lang: "Español (Spanish)",
+        flags: [
+          { code: "es", name: "Spain", url: "https://flagcdn.com/48x36/es.png" }
+        ],
+        text: "El sitio web está en mantenimiento por una renovación completa de la interfaz. ¡Gracias por su comprensión!"
+      },
+      {
+        lang: "Português (Portuguese)",
+        flags: [
+          { code: "pt", name: "Portugal", url: "https://flagcdn.com/48x36/pt.png" },
+          { code: "br", name: "Brazil", url: "https://flagcdn.com/48x36/br.png" }
+        ],
+        text: "O site está em manutenção para uma grande reformulação da interface. Agradecemos a sua compreensão!"
+      },
+      {
+        lang: "Italiano (Italian)",
+        flags: [
+          { code: "it", name: "Italy", url: "https://flagcdn.com/48x36/it.png" }
+        ],
+        text: "Il sito è attualmente in manutenzione per un importante rinnovamento dell'interfaccia. Grazie per la comprensión!"
+      },
+      {
+        lang: "中文（简体）(Simplified Chinese)",
+        flags: [
+          { code: "cn", name: "China", url: "https://flagcdn.com/48x36/cn.png" }
+        ],
+        text: "网站正在维护中，以进行界面全面升级。感谢您的理解！"
+      },
+      {
+        lang: "中文（繁體）(Traditional Chinese)",
+        flags: [
+          { code: "tw", name: "Taiwan", url: "https://flagcdn.com/48x36/tw.png" },
+          { code: "hk", name: "Hong Kong", url: "https://flagcdn.com/48x36/hk.png" }
+        ],
+        text: "網站目前正在維護中，以進行介面全面升級。感謝您的理解！"
+      },
+      {
+        lang: "日本語 (Japanese)",
+        flags: [
+          { code: "jp", name: "Japan", url: "https://flagcdn.com/48x36/jp.png" }
+        ],
+        text: "現在、ウェブサイトは大規模なインターフェース刷新のためメンテナンス中です。ご理解のほどよろしくお願いいたします。"
+      },
+      {
+        lang: "한국어 (Korean)",
+        flags: [
+          { code: "kr", name: "South Korea", url: "https://flagcdn.com/48x36/kr.png" }
+        ],
+        text: "웹사이트는 대규모 인터페이스 개편을 위해 현재 유지보수 중입니다. 양해해 주셔서 감사합니다."
+      }
+    ];
+
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[99999] overflow-hidden select-none font-google">
-        {/* Ambient Purple/Indigo Glow in the corners */}
-        <motion.div 
-          animate={{
-            scale: [0.8, 1.4, 0.8],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-purple-600/15 rounded-full blur-[80px] sm:blur-[110px] -top-20 -left-20 pointer-events-none" 
-        />
-        <motion.div 
-          animate={{
-            scale: [0.8, 1.4, 0.8],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-indigo-600/15 rounded-full blur-[80px] sm:blur-[110px] -bottom-20 -right-20 pointer-events-none" 
+      <div className="fixed inset-0 z-[99999] overflow-y-auto bg-gradient-to-b from-white via-slate-50 to-gray-200 text-slate-800 font-jura select-none p-4 sm:p-8 md:p-12 flex flex-col items-center min-h-screen">
+        {/* Hidden YouTube Background Audio Player */}
+        <iframe
+          src="https://www.youtube.com/embed/ijS5whAOX3Q?autoplay=1&loop=1&playlist=ijS5whAOX3Q&enablejsapi=1&controls=0&playsinline=1"
+          title="Maintenance Background Music"
+          className="hidden pointer-events-none w-0 h-0 opacity-0"
+          allow="autoplay; encrypted-media"
         />
 
-        {/* Ambient Purple Glow in the center of splash screen */}
-        <motion.div 
-          animate={{
-            x: "-50%",
-            y: "-50%",
-            scale: [0.6, 1.8, 0.6],
-          }}
-          transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute w-[320px] h-[320px] sm:w-[450px] sm:h-[450px] bg-purple-600/20 rounded-full blur-[90px] sm:blur-[120px] top-1/2 left-1/2 pointer-events-none" 
-        />
-        
-        {/* Content Container */}
-        <div className="relative z-10 flex flex-col items-center gap-6">
-          <svg className="animate-spin h-14 w-14 text-white" viewBox="0 0 50 50">
-            <circle
-              className="opacity-100"
-              cx="25"
-              cy="25"
-              r="20"
-              stroke="currentColor"
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray="40 150"
-              fill="none"
-            />
-          </svg>
-          <span className="text-white text-sm sm:text-base font-bold tracking-wide select-none font-google">
-            Connecting to services
-          </span>
+        <div className="w-full max-w-3xl my-auto py-8 space-y-6">
+          {/* Plain Text Language List with Larger Flags */}
+          <div className="space-y-6 text-left">
+            {maintenanceMessages.map((item, idx) => (
+              <div key={idx} className="space-y-1.5 border-b border-gray-200/50 pb-5 last:border-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.flags.map((flag, fIdx) => (
+                      <img
+                        key={fIdx}
+                        src={flag.url}
+                        alt={flag.name}
+                        title={flag.name}
+                        className="w-8 h-5 sm:w-10 sm:h-7 object-cover rounded-[3px] shadow-xs border border-slate-300/80"
+                        referrerPolicy="no-referrer"
+                      />
+                    ))}
+                  </div>
+                  <span className="text-base sm:text-lg font-bold text-slate-900 tracking-wide font-jura">
+                    {item.lang}
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-medium pl-0.5">
+                  {item.text}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-6 text-center pb-8">
+            <button
+              onClick={() => {
+                playPopSound();
+                setShowSplash(false);
+              }}
+              className="py-3.5 px-9 rounded-full bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-bold text-sm sm:text-base tracking-wide shadow-lg hover:shadow-xl transition-all cursor-pointer active:scale-95 font-jura"
+            >
+              Tiếp tục vào trang web (Continue to Website) →
+            </button>
+          </div>
         </div>
       </div>
     );
